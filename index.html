@@ -11,188 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
-// ══════════════════════════════════════════
-// PAGES LISTE + PDF
-// ══════════════════════════════════════════
-let listPageType = 'income';
-let listPageFilter = 'all';
-
-function openListPage(type){
-  listPageType = type;
-  listPageFilter = 'all';
-  renderListPage();
-  document.getElementById('pageList').classList.add('open');
-}
-
-function renderListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
-  const m = month();
-  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
-
-  // Titres et données selon type
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
-  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
-
-  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
-  const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'income' || type === 'expense'){
-    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
-    tabsEl.innerHTML = opts.map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  } else {
-    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  }
-
-  // Event delegation pour les onglets
-  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
-    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
-  });
-
-  // Données
-  let items = [];
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  }
-
-  // Résumé
-  const sumEl = document.getElementById('pageListSummary');
-  if(type === 'income' || type === 'expense'){
-    const total = items.reduce((s,t)=>s+t.amt, 0);
-    const color = type==='income' ? 'var(--green)' : 'var(--red)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
-  } else {
-    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
-    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
-    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
-  }
-
-  // Liste
-  const el = document.getElementById('pageListContent');
-  if(!items.length){
-    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
-    return;
-  }
-
-  if(type === 'income' || type === 'expense'){
-    el.innerHTML = items.map(t=>txHTML(t)).join('');
-  } else {
-    el.innerHTML = items.map(c=>{
-      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
-        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
-        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
-        : '<span class="badge b-ok">📅 '+days+' j</span>';
-      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
-        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
-        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
-        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
-    }).join('');
-  }
-}
-
-function printListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
-  const title = titles[type] || 'Liste';
-  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-
-  // Construire les lignes du tableau
-  let thead = '', rows = '';
-  let items = [];
-
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-    const total = items.reduce((s,t)=>s+t.amt,0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
-    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const total = items.reduce((s,c)=>s+c.amount,0);
-    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
-    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8">
-<title>DiafaGestion — ${title}</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
-  .logo-zone{display:flex;align-items:center;gap:12px;}
-  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
-  .logo-sub{font-size:12px;color:#6b7280;}
-  .meta{text-align:right;font-size:12px;color:#6b7280;}
-  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
-  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
-  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
-  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
-  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
-  tr:nth-child(even){background:#f8fafc;}
-  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
-  @media print{body{padding:10px;}button{display:none!important;}}
-</style></head><body>
-<div class="header">
-  <div class="logo-zone">
-    <div>
-      <div class="logo-title">DiafaGestion</div>
-      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div style="font-weight:700;">${clientName}</div>
-    <div>Généré le ${now}</div>
-  </div>
-</div>
-<h2>${title}</h2>
-<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
-<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
-<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
-</body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(()=>{ win.print(); }, 400);
-}
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
   --white:#ffffff; --bg:#f5f6fa; --bg2:#eef0f6; --border:#e2e5f0;
@@ -526,7 +345,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .whatsapp-btn:active{background:#dcfce7;}
 
 /* ── SPLASH SCREEN ── */
-.splash{position:fixed;inset:0;background:linear-gradient(135deg,#1a1d2e 0%,#dc2626 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.6s ease;}
+.splash{position:fixed;inset:0;background:linear-gradient(135deg,#1a1d2e 0%,#dc2626 100%);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.7s ease;}.splash.active{display:flex;}.splash.fade-out{opacity:0;pointer-events:none!important;}
 .splash.fade-out{opacity:0;pointer-events:none;}
 .splash-logo{width:140px;height:140px;border-radius:28px;animation:splashPop 0.8s cubic-bezier(.34,1.56,.64,1) forwards;opacity:0;}
 .splash-title{color:#fff;font-size:28px;font-weight:800;margin-top:20px;animation:splashSlide 0.6s 0.5s ease forwards;opacity:0;}
@@ -589,370 +408,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .firstprofile-required{color:#dc2626;font-size:11px;margin-top:4px;}
 </style>
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
-// ══════════════════════════════════════════
-// PAGES LISTE + PDF
-// ══════════════════════════════════════════
-let listPageType = 'income';
-let listPageFilter = 'all';
-
-function openListPage(type){
-  listPageType = type;
-  listPageFilter = 'all';
-  renderListPage();
-  document.getElementById('pageList').classList.add('open');
-}
-
-function renderListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
-  const m = month();
-  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
-
-  // Titres et données selon type
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
-  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
-
-  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
-  const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'income' || type === 'expense'){
-    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
-    tabsEl.innerHTML = opts.map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  } else {
-    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  }
-
-  // Event delegation pour les onglets
-  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
-    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
-  });
-
-  // Données
-  let items = [];
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  }
-
-  // Résumé
-  const sumEl = document.getElementById('pageListSummary');
-  if(type === 'income' || type === 'expense'){
-    const total = items.reduce((s,t)=>s+t.amt, 0);
-    const color = type==='income' ? 'var(--green)' : 'var(--red)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
-  } else {
-    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
-    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
-    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
-  }
-
-  // Liste
-  const el = document.getElementById('pageListContent');
-  if(!items.length){
-    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
-    return;
-  }
-
-  if(type === 'income' || type === 'expense'){
-    el.innerHTML = items.map(t=>txHTML(t)).join('');
-  } else {
-    el.innerHTML = items.map(c=>{
-      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
-        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
-        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
-        : '<span class="badge b-ok">📅 '+days+' j</span>';
-      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
-        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
-        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
-        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
-    }).join('');
-  }
-}
-
-function printListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
-  const title = titles[type] || 'Liste';
-  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-
-  // Construire les lignes du tableau
-  let thead = '', rows = '';
-  let items = [];
-
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-    const total = items.reduce((s,t)=>s+t.amt,0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
-    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const total = items.reduce((s,c)=>s+c.amount,0);
-    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
-    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8">
-<title>DiafaGestion — ${title}</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
-  .logo-zone{display:flex;align-items:center;gap:12px;}
-  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
-  .logo-sub{font-size:12px;color:#6b7280;}
-  .meta{text-align:right;font-size:12px;color:#6b7280;}
-  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
-  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
-  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
-  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
-  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
-  tr:nth-child(even){background:#f8fafc;}
-  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
-  @media print{body{padding:10px;}button{display:none!important;}}
-</style></head><body>
-<div class="header">
-  <div class="logo-zone">
-    <div>
-      <div class="logo-title">DiafaGestion</div>
-      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div style="font-weight:700;">${clientName}</div>
-    <div>Généré le ${now}</div>
-  </div>
-</div>
-<h2>${title}</h2>
-<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
-<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
-<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
-</body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(()=>{ win.print(); }, 400);
-}
-
-</script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
-// ══════════════════════════════════════════
-// PAGES LISTE + PDF
-// ══════════════════════════════════════════
-let listPageType = 'income';
-let listPageFilter = 'all';
-
-function openListPage(type){
-  listPageType = type;
-  listPageFilter = 'all';
-  renderListPage();
-  document.getElementById('pageList').classList.add('open');
-}
-
-function renderListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
-  const m = month();
-  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
-
-  // Titres et données selon type
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
-  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
-
-  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
-  const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'income' || type === 'expense'){
-    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
-    tabsEl.innerHTML = opts.map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  } else {
-    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  }
-
-  // Event delegation pour les onglets
-  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
-    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
-  });
-
-  // Données
-  let items = [];
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  }
-
-  // Résumé
-  const sumEl = document.getElementById('pageListSummary');
-  if(type === 'income' || type === 'expense'){
-    const total = items.reduce((s,t)=>s+t.amt, 0);
-    const color = type==='income' ? 'var(--green)' : 'var(--red)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
-  } else {
-    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
-    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
-    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
-  }
-
-  // Liste
-  const el = document.getElementById('pageListContent');
-  if(!items.length){
-    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
-    return;
-  }
-
-  if(type === 'income' || type === 'expense'){
-    el.innerHTML = items.map(t=>txHTML(t)).join('');
-  } else {
-    el.innerHTML = items.map(c=>{
-      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
-        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
-        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
-        : '<span class="badge b-ok">📅 '+days+' j</span>';
-      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
-        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
-        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
-        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
-    }).join('');
-  }
-}
-
-function printListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
-  const title = titles[type] || 'Liste';
-  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-
-  // Construire les lignes du tableau
-  let thead = '', rows = '';
-  let items = [];
-
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-    const total = items.reduce((s,t)=>s+t.amt,0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
-    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const total = items.reduce((s,c)=>s+c.amount,0);
-    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
-    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8">
-<title>DiafaGestion — ${title}</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
-  .logo-zone{display:flex;align-items:center;gap:12px;}
-  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
-  .logo-sub{font-size:12px;color:#6b7280;}
-  .meta{text-align:right;font-size:12px;color:#6b7280;}
-  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
-  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
-  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
-  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
-  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
-  tr:nth-child(even){background:#f8fafc;}
-  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
-  @media print{body{padding:10px;}button{display:none!important;}}
-</style></head><body>
-<div class="header">
-  <div class="logo-zone">
-    <div>
-      <div class="logo-title">DiafaGestion</div>
-      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div style="font-weight:700;">${clientName}</div>
-    <div>Généré le ${now}</div>
-  </div>
-</div>
-<h2>${title}</h2>
-<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
-<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
-<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
-</body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(()=>{ win.print(); }, 400);
-}
-
-</script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -1082,7 +539,7 @@ function printListPage(){
     <div class="firstprofile-label">📞 Numéro de téléphone *</div>
     <input class="firstprofile-input" type="tel" id="fpTel" placeholder="Ex: 625 00 00 00">
     <div class="firstprofile-label">🎂 Date de naissance</div>
-    <input class="firstprofile-input" type="date" id="fpDOB">
+    <input class="firstprofile-input" type="date" id="fpDOB" onchange="calcFpAge(this.value)">
     <div class="firstprofile-label">📍 Quartier</div>
     <input class="firstprofile-input" type="text" id="fpQuartier" placeholder="Ex: Kaloum, Ratoma...">
     <div class="firstprofile-label">💼 Profession</div>
@@ -1146,7 +603,7 @@ function printListPage(){
     </div>
     <div class="profile-fg"><label>📞 Téléphone</label><input type="tel" id="pTel" placeholder="Ex: 625 00 00 00"></div>
     <div class="profile-grid">
-      <div class="profile-fg"><label>Date de naissance</label><input type="date" id="pDOB" onchange="calcAge(this.value)"></div>
+      <div class="profile-fg"><label>Date de naissance</label><input type="date" id="pDOB" onchange="calcAge(this.value)" onchange="calcAge(this.value)"></div>
       <div class="profile-fg"><label>Âge</label><input type="number" id="pAge" placeholder="Âge" readonly style="background:#f5f6fa;color:#9ca3af;"></div>
     </div>
     <div class="profile-fg"><label>Quartier</label><input type="text" id="pQuartier" placeholder="Ex: Kaloum, Ratoma..."></div>
@@ -1181,7 +638,7 @@ function printListPage(){
 </div>
 
 <!-- WELCOME SCREEN -->
-<div class="login-overlay" id="loginOverlay">
+<div class="login-overlay hidden" id="loginOverlay">
   <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA">
   <div class="login-title">DiafaGestion</div>
   <div class="login-sub">Gestion Financière Personnelle</div>
@@ -1278,22 +735,10 @@ function printListPage(){
 
     <!-- QUICK ACTIONS -->
     <div class="qa-grid">
-      <div class="qa-wrap">
-        <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
-        <button class="qa-list inc" onclick="openListPage('income')">📋 Liste</button>
-      </div>
-      <div class="qa-wrap">
-        <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
-        <button class="qa-list exp" onclick="openListPage('expense')">📋 Liste</button>
-      </div>
-      <div class="qa-wrap">
-        <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
-        <button class="qa-list debt" onclick="openListPage('debt')">📋 Liste</button>
-      </div>
-      <div class="qa-wrap">
-        <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
-        <button class="qa-list credit" onclick="openListPage('credit')">📋 Liste</button>
-      </div>
+      <button class="qa-btn inc" onclick="openCatSheet('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter · Liste</div></div></button>
+      <button class="qa-btn exp" onclick="openCatSheet('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter · Liste</div></div></button>
+      <button class="qa-btn debt" onclick="openCatSheet('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">Ajouter · Liste</div></div></button>
+      <button class="qa-btn credit" onclick="openCatSheet('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Ajouter · Liste</div></div></button>
     </div>
 
     <!-- PREVISION -->
@@ -1359,11 +804,11 @@ function printListPage(){
       </div>
 
       <div class="drawer-section-label">Ajouter</div>
-      <button class="menu-item" onclick="closeDrawer();openTx('income')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('income')">
         <div class="menu-icon" style="background:var(--green-l)">💰</div>
         <div><div class="menu-label">Ajouter un revenu</div><div class="menu-sub">Salaire, commerce…</div></div>
       </button>
-      <button class="menu-item" onclick="closeDrawer();openTx('expense')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('expense')">
         <div class="menu-icon" style="background:var(--red-l)">💸</div>
         <div><div class="menu-label">Ajouter une dépense</div><div class="menu-sub">Loyer, transport…</div></div>
       </button>
@@ -1374,12 +819,12 @@ function printListPage(){
       </button>
 
       <div class="drawer-section-label">Créances & Dettes</div>
-      <button class="menu-item" onclick="closeDrawer();openPageCD('debt')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('debt')">
         <div class="menu-icon" style="background:var(--orange-l)">🤲</div>
         <div><div class="menu-label">Créanciers</div><div class="menu-sub" id="menuOwe">0 GNF en attente</div></div>
         <span class="menu-badge" id="menuOweBadge" style="display:none">!</span>
       </button>
-      <button class="menu-item" onclick="closeDrawer();openPageCD('credit')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('credit')">
         <div class="menu-icon" style="background:var(--blue-l)">🙏</div>
         <div><div class="menu-label">Débiteurs</div><div class="menu-sub" id="menuOwned">0 GNF à récupérer</div></div>
         <span class="menu-badge green" id="menuOwnedBadge" style="display:none">!</span>
@@ -1687,6 +1132,31 @@ function printListPage(){
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastText">Enregistré</span></div>
 
+
+<!-- ══ CAT SHEET ══ -->
+<div class="overlay" id="catSheet">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:92vh;display:flex;flex-direction:column;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="flex-shrink:0;">
+      <div class="sheet-title" id="catSheetTitle">💰 Revenus</div>
+      <button class="sheet-close" onclick="closeSheet('catSheet')">✕</button>
+    </div>
+    <div style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);">
+      <button id="catBtnAdd" onclick="catSheetAdd()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:16px;border:none;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:#15803d;">➕ Ajouter</button>
+      <button id="catBtnList" onclick="catSheetList()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:16px;border:2px solid var(--border);font-size:15px;font-weight:700;cursor:pointer;color:var(--text);background:var(--bg);">📋 Liste</button>
+    </div>
+    <div id="catListZone" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div id="catListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
+      <div style="flex-shrink:0;padding:10px 14px 4px;"><div class="cd-tabs" id="catListTabs"></div></div>
+      <div style="flex-shrink:0;padding:4px 14px 8px;text-align:right;">
+        <button onclick="printCatList()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;">📄 PDF</button>
+      </div>
+      <div id="catListContent" style="overflow-y:auto;flex:1;padding:0 14px 20px;"></div>
+    </div>
+  </div>
+</div>
+
+
 <script>
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
@@ -1714,7 +1184,7 @@ async function loadDataFromFirebase(){
     const doc=await db.collection('clients').doc(uid).get();
     if(doc.exists && doc.data().appData){
       const d=JSON.parse(doc.data().appData);
-      S={...S,...d};
+      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income',...d};
       localStorage.setItem(getDataKey(),JSON.stringify(S));
     }
   }catch(e){}
@@ -1996,6 +1466,7 @@ function logoutClient(){
     localStorage.removeItem('diafa_pwd');
     localStorage.removeItem('fp_temp_avatar');
     localStorage.removeItem('ca_temp_avatar');
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     // Réinitialiser S pour éviter fuite de données entre comptes
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     document.getElementById('adminTabBtn').style.display='none';
@@ -2021,57 +1492,31 @@ async function checkLogin(){
   const pass=document.getElementById('loginPass').value;
   const err=document.getElementById('loginError2');
   const isAdmin=checkAdminLogin();
-
   if(!isAdmin){
-    const storedUser=localStorage.getItem('diafa_user');
-    const storedPass=localStorage.getItem('diafa_pwd');
-    // Vérifier d'abord localStorage
-    if(storedUser && storedPass){
-      if(user!==storedUser||pass!==storedPass){
-        // Essayer Firebase si localStorage ne correspond pas
-        const fbOk = await checkLoginFromFirebase(user, pass, err);
-        if(!fbOk) return;
-      }
-    } else {
-      // Pas de compte local — essayer Firebase directement
-      const fbOk = await checkLoginFromFirebase(user, pass, err);
-      if(!fbOk) return;
-    }
+    const fbOk=await checkLoginFromFirebase(user,pass,err);
+    if(!fbOk) return;
   }
-
-  // Connexion réussie
   document.getElementById('loginFormOverlay').classList.add('hidden');
   document.getElementById('loginOverlay').classList.add('hidden');
-
   if(isAdmin){
-    // Admin: UID fixe, entre dans l'app + affiche bouton panneau
     localStorage.setItem('diafa_uid','admin_uid');
-    localStorage.setItem('diafa_user', ADMIN_LOGIN);
+    localStorage.setItem('diafa_user',ADMIN_LOGIN);
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-    try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
     let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-    if(!ap.nom){
-      ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
-      localStorage.setItem('diafa_profile',JSON.stringify(ap));
-    }
-    loadProfile();
-    render();
-    loadDataFromFirebase().then(()=>render());
-    document.getElementById('adminTabBtn').style.display='flex';
+    if(!ap.nom){ ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()}; localStorage.setItem('diafa_profile',JSON.stringify(ap)); }
+    loadProfile(); render();
+    if(db) loadDataFromFirebase().then(()=>render()).catch(()=>{});
+    document.getElementById('adminTabBtn').style.display='block';
   } else {
-    // Client normal — on essaie Firebase, sinon on garde le profil local
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    localStorage.removeItem('diafa_profile');
     await loadProfileFromFirebase(user);
     const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!p.nom||!p.prenom||!p.telephone){
-      // Aucun profil ni local ni Firebase → première connexion
       openFirstTimeProfile();
     } else {
-      // Profil trouvé (local ou Firebase)
-      const uid=localStorage.getItem('diafa_uid');
-      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
-      render();
-      loadDataFromFirebase().then(()=>render());
+      render(); loadProfile();
+      if(db) loadDataFromFirebase().then(()=>{ render(); loadProfile(); }).catch(()=>{});
     }
     document.getElementById('adminTabBtn').style.display='none';
   }
@@ -2215,12 +1660,13 @@ function openCreateAccountForm(){
 // ── SPLASH SCREEN ──
 function showSplash(){
   const splash = document.getElementById('splashScreen');
+  if(!splash) return;
+  splash.classList.add('active');
   setTimeout(() => {
     splash.classList.add('fade-out');
-    setTimeout(() => {
-      splash.style.display = 'none';
-    }, 700);
+    setTimeout(() => { splash.classList.remove('active'); }, 750);
   }, 2800);
+  setTimeout(() => { splash.style.cssText='display:none!important;'; }, 4000);
 }
 showSplash();
 
@@ -2279,6 +1725,7 @@ async function saveClientToFirebase(profile){
       dob:        profile.dob       || '',
       avatar:     avatarData,
       login:      localStorage.getItem('diafa_user') || '',
+      password:   localStorage.getItem('diafa_pwd')  || '',
       status:     'active',
       createdAt:  profile.createdAt || new Date().toISOString(),
       updatedAt:  new Date().toISOString()
@@ -2308,28 +1755,17 @@ function resizeAvatar(dataUrl, size){
 
 async function loadProfileFromFirebase(login){
   if(!db) return;
-  try {
-    const snap = await db.collection('clients').where('login','==',login).limit(1).get();
+  try{
+    const snap=await db.collection('clients').where('login','==',login).limit(1).get();
     if(!snap.empty){
-      const data = snap.docs[0].data();
-      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
-      // Fusionner avec le profil local existant (priorité Firebase)
-      const existing = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-      const p = {...existing};
-      if(data.avatar)     p.avatar     = data.avatar;
-      if(data.nom)        p.nom        = data.nom;
-      if(data.prenom)     p.prenom     = data.prenom;
-      if(data.telephone)  p.telephone  = data.telephone;
-      if(data.quartier)   p.quartier   = data.quartier;
-      if(data.profession) p.profession = data.profession;
-      if(data.dob)        p.dob        = data.dob;
-      if(data.situation)  p.situation  = data.situation;
-      if(data.sexe)       p.sexe       = data.sexe;
-      if(data.createdAt)  p.createdAt  = data.createdAt;
-      localStorage.setItem('diafa_profile', JSON.stringify(p));
+      const d=snap.docs[0].data();
+      if(d.uid) localStorage.setItem('diafa_uid',d.uid);
+      const p={avatar:d.avatar||'',nom:d.nom||'',prenom:d.prenom||'',telephone:d.telephone||'',quartier:d.quartier||'',profession:d.profession||'',dob:d.dob||'',situation:d.situation||'',sexe:d.sexe||'',createdAt:d.createdAt||''};
+      localStorage.setItem('diafa_profile',JSON.stringify(p));
+    } else {
+      localStorage.removeItem('diafa_profile');
     }
-    // Si pas trouvé Firebase, on garde le profil local tel quel
-  } catch(e){ console.warn('Load profile error:', e); }
+  }catch(e){ console.warn('loadProfile error:',e); }
 }
 
 async function syncAvatarFromFirebase(){
@@ -2370,35 +1806,49 @@ function checkAdminLogin(){
 
 async function checkLoginFromFirebase(user, pass, err){
   if(!db){
-    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+    err.textContent='❌ Connexion internet requise.';
     err.style.display='block';
     setTimeout(()=>err.style.display='none',4000);
     return false;
   }
-  try {
-    err.textContent='⏳ Vérification en cours...';
+  try{
+    err.textContent='⏳ Connexion...';
     err.style.display='block';
-    const snap = await db.collection('clients').where('login','==',user).limit(1).get();
+    const snap=await db.collection('clients').where('login','==',user).limit(1).get();
     if(snap.empty){
-      err.textContent='❌ Identifiant ou mot de passe incorrect';
+      err.textContent='❌ Identifiant inconnu. Créez un compte.';
       err.style.display='block';
-      setTimeout(()=>err.style.display='none',3000);
+      setTimeout(()=>err.style.display='none',4000);
       return false;
     }
-    const data = snap.docs[0].data();
-    if(data.login === user){
-      // Restaurer localStorage depuis Firebase
-      localStorage.setItem('diafa_user', user);
-      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+    const data=snap.docs[0].data();
+    if(data.status==='suspended'){
+      err.textContent='❌ Compte suspendu. Contactez DIAFA.';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',5000);
+      return false;
+    }
+    if(data.password && data.password===pass){
+      localStorage.setItem('diafa_user',user);
+      localStorage.setItem('diafa_pwd',pass);
+      if(data.uid) localStorage.setItem('diafa_uid',data.uid);
       err.style.display='none';
       return true;
     }
-    err.textContent='❌ Identifiant ou mot de passe incorrect';
+    if(!data.password){
+      localStorage.setItem('diafa_user',user);
+      localStorage.setItem('diafa_pwd',pass);
+      if(data.uid) localStorage.setItem('diafa_uid',data.uid);
+      db.collection('clients').doc(snap.docs[0].id).set({password:pass,updatedAt:new Date().toISOString()},{merge:true}).catch(()=>{});
+      err.style.display='none';
+      return true;
+    }
+    err.textContent='❌ Mot de passe incorrect.';
     err.style.display='block';
     setTimeout(()=>err.style.display='none',3000);
     return false;
-  } catch(e){
-    err.textContent='❌ Erreur réseau: ' + e.message;
+  }catch(e){
+    err.textContent='❌ Erreur réseau.';
     err.style.display='block';
     setTimeout(()=>err.style.display='none',4000);
     return false;
@@ -2728,9 +2178,19 @@ function saveFirstProfile(){
 // ── INIT ──
 const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
 initFirebase();
+
+// ── SÉCURITÉ : effacer toute session et forcer l'écran d'accueil ──
+localStorage.removeItem('diafa_user');
+localStorage.removeItem('diafa_pwd');
+localStorage.removeItem('diafa_uid');
+localStorage.removeItem('diafa_profile');
+
 render();
 loadProfile();
 updateTrashBadge();
+
+// Afficher l'écran d'accueil
+document.getElementById('loginOverlay').classList.remove('hidden');
 
 // ══════════════════════════════════════════
 // PAGES LISTE + PDF
@@ -2903,7 +2363,7 @@ function printListPage(){
 <div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
 <table><thead>${thead}</thead><tbody>${rows}</tbody></table>
 <div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
-</body></html>`;
+</html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
@@ -2912,28 +2372,149 @@ function printListPage(){
   setTimeout(()=>{ win.print(); }, 400);
 }
 
-</script>
 
-<!-- PAGE LISTE + PDF -->
-<div class="overlay" id="pageList">
-  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header" style="flex-shrink:0;">
-      <div class="sheet-title" id="pageListTitle">📋 Liste</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="pageListPdfBtn" onclick="printListPage()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 PDF</button>
-        <button class="sheet-close" onclick="closeSheet('pageList')">✕</button>
-      </div>
-    </div>
-    <!-- Résumé stat -->
-    <div id="pageListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
-    <!-- Filtre période -->
-    <div style="flex-shrink:0;padding:10px 14px 6px;">
-      <div class="cd-tabs" id="pageListTabs"></div>
-    </div>
-    <!-- Liste scrollable -->
-    <div id="pageListContent" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
-  </div>
-</div>
+
+// ═══════════════════════════════════════
+// CAT SHEET JS
+// ═══════════════════════════════════════
+let catType='income', catFilter='all';
+const catAddColors={income:'#15803d',expense:'#dc2626',debt:'#ea580c',credit:'#1d4ed8'};
+const catTitles={income:'💰 Revenus',expense:'💸 Dépenses',debt:'🤲 Créanciers',credit:'🙏 Débiteurs'};
+const catSign={income:'+',expense:'-',debt:'-',credit:'+'};
+
+function openCatSheet(type){
+  catType=type; catFilter='all';
+  const sheet=document.getElementById('catSheet');
+  if(!sheet) return;
+  document.getElementById('catSheetTitle').textContent=catTitles[type];
+  document.getElementById('catListZone').style.display='none';
+  document.getElementById('catBtnAdd').style.background=catAddColors[type];
+  const lb=document.getElementById('catBtnList');
+  lb.style.background='var(--bg)'; lb.style.color='var(--text)'; lb.style.border='2px solid var(--border)';
+  sheet.classList.add('open');
+}
+function catSheetAdd(){
+  closeSheet('catSheet');
+  if(catType==='income'||catType==='expense') openTx(catType);
+  else openPageCD(catType);
+}
+function catSheetList(){
+  const zone=document.getElementById('catListZone');
+  const lb=document.getElementById('catBtnList');
+  if(zone.style.display==='flex'){
+    zone.style.display='none';
+    lb.style.background='var(--bg)'; lb.style.color='var(--text)'; lb.style.border='2px solid var(--border)';
+  } else {
+    zone.style.display='flex';
+    lb.style.background=catAddColors[catType]; lb.style.color='#fff'; lb.style.border='2px solid transparent';
+    renderCatList();
+  }
+}
+function renderCatList(){
+  const type=catType;
+  const allMonths=[...new Set(S.tx.map(t=>t.month))].sort().reverse();
+  const tabsEl=document.getElementById('catListTabs');
+  if(type==='income'||type==='expense'){
+    const opts=[['all','Tous'],...allMonths.slice(0,6).map(m=>[m,monthLabel(m)])];
+    tabsEl.innerHTML=opts.map(([v,l])=>`<button class="cd-tab${catFilter===v?' ad':''}" onclick="catFilter='${v}';renderCatList()">${l}</button>`).join('');
+  } else {
+    tabsEl.innerHTML=[['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>`<button class="cd-tab${catFilter===v?' ad':''}" onclick="catFilter='${v}';renderCatList()">${l}</button>`).join('');
+  }
+  let items=[];
+  if(type==='income'||type==='expense'){
+    items=S.tx.filter(t=>t.type===type);
+    if(catFilter!=='all') items=items.filter(t=>t.month===catFilter);
+    items=[...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total=items.reduce((s,t)=>s+t.amt,0);
+    document.getElementById('catListSummary').innerHTML=
+      `<div style="background:var(--bg);border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:${type==='income'?'var(--green)':'var(--red)'};">${fmt(total)}</div></div>`+
+      `<div style="background:var(--bg);border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;">${items.length}</div></div>`;
+    const el=document.getElementById('catListContent');
+    el.innerHTML=items.length ? items.map(t=>txHTML(t)).join('') : '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items=S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(catFilter==='active') items=items.filter(c=>!c.paid);
+    if(catFilter==='paid') items=items.filter(c=>c.paid);
+    items=[...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const tp=items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount,0);
+    const tr=items.filter(c=>c.paid).reduce((s,c)=>s+c.amount,0);
+    const col=type==='debt'?'var(--red)':'var(--green)';
+    document.getElementById('catListSummary').innerHTML=
+      `<div style="background:var(--bg);border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:${col};">${fmt(tp)}</div></div>`+
+      `<div style="background:var(--bg);border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:var(--text2);">${fmt(tr)}</div></div>`;
+    const el=document.getElementById('catListContent');
+    el.innerHTML=items.length ? items.map(c=>{
+      const days=daysTo(c.date),ov=!c.paid&&days<0,soon=!c.paid&&days>=0&&days<=7;
+      const badge=c.paid?'<span class="badge b-paid">✅ Réglé</span>':ov?`<span class="badge b-late">🔴 Retard ${Math.abs(days)}j</span>`:days===0?'<span class="badge b-urgent">⚡ Auj.</span>':soon?`<span class="badge b-soon">⏰ ${days}j</span>`:`<span class="badge b-ok">📅 ${days}j</span>`;
+      const ini=c.name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase();
+      return `<div class="cd-item"><div class="cd-avatar ${c.type}">${ini}</div><div class="cd-info"><div class="cd-name">${c.name}</div><div class="cd-reason">${c.reason||''}·${c.meth||''}</div><div class="cd-due">${badge}·${c.date}</div></div><div class="cd-right"><div class="cd-amount ${c.type}">${catSign[type]}${fmt(c.amount)}</div></div></div>`;
+    }).join('') : '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+  }
+}
+function printCatList(){
+  const type=catType;
+  const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName=((p.prenom||'')+' '+(p.nom||'')).trim()||'Client';
+  const title={income:'Revenus',expense:'Dépenses',debt:'Créanciers',credit:'Débiteurs'}[type];
+  const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  let thead='',rows='',items=[];
+  if(type==='income'||type==='expense'){
+    items=S.tx.filter(t=>t.type===type);
+    if(catFilter!=='all') items=items.filter(t=>t.month===catFilter);
+    items=[...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total=items.reduce((s,t)=>s+t.amt,0);
+    thead='<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows=items.map((t,i)=>`<tr><td>${i+1}</td><td>${t.date}</td><td>${t.lbl}</td><td>${t.cat}</td><td>${t.meth||'—'}</td><td style="text-align:right;font-weight:700;color:${t.type==='income'?'#15803d':'#b91c1c'};">${fmt(t.amt)}</td></tr>`).join('');
+    rows+=`<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:${type==='income'?'#15803d':'#b91c1c'};">${fmt(total)}</td></tr>`;
+  } else {
+    if(!S.cd) S.cd=[];
+    items=S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(catFilter==='active') items=items.filter(c=>!c.paid);
+    if(catFilter==='paid') items=items.filter(c=>c.paid);
+    items=[...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    thead='<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows=items.map((c,i)=>`<tr><td>${i+1}</td><td>${c.name}</td><td>${c.reason||'—'}</td><td>${c.meth||'—'}</td><td>${c.date}</td><td style="text-align:right;font-weight:700;">${fmt(c.amount)}</td><td>${c.paid?'✅ Réglé':'⏳ En cours'}</td></tr>`).join('');
+    rows+=`<tr style="font-weight:800;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;">${fmt(items.reduce((s,c)=>s+c.amount,0))}</td><td></td></tr>`;
+  }
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>DiafaGestion — ${title}</title><style>body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}h2{font-size:18px;font-weight:800;}table{width:100%;border-collapse:collapse;font-size:12px;}th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;}td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}tr:nth-child(even){background:#f8fafc;}.hdr{display:flex;justify-content:space-between;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}.logo{font-size:22px;font-weight:800;color:#dc2626;}.meta{text-align:right;font-size:12px;color:#6b7280;}.ftr{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}</style></head><body><div class="hdr"><div><div class="logo">DiafaGestion</div><div style="font-size:12px;color:#6b7280;">Gestion Financière Personnelle</div></div><div class="meta"><div style="font-weight:700;">${clientName}</div><div>Généré le ${now}</div></div></div><h2>${title}</h2><table><thead>${thead}</thead><tbody>${rows}</tbody></table><div class="ftr">DiafaGestion — DIAFA Consulting · wa.me/625518669</div></body></html>`);
+  w.document.close(); w.focus(); setTimeout(()=>w.print(),400);
+}
+
+// ═══════════════════════════════════════
+// CALCUL ÂGE AUTOMATIQUE
+// ═══════════════════════════════════════
+function calcAge(dob){
+  if(!dob) return;
+  const b=new Date(dob), t=new Date();
+  let age=t.getFullYear()-b.getFullYear();
+  if(t.getMonth()-b.getMonth()<0||(t.getMonth()===b.getMonth()&&t.getDate()<b.getDate())) age--;
+  const el=document.getElementById('pAge'); if(el) el.value=age+' ans';
+}
+function calcFpAge(dob){
+  if(!dob) return;
+  const b=new Date(dob), t=new Date();
+  let age=t.getFullYear()-b.getFullYear();
+  if(t.getMonth()-b.getMonth()<0||(t.getMonth()===b.getMonth()&&t.getDate()<b.getDate())) age--;
+  const el=document.getElementById('fpAge'); if(el) el.value=age+' ans';
+}
+
+</script>
 </body>
 </html>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw.addEventListener('statechange', () => {
+        if(sw.state === 'activated') window.location.reload();
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
+</script>
