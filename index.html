@@ -460,6 +460,25 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
     </div>
 
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">💍 Situation matrimoniale</div>
+      <select id="caSituation" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
+        <option value="">-- Sélectionner --</option>
+        <option value="Célibataire">Célibataire</option>
+        <option value="Marié(e)">Marié(e)</option>
+        <option value="Divorcé(e)">Divorcé(e)</option>
+        <option value="Veuf/Veuve">Veuf/Veuve</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">⚧ Sexe</div>
+      <select id="caSexe" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
+        <option value="">-- Sélectionner --</option>
+        <option value="Masculin">👨 Masculin</option>
+        <option value="Féminin">👩 Féminin</option>
+      </select>
+    </div>
+
     <!-- Séparateur -->
     <div style="border-top:2px dashed #e5e7eb;margin:14px 0 12px;"></div>
     <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-align:center;">🔐 Choisissez vos identifiants de connexion</div>
@@ -581,6 +600,22 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     </div>
     <div class="profile-fg"><label>Quartier</label><input type="text" id="pQuartier" placeholder="Ex: Kaloum, Ratoma..."></div>
     <div class="profile-fg"><label>Profession</label><input type="text" id="pProfession" placeholder="Ex: Ingénieur, Commerçant..."></div>
+    <div class="profile-fg"><label>⚧ Sexe</label>
+      <select id="pSexe">
+        <option value="">-- Sélectionner --</option>
+        <option value="Masculin">👨 Masculin</option>
+        <option value="Féminin">👩 Féminin</option>
+      </select>
+    </div>
+    <div class="profile-fg"><label>Situation matrimoniale</label>
+      <select id="pSituation">
+        <option value="">-- Sélectionner --</option>
+        <option value="Célibataire">Célibataire</option>
+        <option value="Marié(e)">Marié(e)</option>
+        <option value="Divorcé(e)">Divorcé(e)</option>
+        <option value="Veuf/Veuve">Veuf/Veuve</option>
+      </select>
+    </div>
     <div class="profile-fg"><label>Situation matrimoniale</label>
       <select id="pSituation">
         <option value="">-- Sélectionner --</option>
@@ -847,7 +882,16 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </button>
 
       <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
-      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
+      
+            <div id="adminTabBtn" style="display:none;">
+        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
+        <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
+          <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
+          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
+        </button>
+      </div>
+
+<button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
         <div class="menu-icon" style="background:#dcfce7">🚪</div>
         <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter et accéder à un autre compte</div></div>
       </button>
@@ -1095,7 +1139,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
 try{const s=localStorage.getItem('diafa_v4');if(s)S={...S,...JSON.parse(s)};}catch(e){}
-function save(){try{localStorage.setItem('diafa_v4',JSON.stringify(S));}catch(e){}}
+function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
+function save(){try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}}
 
 // ── UTILS ──
 const fmt=n=>new Intl.NumberFormat('fr-FR').format(Math.round(n))+' GNF';
@@ -1365,6 +1410,229 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 
 
 // ── RESET ──
+async function syncDataToFirebase(){
+  if(!db) return;
+  const uid=localStorage.getItem('diafa_uid');
+  if(!uid) return;
+  try{
+    const d=JSON.parse(JSON.stringify(S)); delete d.type;
+    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+  }catch(e){}
+}
+
+async function loadDataFromFirebase(){
+  if(!db) return;
+  const uid=localStorage.getItem('diafa_uid');
+  if(!uid) return;
+  try{
+    const doc=await db.collection('clients').doc(uid).get();
+    if(doc.exists && doc.data().appData){
+      const d=JSON.parse(doc.data().appData);
+      S={...S,...d};
+      localStorage.setItem(getDataKey(),JSON.stringify(S));
+    }
+  }catch(e){}
+}
+
+function closeAdminPanel(){
+  document.getElementById('adminPanel').classList.add('hidden');
+}
+
+async function toggleSuspendClient(docId, isSuspended){
+  if(!db||!docId) return;
+  if(!confirm(isSuspended?'Réactiver ce client ?':'Suspendre ce client ?')) return;
+  try{
+    await db.collection('clients').doc(docId).update({status: isSuspended?'active':'suspended'});
+    toast('✅', isSuspended?'Client réactivé !':'Client suspendu !');
+    await loadAdminClients();
+  }catch(e){ toast('❌','Erreur: '+e.message); }
+}
+
+async function deleteClient(docId){
+  if(!db||!docId) return;
+  if(!confirm('⚠️ Supprimer définitivement ce client ?\nImpossible d\'annuler !')) return;
+  try{
+    await db.collection('clients').doc(docId).delete();
+    toast('🗑','Client supprimé !');
+    await loadAdminClients();
+  }catch(e){ toast('❌','Erreur: '+e.message); }
+}
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+
 function logoutClient(){
   if(confirm('Voulez-vous vous déconnecter ?\nVos données resteront sauvegardées.')){
     // Clear per-session data but keep credentials
@@ -1390,42 +1658,101 @@ function resetApp(){
 
 
 // ── LOGIN / PASSWORD ──
-async function checkLogin(){
-  // Check admin first
-  if(checkAdminLogin()) return;
-
-  const user=document.getElementById('loginUser').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  const err=document.getElementById('loginError2');
-  const storedUser=localStorage.getItem('diafa_user');
-  const storedPass=localStorage.getItem('diafa_pwd');
-
-  // No account exists
-  if(!storedUser || !storedPass){
+async function checkLoginFromFirebase(user, pass, err){
+  if(!db){
     err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
     err.style.display='block';
     setTimeout(()=>err.style.display='none',4000);
-    return;
+    return false;
   }
-
-  if(user===storedUser && pass===storedPass){
-    // Login success - clear old profile so we load fresh from Firebase
-    localStorage.removeItem('diafa_profile');
-    localStorage.removeItem('diafa_uid');
-    document.getElementById('loginFormOverlay').classList.add('hidden');
-    document.getElementById('loginOverlay').classList.add('hidden');
-    // Try to load profile from Firebase first
-    await loadProfileFromFirebase(user);
-    const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-    if(!p.nom || !p.prenom || !p.telephone){
-      openFirstTimeProfile();
-    } else {
-      render();
+  try {
+    err.textContent='⏳ Vérification en cours...';
+    err.style.display='block';
+    const snap = await db.collection('clients').where('login','==',user).limit(1).get();
+    if(snap.empty){
+      err.textContent='❌ Identifiant ou mot de passe incorrect';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',3000);
+      return false;
     }
-  } else {
+    const data = snap.docs[0].data();
+    if(data.login === user){
+      // Restaurer localStorage depuis Firebase
+      localStorage.setItem('diafa_user', user);
+      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+      err.style.display='none';
+      return true;
+    }
     err.textContent='❌ Identifiant ou mot de passe incorrect';
     err.style.display='block';
     setTimeout(()=>err.style.display='none',3000);
+    return false;
+  } catch(e){
+    err.textContent='❌ Erreur réseau: ' + e.message;
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',4000);
+    return false;
+  }
+}
+
+async function checkLogin(){
+  const user=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginError2');
+  const isAdmin=checkAdminLogin();
+
+  if(!isAdmin){
+    const storedUser=localStorage.getItem('diafa_user');
+    const storedPass=localStorage.getItem('diafa_pwd');
+    // Vérifier d'abord localStorage
+    if(storedUser && storedPass){
+      if(user!==storedUser||pass!==storedPass){
+        // Essayer Firebase si localStorage ne correspond pas
+        const fbOk = await checkLoginFromFirebase(user, pass, err);
+        if(!fbOk) return;
+      }
+    } else {
+      // Pas de compte local — essayer Firebase directement
+      const fbOk = await checkLoginFromFirebase(user, pass, err);
+      if(!fbOk) return;
+    }
+  }
+
+  // Connexion réussie
+  document.getElementById('loginFormOverlay').classList.add('hidden');
+  document.getElementById('loginOverlay').classList.add('hidden');
+
+  if(isAdmin){
+    // Admin: UID fixe, entre dans l'app + affiche bouton panneau
+    localStorage.setItem('diafa_uid','admin_uid');
+    localStorage.setItem('diafa_user', ADMIN_LOGIN);
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
+    let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    if(!ap.nom){
+      ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
+      localStorage.setItem('diafa_profile',JSON.stringify(ap));
+    }
+    loadProfile();
+    render();
+    loadDataFromFirebase().then(()=>render());
+    document.getElementById('adminTabBtn').style.display='flex';
+  } else {
+    // Client normal — on essaie Firebase, sinon on garde le profil local
+    await loadProfileFromFirebase(user);
+    const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    if(!p.nom||!p.prenom||!p.telephone){
+      // Aucun profil ni local ni Firebase → première connexion
+      openFirstTimeProfile();
+    } else {
+      // Profil trouvé (local ou Firebase)
+      const uid=localStorage.getItem('diafa_uid');
+      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+      try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
+      render();
+      loadDataFromFirebase().then(()=>render());
+    }
+    document.getElementById('adminTabBtn').style.display='none';
   }
 }
 function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
@@ -1915,13 +2242,15 @@ function backToWelcomeFromCreate(){
   document.getElementById('loginOverlay').classList.remove('hidden');
 }
 
-function saveCreateAccount(){
+async function saveCreateAccount(){
   const prenom     = document.getElementById('caPrenom').value.trim();
   const nom        = document.getElementById('caNom').value.trim();
   const telephone  = document.getElementById('caTel').value.trim();
   const dob        = document.getElementById('caDOB').value;
   const quartier   = document.getElementById('caQuartier').value.trim();
   const profession = document.getElementById('caProfession').value.trim();
+  const situation  = document.getElementById('caSituation').value;
+  const sexe       = document.getElementById('caSexe').value;
   const login      = document.getElementById('caLogin').value.trim();
   const pass       = document.getElementById('caPass').value;
   const passConfirm= document.getElementById('caPassConfirm').value;
@@ -1943,11 +2272,11 @@ function saveCreateAccount(){
   // Save profile
   const avatar = localStorage.getItem('ca_temp_avatar') || '';
   localStorage.removeItem('ca_temp_avatar');
-  const profile = { prenom, nom, telephone, dob, quartier, profession, avatar, createdAt: new Date().toISOString() };
+  const profile = { prenom, nom, telephone, dob, quartier, profession, situation, sexe, avatar, createdAt: new Date().toISOString() };
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
-  // Sync Firebase
-  saveClientToFirebase(profile);
+  // Sync Firebase (await pour que l'UID soit prêt avant d'entrer dans l'app)
+  await saveClientToFirebase(profile);
 
   // Enter app
   document.getElementById('createAccountOverlay').classList.add('hidden');
@@ -2016,5 +2345,24 @@ render();
 loadProfile();
 updateTrashBadge();
 </script>
+<div class="overlay" id="pageList">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="flex-shrink:0;">
+      <div class="sheet-title" id="pageListTitle">📋 Liste</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="pageListPdfBtn" onclick="printListPage()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 PDF</button>
+        <button class="sheet-close" onclick="closeSheet('pageList')">✕</button>
+      </div>
+    </div>
+    <!-- Résumé stat -->
+    <div id="pageListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
+    <!-- Filtre période -->
+    <div style="flex-shrink:0;padding:10px 14px 6px;">
+      <div class="cd-tabs" id="pageListTabs"></div>
+    </div>
+    <!-- Liste scrollable -->
+    <div id="pageListContent" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
+  </div>
 </body>
 </html>
