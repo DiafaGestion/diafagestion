@@ -2181,17 +2181,8 @@ initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
-// Vérifier session au démarrage
-(function(){
-  const user = localStorage.getItem('diafa_user');
-  const uid  = localStorage.getItem('diafa_uid');
-  if(!user || !uid){
-    const lo = document.getElementById('loginOverlay');
-    if(lo) lo.classList.remove('hidden');
-  } else {
-    if(db) loadDataFromFirebase().then(()=>{ render(); loadProfile(); }).catch(()=>{});
-  }
-})();
+// Toujours afficher l'écran d'accueil au démarrage
+document.getElementById('loginOverlay').classList.remove('hidden');
 
 // ══════════════════════════════════════════
 // PAGES LISTE + PDF
