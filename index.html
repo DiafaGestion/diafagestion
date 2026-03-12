@@ -2178,10 +2178,18 @@ function saveFirstProfile(){
 // ── INIT ──
 const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
 initFirebase();
+
+// ── SÉCURITÉ : effacer toute session et forcer l'écran d'accueil ──
+localStorage.removeItem('diafa_user');
+localStorage.removeItem('diafa_pwd');
+localStorage.removeItem('diafa_uid');
+localStorage.removeItem('diafa_profile');
+
 render();
 loadProfile();
 updateTrashBadge();
-// Toujours afficher l'écran d'accueil au démarrage
+
+// Afficher l'écran d'accueil
 document.getElementById('loginOverlay').classList.remove('hidden');
 
 // ══════════════════════════════════════════
