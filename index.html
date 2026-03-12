@@ -238,7 +238,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 .drawer-close{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
 .drawer-body{flex:1;overflow-y:auto;padding:10px 0;}
 .drawer-section-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:12px 18px 4px;}
-.menu-item{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;transition:background 0.15s;border:none;background:none;width:100%;text-align:left;}
+.menu-item{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;transition:background 0.15s;border:none;outline:none;background:none;width:100%;text-align:left;-webkit-tap-highlight-color:transparent;}
 .menu-item:hover,.menu-item:active{background:var(--bg);}
 .menu-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 .menu-label{font-size:14px;font-weight:600;color:var(--text);}
@@ -442,7 +442,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 /* ── OVERLAY / SHEET ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:300;display:none;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
-.sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding-bottom:max(20px,env(safe-area-inset-bottom));animation:sheetUp 0.3s cubic-bezier(0.34,1.2,0.64,1);max-height:92vh;overflow-y:auto;}
+.sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding-bottom:max(20px,env(safe-area-inset-bottom));animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);max-height:92vh;overflow-y:auto;}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle{width:36px;height:4px;background:var(--border);border-radius:100px;margin:12px auto 0;}
 .sheet-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -1992,6 +1992,8 @@ function logoutClient(){
   if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées.')){
     localStorage.removeItem('diafa_profile');
     localStorage.removeItem('diafa_uid');
+    localStorage.removeItem('diafa_user');
+    localStorage.removeItem('diafa_pwd');
     localStorage.removeItem('fp_temp_avatar');
     localStorage.removeItem('ca_temp_avatar');
     // Réinitialiser S pour éviter fuite de données entre comptes
@@ -2023,17 +2025,17 @@ async function checkLogin(){
   if(!isAdmin){
     const storedUser=localStorage.getItem('diafa_user');
     const storedPass=localStorage.getItem('diafa_pwd');
-    if(!storedUser||!storedPass){
-      err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
-      err.style.display='block';
-      setTimeout(()=>err.style.display='none',4000);
-      return;
-    }
-    if(user!==storedUser||pass!==storedPass){
-      err.textContent='❌ Identifiant ou mot de passe incorrect';
-      err.style.display='block';
-      setTimeout(()=>err.style.display='none',3000);
-      return;
+    // Vérifier d'abord localStorage
+    if(storedUser && storedPass){
+      if(user!==storedUser||pass!==storedPass){
+        // Essayer Firebase si localStorage ne correspond pas
+        const fbOk = await checkLoginFromFirebase(user, pass, err);
+        if(!fbOk) return;
+      }
+    } else {
+      // Pas de compte local — essayer Firebase directement
+      const fbOk = await checkLoginFromFirebase(user, pass, err);
+      if(!fbOk) return;
     }
   }
 
@@ -2277,6 +2279,7 @@ async function saveClientToFirebase(profile){
       dob:        profile.dob       || '',
       avatar:     avatarData,
       login:      localStorage.getItem('diafa_user') || '',
+      status:     'active',
       createdAt:  profile.createdAt || new Date().toISOString(),
       updatedAt:  new Date().toISOString()
     }, { merge: true });
@@ -2363,6 +2366,43 @@ function checkAdminLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
   return (u === ADMIN_LOGIN && p === ADMIN_PASS);
+}
+
+async function checkLoginFromFirebase(user, pass, err){
+  if(!db){
+    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',4000);
+    return false;
+  }
+  try {
+    err.textContent='⏳ Vérification en cours...';
+    err.style.display='block';
+    const snap = await db.collection('clients').where('login','==',user).limit(1).get();
+    if(snap.empty){
+      err.textContent='❌ Identifiant ou mot de passe incorrect';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',3000);
+      return false;
+    }
+    const data = snap.docs[0].data();
+    if(data.login === user){
+      // Restaurer localStorage depuis Firebase
+      localStorage.setItem('diafa_user', user);
+      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+      err.style.display='none';
+      return true;
+    }
+    err.textContent='❌ Identifiant ou mot de passe incorrect';
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',3000);
+    return false;
+  } catch(e){
+    err.textContent='❌ Erreur réseau: ' + e.message;
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',4000);
+    return false;
+  }
 }
 
 function openAdminPanel(){
