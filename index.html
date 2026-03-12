@@ -1679,6 +1679,9 @@ function showSplash(){
     splash.classList.add('fade-out');
     setTimeout(() => {
       splash.style.display = 'none';
+      // Always show login screen after splash
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('loginFormOverlay').classList.add('hidden');
     }, 700);
   }, 2800);
 }
