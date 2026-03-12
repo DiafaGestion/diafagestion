@@ -1440,24 +1440,33 @@ function resetApp(){
 
 // ── LOGIN / PASSWORD ──
 async function checkLogin(){
-  // Check admin - enters app as normal client with admin tab
-  const isAdmin = (user === ADMIN_LOGIN && pass === ADMIN_PASS);
-
   const user=document.getElementById('loginUser').value.trim();
   const pass=document.getElementById('loginPass').value;
   const err=document.getElementById('loginError2');
-  const storedUser=localStorage.getItem('diafa_user');
-  const storedPass=localStorage.getItem('diafa_pwd');
 
-  // No account exists
-  if(!storedUser || !storedPass){
-    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',4000);
-    return;
+  // Check admin FIRST before checking localStorage
+  const isAdmin = (user === ADMIN_LOGIN && pass === ADMIN_PASS);
+
+  if(!isAdmin){
+    const storedUser=localStorage.getItem('diafa_user');
+    const storedPass=localStorage.getItem('diafa_pwd');
+    // No account exists
+    if(!storedUser || !storedPass){
+      err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',4000);
+      return;
+    }
+    if(user!==storedUser || pass!==storedPass){
+      err.textContent='❌ Identifiant ou mot de passe incorrect';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',3000);
+      return;
+    }
   }
 
-  if(user===storedUser && pass===storedPass){
+  // Login success
+  if(true){
     // Login success — NE PAS effacer les données locales
     document.getElementById('loginFormOverlay').classList.add('hidden');
     document.getElementById('loginOverlay').classList.add('hidden');
@@ -1521,10 +1530,6 @@ async function checkLogin(){
       }
       document.getElementById('adminTabBtn').style.display = 'none';
     }
-  } else {
-    err.textContent='❌ Identifiant ou mot de passe incorrect';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',3000);
   }
 }
 function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
