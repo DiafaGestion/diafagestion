@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v32';
+const CACHE_NAME = 'diafagestion-v33';
 
 // À l'installation : ne PAS mettre en cache — toujours charger depuis réseau
 self.addEventListener('install', e => {
