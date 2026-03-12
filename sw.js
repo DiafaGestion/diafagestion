@@ -1,36 +1,38 @@
-const CACHE_NAME = 'diafagestion-v33';
+const CACHE_NAME = 'diafagestion-v15';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'
+];
 
-// À l'installation : ne PAS mettre en cache — toujours charger depuis réseau
 self.addEventListener('install', e => {
-  self.skipWaiting(); // Activer immédiatement sans attendre
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
 });
 
-// À l'activation : supprimer TOUS les anciens caches et prendre le contrôle
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-     .then(() => {
-       // Forcer le rechargement de tous les onglets ouverts
-       return self.clients.matchAll({ type: 'window' }).then(clients => {
-         clients.forEach(client => client.navigate(client.url));
-       });
-     })
+    )
   );
+  self.clients.claim();
 });
 
-// NETWORK FIRST : toujours chercher sur le réseau, cache seulement en fallback
+// TOUJOURS network-first pour forcer la dernière version
 self.addEventListener('fetch', e => {
-  // Ne pas intercepter les requêtes Firebase/CDN externes
-  const url = new URL(e.request.url);
-  if (url.hostname !== location.hostname) {
-    return; // Laisser passer sans interception
-  }
-  
   e.respondWith(
-    fetch(e.request, { cache: 'no-store' })
-      .then(response => response)
-      .catch(() => caches.match('./index.html'))
+    fetch(e.request).then(response => {
+      if (response && response.status === 200) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      }
+      return response;
+    }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
   );
 });
