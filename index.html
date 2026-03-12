@@ -460,6 +460,17 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
     </div>
 
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">💍 Situation matrimoniale</div>
+      <select id="caSituation" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
+        <option value="">-- Sélectionner --</option>
+        <option value="Célibataire">Célibataire</option>
+        <option value="Marié(e)">Marié(e)</option>
+        <option value="Divorcé(e)">Divorcé(e)</option>
+        <option value="Veuf/Veuve">Veuf/Veuve</option>
+      </select>
+    </div>
+
     <!-- Séparateur -->
     <div style="border-top:2px dashed #e5e7eb;margin:14px 0 12px;"></div>
     <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-align:center;">🔐 Choisissez vos identifiants de connexion</div>
@@ -844,12 +855,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <button class="menu-item" onclick="closeDrawer();importData()">
         <div class="menu-icon" style="background:#dcfce7">📂</div>
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
-      </button>
-
-      <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
-      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
-        <div class="menu-icon" style="background:#dcfce7">🚪</div>
-        <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter et accéder à un autre compte</div></div>
       </button>
 
       <div id="adminTabBtn" style="display:none;">
@@ -1484,16 +1489,17 @@ async function checkLogin(){
     loadDataFromFirebase().then(()=>render());
     document.getElementById('adminTabBtn').style.display='flex';
   } else {
-    // Client normal
-    localStorage.removeItem('diafa_profile');
-    localStorage.removeItem('diafa_uid');
+    // Client normal — on essaie Firebase, sinon on garde le profil local
     await loadProfileFromFirebase(user);
-    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-    try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
     const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!p.nom||!p.prenom||!p.telephone){
+      // Aucun profil ni local ni Firebase → première connexion
       openFirstTimeProfile();
     } else {
+      // Profil trouvé (local ou Firebase)
+      const uid=localStorage.getItem('diafa_uid');
+      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+      try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
       render();
       loadDataFromFirebase().then(()=>render());
     }
@@ -1610,13 +1616,7 @@ function saveProfile(){
 // ── WELCOME SCREEN NAVIGATION ──
 function showAccessLogin(){
   // If no account exists, suggest creating one first
-  if(!localStorage.getItem('diafa_user')){
-    const err = document.getElementById('loginError');
-    err.textContent = '⚠️ Aucun compte trouvé. Veuillez d\'abord créer un compte.';
-    err.style.display = 'block';
-    setTimeout(()=>err.style.display='none', 4000);
-    return;
-  }
+  // Toujours afficher le formulaire (admin peut se connecter même sans compte client)
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('loginFormOverlay').classList.remove('hidden');
   setTimeout(()=>document.getElementById('loginUser').focus(), 100);
@@ -1738,7 +1738,9 @@ async function loadProfileFromFirebase(login){
     if(!snap.empty){
       const data = snap.docs[0].data();
       if(data.uid) localStorage.setItem('diafa_uid', data.uid);
-      const p = {};
+      // Fusionner avec le profil local existant (priorité Firebase)
+      const existing = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+      const p = {...existing};
       if(data.avatar)     p.avatar     = data.avatar;
       if(data.nom)        p.nom        = data.nom;
       if(data.prenom)     p.prenom     = data.prenom;
@@ -1749,6 +1751,7 @@ async function loadProfileFromFirebase(login){
       if(data.createdAt)  p.createdAt  = data.createdAt;
       localStorage.setItem('diafa_profile', JSON.stringify(p));
     }
+    // Si pas trouvé Firebase, on garde le profil local tel quel
   } catch(e){ console.warn('Load profile error:', e); }
 }
 
@@ -2010,13 +2013,14 @@ function backToWelcomeFromCreate(){
   document.getElementById('loginOverlay').classList.remove('hidden');
 }
 
-function saveCreateAccount(){
+async function saveCreateAccount(){
   const prenom     = document.getElementById('caPrenom').value.trim();
   const nom        = document.getElementById('caNom').value.trim();
   const telephone  = document.getElementById('caTel').value.trim();
   const dob        = document.getElementById('caDOB').value;
   const quartier   = document.getElementById('caQuartier').value.trim();
   const profession = document.getElementById('caProfession').value.trim();
+  const situation  = document.getElementById('caSituation').value;
   const login      = document.getElementById('caLogin').value.trim();
   const pass       = document.getElementById('caPass').value;
   const passConfirm= document.getElementById('caPassConfirm').value;
@@ -2038,11 +2042,11 @@ function saveCreateAccount(){
   // Save profile
   const avatar = localStorage.getItem('ca_temp_avatar') || '';
   localStorage.removeItem('ca_temp_avatar');
-  const profile = { prenom, nom, telephone, dob, quartier, profession, avatar, createdAt: new Date().toISOString() };
+  const profile = { prenom, nom, telephone, dob, quartier, profession, situation, avatar, createdAt: new Date().toISOString() };
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
-  // Sync Firebase
-  saveClientToFirebase(profile);
+  // Sync Firebase (await pour que l'UID soit prêt avant d'entrer dans l'app)
+  await saveClientToFirebase(profile);
 
   // Enter app
   document.getElementById('createAccountOverlay').classList.add('hidden');
