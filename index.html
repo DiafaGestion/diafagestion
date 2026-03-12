@@ -410,12 +410,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 </style>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script>
-// (removed duplicate list functions)
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script>
-// ══ DUPLICATE REMOVED ══
-</script>
 </head>
 <body>
 
@@ -1669,6 +1664,7 @@ function openCreateAccountForm(){
 // ── SPLASH SCREEN ──
 function showSplash(){
   const splash = document.getElementById('splashScreen');
+  // Fermer le splash après 2.8s max — quoi qu'il arrive (Firebase ou pas)
   setTimeout(() => {
     splash.classList.add('fade-out');
     setTimeout(() => {
@@ -2236,11 +2232,12 @@ function saveFirstProfile(){
 }
 
 // ── INIT ──
-const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
-initFirebase();
-render();
-loadProfile();
-updateTrashBadge();
+const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};
+try{ document.getElementById('monthLabel').textContent=fullDateLabel(); }catch(e){}
+try{ initFirebase(); }catch(e){ console.warn('Firebase init error:', e); }
+try{ render(); }catch(e){ console.warn('Render error:', e); }
+try{ loadProfile(); }catch(e){ console.warn('LoadProfile error:', e); }
+try{ updateTrashBadge(); }catch(e){}
 
 // ══════════════════════════════════════════
 // CAT SHEET — Ajouter / Liste intégrée
