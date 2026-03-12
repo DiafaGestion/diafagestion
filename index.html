@@ -11,7 +11,188 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+</script>
 <style>
 :root{
   --white:#ffffff; --bg:#f5f6fa; --bg2:#eef0f6; --border:#e2e5f0;
@@ -50,7 +231,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 /* ── DRAWER MENU (RIGHT) ── */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:200;display:none;justify-content:flex-start;}
 .drawer-overlay.open{display:flex;}
-.drawer{background:var(--white);width:280px;max-width:85vw;height:100%;display:flex;flex-direction:column;animation:drawerIn 0.28s cubic-bezier(0.34,1.1,0.64,1);}
+.drawer{background:var(--white);width:280px;max-width:85vw;height:100%;display:flex;flex-direction:column;animation:drawerIn 0.25s cubic-bezier(0.25,0.46,0.45,0.94);}
 @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 .drawer-head{padding:20px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .drawer-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;}
@@ -97,12 +278,19 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 .qa-btn{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;box-shadow:var(--sh);}
 .qa-btn:active{transform:scale(0.97);}
 .qa-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.qa-wrap{display:flex;flex-direction:column;gap:5px;}
 .qa-btn.inc .qa-icon{background:var(--green-l);}
 .qa-btn.exp .qa-icon{background:var(--red-l);}
 .qa-btn.debt .qa-icon{background:var(--orange-l);}
 .qa-btn.credit .qa-icon{background:var(--blue-l);}
 .qa-lbl{font-size:13px;font-weight:600;}
 .qa-sub{font-size:11px;color:var(--text3);}
+.qa-list{border:none;border-radius:10px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:4px;}
+.qa-list:active{transform:scale(0.96);}
+.qa-list.inc{background:#dcfce7;color:#15803d;}
+.qa-list.exp{background:#fee2e2;color:#b91c1c;}
+.qa-list.debt{background:#fff7ed;color:#c2410c;}
+.qa-list.credit{background:#dbeafe;color:#1d4ed8;}
 
 /* ── SECTION ── */
 .section{margin-bottom:18px;}
@@ -401,8 +589,370 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .firstprofile-required{color:#dc2626;font-size:11px;margin-top:4px;}
 </style>
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+</script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+</script>
 </head>
 <body>
 
@@ -472,15 +1022,12 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     </div>
 
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px;text-transform:uppercase;">⚧ Sexe</div>
-      <div style="display:flex;gap:10px;">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px;">
-          <input type="radio" name="caSexe" id="caSexeM" value="Masculin" style="accent-color:#dc2626;width:16px;height:16px;"> 👨 Masculin
-        </label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px;">
-          <input type="radio" name="caSexe" id="caSexeF" value="Féminin" style="accent-color:#dc2626;width:16px;height:16px;"> 👩 Féminin
-        </label>
-      </div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">⚧ Sexe</div>
+      <select id="caSexe" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
+        <option value="">-- Sélectionner --</option>
+        <option value="Masculin">👨 Masculin</option>
+        <option value="Féminin">👩 Féminin</option>
+      </select>
     </div>
 
     <!-- Séparateur -->
@@ -731,10 +1278,22 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <!-- QUICK ACTIONS -->
     <div class="qa-grid">
-      <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
-      <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
-      <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
-      <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
+      <div class="qa-wrap">
+        <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
+        <button class="qa-list inc" onclick="openListPage('income')">📋 Liste</button>
+      </div>
+      <div class="qa-wrap">
+        <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
+        <button class="qa-list exp" onclick="openListPage('expense')">📋 Liste</button>
+      </div>
+      <div class="qa-wrap">
+        <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
+        <button class="qa-list debt" onclick="openListPage('debt')">📋 Liste</button>
+      </div>
+      <div class="qa-wrap">
+        <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
+        <button class="qa-list credit" onclick="openListPage('credit')">📋 Liste</button>
+      </div>
     </div>
 
     <!-- PREVISION -->
@@ -878,19 +1437,19 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
       <div id="adminTabBtn" style="display:none;">
         <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
-        <button class="menu-item" onclick="closeDrawer();openAdminPanel();" style="border:2px solid #dc2626;">
+        <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
           <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
           <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
         </button>
       </div>
 
-      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;margin:8px 18px 4px;">
+      <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
         <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
 
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
-      <button class="menu-item" onclick="resetApp()" style="border:2px solid #ef4444;">
+      <button class="menu-item" onclick="resetApp()">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
         <div><div class="menu-label" style="color:#ef4444;">Réinitialiser tout</div><div class="menu-sub">Effacer toutes les données</div></div>
       </button>
@@ -1824,8 +2383,10 @@ async function loadAdminClients(){
   if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.</div>'; return; }
   el.innerHTML = '<div class="admin-empty">Chargement...</div>';
   try {
-    const snap = await db.collection('clients').orderBy('createdAt','desc').get();
-    ALL_CLIENTS = snap.docs.map(d => ({...d.data(), _docId: d.id})).filter(c => c.login !== 'admin');
+    const snap = await db.collection('clients').get();
+    ALL_CLIENTS = snap.docs.map(d => ({...d.data(), _docId: d.id}))
+      .filter(c => c.login !== 'admin' && c.login !== ADMIN_LOGIN)
+      .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
     document.getElementById('adminTotalClients').textContent = ALL_CLIENTS.length;
     const today = new Date().toDateString();
     document.getElementById('adminTodayClients').textContent = ALL_CLIENTS.filter(c=>new Date(c.createdAt).toDateString()===today).length;
@@ -2036,8 +2597,7 @@ async function saveCreateAccount(){
   const quartier   = document.getElementById('caQuartier').value.trim();
   const profession = document.getElementById('caProfession').value.trim();
   const situation  = document.getElementById('caSituation').value;
-  const sexeEl     = document.querySelector('input[name="caSexe"]:checked');
-  const sexe       = sexeEl ? sexeEl.value : '';
+  const sexe       = document.getElementById('caSexe').value;
   const login      = document.getElementById('caLogin').value.trim();
   const pass       = document.getElementById('caPass').value;
   const passConfirm= document.getElementById('caPassConfirm').value;
@@ -2131,6 +2691,209 @@ initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
+
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
 </script>
+
+<!-- PAGE LISTE + PDF -->
+<div class="overlay" id="pageList">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="flex-shrink:0;">
+      <div class="sheet-title" id="pageListTitle">📋 Liste</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="pageListPdfBtn" onclick="printListPage()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 PDF</button>
+        <button class="sheet-close" onclick="closeSheet('pageList')">✕</button>
+      </div>
+    </div>
+    <!-- Résumé stat -->
+    <div id="pageListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
+    <!-- Filtre période -->
+    <div style="flex-shrink:0;padding:10px 14px 6px;">
+      <div class="cd-tabs" id="pageListTabs"></div>
+    </div>
+    <!-- Liste scrollable -->
+    <div id="pageListContent" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
+  </div>
+</div>
 </body>
 </html>
