@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>DiafaGestion</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -26,12 +26,12 @@
   --sh2:0 8px 32px rgba(0,0,0,0.12);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html{height:-webkit-fill-available;}
-body{font-family:'Mulish',sans-serif;background:#e8eaf2;color:var(--text);min-height:100vh;min-height:-webkit-fill-available;display:flex;align-items:flex-start;justify-content:center;}
+html{height:100%;height:-webkit-fill-available;overflow:hidden;}
+body{font-family:'Mulish',sans-serif;background:#e8eaf2;color:var(--text);height:100vh;height:-webkit-fill-available;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;width:100%;}
 h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 
 /* ── APP SHELL ── */
-.app{width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);position:relative;overflow:hidden;}
+.app{width:100%;max-width:430px;height:100vh;height:-webkit-fill-available;display:flex;flex-direction:column;background:var(--bg);position:relative;overflow:hidden;}
 @media(min-width:500px){
   body{padding:24px 0 40px;}
   .app{min-height:auto;border-radius:28px;border:1px solid #d1d5e8;box-shadow:0 4px 6px rgba(0,0,0,0.04),0 20px 60px rgba(0,0,0,0.12);overflow:hidden;}
@@ -846,6 +846,12 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
 
+      <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
+      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
+        <div class="menu-icon" style="background:#dcfce7">🚪</div>
+        <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter et accéder à un autre compte</div></div>
+      </button>
+
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
       <button class="menu-item" onclick="resetApp()" style="border:2px solid #ef4444;">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
@@ -1359,6 +1365,19 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 
 
 // ── RESET ──
+function logoutClient(){
+  if(confirm('Voulez-vous vous déconnecter ?\nVos données resteront sauvegardées.')){
+    // Clear per-session data but keep credentials
+    localStorage.removeItem('diafa_profile');
+    localStorage.removeItem('diafa_uid');
+    localStorage.removeItem('fp_temp_avatar');
+    localStorage.removeItem('ca_temp_avatar');
+    // Show login screen
+    closeDrawer();
+    document.getElementById('loginOverlay').classList.remove('hidden');
+  }
+}
+
 function resetApp(){
   if(confirm('⚠️ Voulez-vous vraiment effacer TOUTES les données ?\nCette action est irréversible !')){
     localStorage.removeItem('diafa_v4');
@@ -1371,7 +1390,7 @@ function resetApp(){
 
 
 // ── LOGIN / PASSWORD ──
-function checkLogin(){
+async function checkLogin(){
   // Check admin first
   if(checkAdminLogin()) return;
 
@@ -1390,9 +1409,13 @@ function checkLogin(){
   }
 
   if(user===storedUser && pass===storedPass){
-    // Login success
+    // Login success - clear old profile so we load fresh from Firebase
+    localStorage.removeItem('diafa_profile');
+    localStorage.removeItem('diafa_uid');
     document.getElementById('loginFormOverlay').classList.add('hidden');
     document.getElementById('loginOverlay').classList.add('hidden');
+    // Try to load profile from Firebase first
+    await loadProfileFromFirebase(user);
     const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!p.nom || !p.prenom || !p.telephone){
       openFirstTimeProfile();
@@ -1595,6 +1618,11 @@ async function saveClientToFirebase(profile){
   try {
     const uid = localStorage.getItem('diafa_uid') || generateUID();
     localStorage.setItem('diafa_uid', uid);
+    // Resize avatar before saving to Firestore (max 80x80px)
+    let avatarData = '';
+    if(profile.avatar && profile.avatar.startsWith('data:image')){
+      avatarData = await resizeAvatar(profile.avatar, 80);
+    }
     await db.collection('clients').doc(uid).set({
       uid,
       nom:        profile.nom       || '',
@@ -1602,12 +1630,79 @@ async function saveClientToFirebase(profile){
       telephone:  profile.telephone || '',
       quartier:   profile.quartier  || '',
       profession: profile.profession|| '',
-      avatar:     '',  // ne pas stocker l'image en Firebase (trop lourd)
+      dob:        profile.dob       || '',
+      avatar:     avatarData,
+      login:      localStorage.getItem('diafa_user') || '',
       createdAt:  profile.createdAt || new Date().toISOString(),
       updatedAt:  new Date().toISOString()
     }, { merge: true });
     console.log('✅ Client enregistré Firebase');
   } catch(e){ console.warn('Firebase save error:', e); }
+}
+
+function resizeAvatar(dataUrl, size){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // Crop to square
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2;
+      const sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve('');
+    img.src = dataUrl;
+  });
+}
+
+async function loadProfileFromFirebase(login){
+  if(!db) return;
+  try {
+    const snap = await db.collection('clients').where('login','==',login).limit(1).get();
+    if(!snap.empty){
+      const data = snap.docs[0].data();
+      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+      const p = {};
+      if(data.avatar)     p.avatar     = data.avatar;
+      if(data.nom)        p.nom        = data.nom;
+      if(data.prenom)     p.prenom     = data.prenom;
+      if(data.telephone)  p.telephone  = data.telephone;
+      if(data.quartier)   p.quartier   = data.quartier;
+      if(data.profession) p.profession = data.profession;
+      if(data.dob)        p.dob        = data.dob;
+      if(data.createdAt)  p.createdAt  = data.createdAt;
+      localStorage.setItem('diafa_profile', JSON.stringify(p));
+    }
+  } catch(e){ console.warn('Load profile error:', e); }
+}
+
+async function syncAvatarFromFirebase(){
+  if(!db) return;
+  try {
+    const login = localStorage.getItem('diafa_user');
+    if(!login) return;
+    // Find client by login - each client has their own data
+    const snap = await db.collection('clients').where('login','==',login).limit(1).get();
+    if(!snap.empty){
+      const data = snap.docs[0].data();
+      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+      const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+      // Always overwrite with Firebase data so each client sees their own photo
+      if(data.avatar) p.avatar = data.avatar;
+      if(data.nom) p.nom = data.nom;
+      if(data.prenom) p.prenom = data.prenom;
+      if(data.telephone) p.telephone = data.telephone;
+      if(data.quartier) p.quartier = data.quartier;
+      if(data.profession) p.profession = data.profession;
+      if(data.dob) p.dob = data.dob;
+      localStorage.setItem('diafa_profile', JSON.stringify(p));
+      loadProfile();
+    }
+  } catch(e){ console.warn('Sync profile error:', e); }
 }
 
 function generateUID(){
@@ -1858,6 +1953,7 @@ function saveCreateAccount(){
   document.getElementById('createAccountOverlay').classList.add('hidden');
   loadProfile();
   render();
+  syncAvatarFromFirebase();
   toast('🎉', 'Bienvenue ' + prenom + ' !');
 }
 
