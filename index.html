@@ -1690,9 +1690,6 @@ function showSplash(){
     }, 700);
   }, 2800);
 }
-showSplash();
-
-
 
 
 // ══════════════════════════════════════════
@@ -1913,8 +1910,8 @@ function renderAdminClients(clients){
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">' +
         '<span class="admin-badge" style="background:'+(suspended?'#fef3c7':'#dcfce7')+';color:'+(suspended?'#92400e':'#15803d')+';">'+(suspended?'⏸ Suspendu':'✅ Actif')+'</span>' +
-        '<button onclick="toggleSuspendClient(''+c._docId+'','+suspended+')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid '+(suspended?'#1a7a4a':'#f59e0b')+';background:'+(suspended?'#dcfce7':'#fef3c7')+';color:'+(suspended?'#15803d':'#92400e')+';cursor:pointer;font-weight:700;">'+(suspended?'▶ Réactiver':'⏸ Suspendre')+'</button>' +
-        '<button onclick="deleteClient(''+c._docId+'')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #ef4444;background:#fee2e2;color:#dc2626;cursor:pointer;font-weight:700;">🗑 Supprimer</button>' +
+        '<button onclick="toggleSuspendClient(\'' + c._docId + '\','+ suspended +')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid '+(suspended?'#1a7a4a':'#f59e0b')+';background:'+(suspended?'#dcfce7':'#fef3c7')+';color:'+(suspended?'#15803d':'#92400e')+';cursor:pointer;font-weight:700;">'+(suspended?'▶ Réactiver':'⏸ Suspendre')+'</button>' +
+        '<button onclick="deleteClient(\'' + c._docId + '\')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #ef4444;background:#fee2e2;color:#dc2626;cursor:pointer;font-weight:700;">🗑 Supprimer</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -2171,11 +2168,16 @@ function saveFirstProfile(){
 }
 
 // ── INIT ──
-const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
-initFirebase();
-render();
-loadProfile();
-updateTrashBadge();
+try {
+  const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};
+  const ml = document.getElementById('monthLabel');
+  if(ml) ml.textContent=fullDateLabel();
+  initFirebase();
+  // Don't render on startup - wait for login
+  // render() and loadProfile() called after successful login
+  try { updateTrashBadge(); } catch(e){}
+  showSplash();
+} catch(e){ console.error('Init error:', e); }
 </script>
 </body>
 </html>
