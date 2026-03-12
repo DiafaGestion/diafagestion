@@ -338,7 +338,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .whatsapp-btn:active{background:#dcfce7;}
 
 /* ── SPLASH SCREEN ── */
-.splash{position:fixed;inset:0;background:linear-gradient(135deg,#1a1d2e 0%,#dc2626 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.6s ease;}
+.splash{position:fixed;inset:0;background:linear-gradient(135deg,#1a1d2e 0%,#dc2626 100%);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.6s ease;}
+.splash.active{display:flex;}
+.splash.fade-out{opacity:0;pointer-events:none!important;}
 .splash.fade-out{opacity:0;pointer-events:none;}
 .splash-logo{width:140px;height:140px;border-radius:28px;animation:splashPop 0.8s cubic-bezier(.34,1.56,.64,1) forwards;opacity:0;}
 .splash-title{color:#fff;font-size:28px;font-weight:800;margin-top:20px;animation:splashSlide 0.6s 0.5s ease forwards;opacity:0;}
@@ -701,10 +703,10 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <!-- QUICK ACTIONS -->
     <div class="qa-grid">
-      <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
-      <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
-      <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
-      <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
+      <button class="qa-btn inc" onclick="openCatSheet('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
+      <button class="qa-btn exp" onclick="openCatSheet('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
+      <button class="qa-btn debt" onclick="openCatSheet('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
+      <button class="qa-btn credit" onclick="openCatSheet('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
     </div>
 
     <!-- PREVISION -->
@@ -770,11 +772,11 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
 
       <div class="drawer-section-label">Ajouter</div>
-      <button class="menu-item" onclick="closeDrawer();openTx('income')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('income')">
         <div class="menu-icon" style="background:var(--green-l)">💰</div>
         <div><div class="menu-label">Ajouter un revenu</div><div class="menu-sub">Salaire, commerce…</div></div>
       </button>
-      <button class="menu-item" onclick="closeDrawer();openTx('expense')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('expense')">
         <div class="menu-icon" style="background:var(--red-l)">💸</div>
         <div><div class="menu-label">Ajouter une dépense</div><div class="menu-sub">Loyer, transport…</div></div>
       </button>
@@ -785,12 +787,12 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </button>
 
       <div class="drawer-section-label">Créances & Dettes</div>
-      <button class="menu-item" onclick="closeDrawer();openPageCD('debt')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('debt')">
         <div class="menu-icon" style="background:var(--orange-l)">🤲</div>
         <div><div class="menu-label">Créanciers</div><div class="menu-sub" id="menuOwe">0 GNF en attente</div></div>
         <span class="menu-badge" id="menuOweBadge" style="display:none">!</span>
       </button>
-      <button class="menu-item" onclick="closeDrawer();openPageCD('credit')">
+      <button class="menu-item" onclick="closeDrawer();openCatSheet('credit')">
         <div class="menu-icon" style="background:var(--blue-l)">🙏</div>
         <div><div class="menu-label">Débiteurs</div><div class="menu-sub" id="menuOwned">0 GNF à récupérer</div></div>
         <span class="menu-badge green" id="menuOwnedBadge" style="display:none">!</span>
@@ -1091,6 +1093,29 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastText">Enregistré</span></div>
 
+<!-- ══ CAT SHEET ══ -->
+<div class="overlay" id="catSheet">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:92vh;display:flex;flex-direction:column;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="flex-shrink:0;">
+      <div class="sheet-title" id="catSheetTitle">💰 Revenus</div>
+      <button class="sheet-close" onclick="closeSheet('catSheet')">✕</button>
+    </div>
+    <div style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);">
+      <button id="catBtnAdd" onclick="catSheetAdd()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:16px;border:none;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:#15803d;">➕ Ajouter</button>
+      <button id="catBtnList" onclick="catSheetList()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:16px;font-size:15px;font-weight:700;cursor:pointer;color:var(--text);background:transparent;border:2px solid var(--border);">📋 Liste</button>
+    </div>
+    <div id="catListZone" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div id="catListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
+      <div style="flex-shrink:0;padding:10px 14px 4px;"><div class="cd-tabs" id="catListTabs"></div></div>
+      <div style="flex-shrink:0;padding:4px 14px 8px;text-align:right;">
+        <button onclick="printCatList()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;">📄 PDF</button>
+      </div>
+      <div id="catListContent" style="overflow-y:auto;flex:1;padding:0 14px 20px;"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
@@ -1367,9 +1392,11 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 // ── RESET ──
 function logoutClient(){
   if(confirm('Voulez-vous vous déconnecter ?\nVos données resteront sauvegardées.')){
-    // Clear per-session data but keep credentials
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     localStorage.removeItem('diafa_profile');
     localStorage.removeItem('diafa_uid');
+    localStorage.removeItem('diafa_user');
+    localStorage.removeItem('diafa_pwd');
     localStorage.removeItem('fp_temp_avatar');
     localStorage.removeItem('ca_temp_avatar');
     // Show login screen
@@ -1391,42 +1418,98 @@ function resetApp(){
 
 // ── LOGIN / PASSWORD ──
 async function checkLogin(){
-  // Check admin first
-  if(checkAdminLogin()) return;
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginError2');
 
-  const user=document.getElementById('loginUser').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  const err=document.getElementById('loginError2');
-  const storedUser=localStorage.getItem('diafa_user');
-  const storedPass=localStorage.getItem('diafa_pwd');
-
-  // No account exists
-  if(!storedUser || !storedPass){
-    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+  if(!user || !pass){
+    err.textContent='❌ Remplissez tous les champs.';
     err.style.display='block';
-    setTimeout(()=>err.style.display='none',4000);
+    setTimeout(()=>err.style.display='none',3000);
     return;
   }
 
-  if(user===storedUser && pass===storedPass){
-    // Login success - clear old profile so we load fresh from Firebase
-    localStorage.removeItem('diafa_profile');
-    localStorage.removeItem('diafa_uid');
+  // Admin
+  if(user === ADMIN_LOGIN && pass === ADMIN_PASS){
+    localStorage.setItem('diafa_uid','admin_uid');
+    localStorage.setItem('diafa_user', ADMIN_LOGIN);
+    localStorage.setItem('diafa_pwd', ADMIN_PASS);
     document.getElementById('loginFormOverlay').classList.add('hidden');
     document.getElementById('loginOverlay').classList.add('hidden');
-    // Try to load profile from Firebase first
-    await loadProfileFromFirebase(user);
-    const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-    if(!p.nom || !p.prenom || !p.telephone){
-      openFirstTimeProfile();
-    } else {
-      render();
-    }
-  } else {
-    err.textContent='❌ Identifiant ou mot de passe incorrect';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',3000);
+    document.getElementById('adminTabBtn').style.display='block';
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    loadProfile(); render();
+    return;
   }
+
+  err.textContent='⏳ Connexion...';
+  err.style.display='block';
+
+  // Firebase d'abord
+  if(db){
+    try{
+      const snap = await db.collection('clients').where('login','==',user).limit(1).get();
+      if(!snap.empty){
+        const data = snap.docs[0].data();
+        if(data.status==='suspended'){
+          err.textContent='❌ Compte suspendu. Contactez DIAFA.';
+          setTimeout(()=>err.style.display='none',5000);
+          return;
+        }
+        const pwdOk = data.password ? (data.password===pass) : (pass===localStorage.getItem('diafa_pwd'));
+        if(pwdOk){
+          if(!data.password) snap.docs[0].ref.set({password:pass},{merge:true}).catch(()=>{});
+          localStorage.setItem('diafa_user', user);
+          localStorage.setItem('diafa_pwd',  pass);
+          if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+          err.style.display='none';
+          document.getElementById('loginFormOverlay').classList.add('hidden');
+          document.getElementById('loginOverlay').classList.add('hidden');
+          document.getElementById('adminTabBtn').style.display='none';
+          S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+          await loadProfileFromFirebase(user);
+          if(data.uid){
+            const doc = await db.collection('clients').doc(data.uid).get().catch(()=>null);
+            if(doc&&doc.exists&&doc.data().appData){
+              const d=JSON.parse(doc.data().appData);
+              S={...S,...d};
+              localStorage.setItem('diafa_v4',JSON.stringify(S));
+            }
+          }
+          const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+          if(!p.nom||!p.prenom||!p.telephone){ openFirstTimeProfile(); }
+          else { render(); loadProfile(); }
+          return;
+        }
+        err.textContent='❌ Mot de passe incorrect.';
+        err.style.display='block';
+        setTimeout(()=>err.style.display='none',3000);
+        return;
+      }
+    }catch(e){ console.warn('Firebase login error:',e); }
+  }
+
+  // Fallback localStorage
+  const storedUser=localStorage.getItem('diafa_user');
+  const storedPass=localStorage.getItem('diafa_pwd');
+  if(user===storedUser && pass===storedPass){
+    err.style.display='none';
+    document.getElementById('loginFormOverlay').classList.add('hidden');
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('adminTabBtn').style.display='none';
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    const raw=localStorage.getItem('diafa_v4');
+    if(raw){ try{ const d=JSON.parse(raw); S={...S,...d}; }catch(e){} }
+    await loadProfileFromFirebase(user);
+    const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    if(!p.nom||!p.prenom||!p.telephone){ openFirstTimeProfile(); }
+    else { render(); loadProfile(); }
+    return;
+  }
+
+  err.textContent='❌ Identifiant introuvable ou mot de passe incorrect.';
+  err.style.display='block';
+  setTimeout(()=>err.style.display='none',4000);
 }
 function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
 function closePwd(){
@@ -1571,11 +1654,11 @@ function openCreateAccountForm(){
 // ── SPLASH SCREEN ──
 function showSplash(){
   const splash = document.getElementById('splashScreen');
+  if(!splash) return;
+  splash.classList.add('active');
   setTimeout(() => {
     splash.classList.add('fade-out');
-    setTimeout(() => {
-      splash.style.display = 'none';
-    }, 700);
+    setTimeout(() => { splash.classList.remove('active'); splash.style.display='none'; }, 750);
   }, 2800);
 }
 showSplash();
@@ -1632,7 +1715,9 @@ async function saveClientToFirebase(profile){
       profession: profile.profession|| '',
       dob:        profile.dob       || '',
       avatar:     avatarData,
-      login:      localStorage.getItem('diafa_user') || '',
+      login:      profile.login || localStorage.getItem('diafa_user') || '',
+      password:   profile.password || localStorage.getItem('diafa_pwd') || '',
+      status:     'active',
       createdAt:  profile.createdAt || new Date().toISOString(),
       updatedAt:  new Date().toISOString()
     }, { merge: true });
@@ -1666,18 +1751,21 @@ async function loadProfileFromFirebase(login){
     if(!snap.empty){
       const data = snap.docs[0].data();
       if(data.uid) localStorage.setItem('diafa_uid', data.uid);
-      const p = {};
-      if(data.avatar)     p.avatar     = data.avatar;
-      if(data.nom)        p.nom        = data.nom;
-      if(data.prenom)     p.prenom     = data.prenom;
-      if(data.telephone)  p.telephone  = data.telephone;
-      if(data.quartier)   p.quartier   = data.quartier;
-      if(data.profession) p.profession = data.profession;
-      if(data.dob)        p.dob        = data.dob;
-      if(data.createdAt)  p.createdAt  = data.createdAt;
+      const p = {
+        avatar:     data.avatar     || '',
+        nom:        data.nom        || '',
+        prenom:     data.prenom     || '',
+        telephone:  data.telephone  || '',
+        quartier:   data.quartier   || '',
+        profession: data.profession || '',
+        dob:        data.dob        || '',
+        situation:  data.situation  || '',
+        sexe:       data.sexe       || '',
+        createdAt:  data.createdAt  || '',
+      };
       localStorage.setItem('diafa_profile', JSON.stringify(p));
     }
-  } catch(e){ console.warn('Load profile error:', e); }
+  }catch(e){}
 }
 
 async function syncAvatarFromFirebase(){
@@ -1947,7 +2035,9 @@ function saveCreateAccount(){
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
   // Sync Firebase
-  saveClientToFirebase(profile);
+  const newUid = generateUID();
+  localStorage.setItem('diafa_uid', newUid);
+  saveClientToFirebase({...profile, login, password: pass});
 
   // Enter app
   document.getElementById('createAccountOverlay').classList.add('hidden');
@@ -2015,6 +2105,199 @@ initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
+// Toujours afficher l'écran d'accueil
+document.getElementById('loginOverlay').classList.remove('hidden');
+// ══ CAT SHEET ══
+let catType='income', catFilter='all';
+var catTitles={income:'Revenus',expense:'Depenses',debt:'Creanciers',credit:'Debiteurs'};
+var catIcons={income:'💰',expense:'💸',debt:'🤲',credit:'🙏'};
+var catBtnColor={income:'#15803d',expense:'#dc2626',debt:'#ea580c',credit:'#1d4ed8'};
+
+function openCatSheet(t){
+  catType=t; catFilter='all';
+  var sh=document.getElementById('catSheet');
+  if(!sh) return;
+  document.getElementById('catSheetTitle').textContent=catIcons[t]+' '+catTitles[t];
+  document.getElementById('catListZone').style.display='none';
+  document.getElementById('catBtnAdd').style.background=catBtnColor[t];
+  var lb=document.getElementById('catBtnList');
+  lb.style.background='transparent'; lb.style.color='var(--text)'; lb.style.border='2px solid var(--border)';
+  sh.classList.add('open');
+}
+function catSheetAdd(){
+  closeSheet('catSheet');
+  if(catType==='income'||catType==='expense') openTx(catType);
+  else openPageCD(catType);
+}
+function catSheetList(){
+  var z=document.getElementById('catListZone');
+  var lb=document.getElementById('catBtnList');
+  if(z.style.display==='flex'){
+    z.style.display='none';
+    lb.style.background='transparent'; lb.style.color='var(--text)'; lb.style.border='2px solid var(--border)';
+  } else {
+    z.style.display='flex';
+    lb.style.background=catBtnColor[catType]; lb.style.color='#fff'; lb.style.border='none';
+    renderCatList();
+  }
+}
+function catTab(v){
+  catFilter=v; renderCatList();
+}
+function renderCatList(){
+  var type=catType;
+  var tabsEl=document.getElementById('catListTabs');
+  var summEl=document.getElementById('catListSummary');
+  var contEl=document.getElementById('catListContent');
+  var html='';
+
+  if(type==='income'||type==='expense'){
+    var allMonths=[...new Set(S.tx.map(function(t){return t.month;}))].sort().reverse();
+    var tabData=[['all','Tous']].concat(allMonths.slice(0,6).map(function(m){return [m,monthLabel(m)];}));
+    var tabsHtml='';
+    for(var i=0;i<tabData.length;i++){
+      var v=tabData[i][0], lbl=tabData[i][1];
+      var active=catFilter===v?' ad':'';
+      tabsHtml+='<button class="cd-tab'+active+'" onclick="catTab(\''+v+'\')">'+lbl+'</button>';
+    }
+    tabsEl.innerHTML=tabsHtml;
+
+    var items=S.tx.filter(function(t){return t.type===type;});
+    if(catFilter!=='all') items=items.filter(function(t){return t.month===catFilter;});
+    items=items.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+    var total=items.reduce(function(s,t){return s+t.amt;},0);
+    var col=type==='income'?'var(--green)':'var(--red)';
+
+    summEl.innerHTML='<div style="background:var(--bg);border-radius:12px;padding:10px 14px;">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;">Total</div>'
+      +'<div style="font-size:18px;font-weight:800;color:'+col+';">'+fmt(total)+'</div></div>'
+      +'<div style="background:var(--bg);border-radius:12px;padding:10px 14px;">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;">Nb</div>'
+      +'<div style="font-size:18px;font-weight:800;">'+items.length+'</div></div>';
+
+    if(items.length){
+      for(var i=0;i<items.length;i++) html+=txHTML(items[i]);
+    } else {
+      html='<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entree</div></div>';
+    }
+    contEl.innerHTML=html;
+
+  } else {
+    var cdList=(S.cd||[]).filter(function(c){return c.type===(type==='debt'?'debt':'credit');});
+    var tabsHtml='<button class="cd-tab'+(catFilter==='all'?' ad':'')+'" onclick="catTab(\'all\')">Tous</button>'
+      +'<button class="cd-tab'+(catFilter==='active'?' ad':'')+'" onclick="catTab(\'active\')">En cours</button>'
+      +'<button class="cd-tab'+(catFilter==='paid'?' ad':'')+'" onclick="catTab(\'paid\')">Regles</button>';
+    tabsEl.innerHTML=tabsHtml;
+
+    var items=cdList.slice();
+    if(catFilter==='active') items=items.filter(function(c){return !c.paid;});
+    if(catFilter==='paid')   items=items.filter(function(c){return c.paid;});
+    items.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+
+    var enCours=items.filter(function(c){return !c.paid;}).reduce(function(s,c){return s+c.amount;},0);
+    var regle=items.filter(function(c){return c.paid;}).reduce(function(s,c){return s+c.amount;},0);
+    var col=type==='debt'?'var(--red)':'var(--green)';
+
+    summEl.innerHTML='<div style="background:var(--bg);border-radius:12px;padding:10px 14px;">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;">En cours</div>'
+      +'<div style="font-size:18px;font-weight:800;color:'+col+';">'+fmt(enCours)+'</div></div>'
+      +'<div style="background:var(--bg);border-radius:12px;padding:10px 14px;">'
+      +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;">Regle</div>'
+      +'<div style="font-size:18px;font-weight:800;color:var(--text3);">'+fmt(regle)+'</div></div>';
+
+    if(!items.length){
+      contEl.innerHTML='<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entree</div></div>';
+      return;
+    }
+    for(var i=0;i<items.length;i++){
+      var c=items[i];
+      var days=daysTo(c.date),ov=!c.paid&&days<0,soon=!c.paid&&days>=0&&days<=7;
+      var badge;
+      if(c.paid) badge='<span class="badge b-paid">Regle</span>';
+      else if(ov) badge='<span class="badge b-late">Retard '+Math.abs(days)+'j</span>';
+      else if(days===0) badge='<span class="badge b-urgent">Auj.</span>';
+      else if(soon) badge='<span class="badge b-soon">'+days+'j</span>';
+      else badge='<span class="badge b-ok">'+days+'j</span>';
+      var ini=c.name.split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+      html+='<div class="cd-item">'
+        +'<div class="cd-avatar '+c.type+'">'+ini+'</div>'
+        +'<div class="cd-info">'
+        +'<div class="cd-name">'+c.name+'</div>'
+        +'<div class="cd-reason">'+(c.reason||'')+' - '+(c.meth||'')+'</div>'
+        +'<div class="cd-due">'+badge+' - '+c.date+'</div>'
+        +'</div>'
+        +'<div class="cd-right"><div class="cd-amount '+c.type+'">'+fmt(c.amount)+'</div></div>'
+        +'</div>';
+    }
+    contEl.innerHTML=html;
+  }
+}
+function printCatList(){
+  var type=catType;
+  var p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  var clientName=((p.prenom||'')+' '+(p.nom||'')).trim()||'Client';
+  var now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  var titles={income:'Revenus',expense:'Depenses',debt:'Creanciers',credit:'Debiteurs'};
+  var thead='',rows='';
+  if(type==='income'||type==='expense'){
+    var items=S.tx.filter(function(t){return t.type===type;});
+    if(catFilter!=='all') items=items.filter(function(t){return t.month===catFilter;});
+    items=items.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+    var total=items.reduce(function(s,t){return s+t.amt;},0);
+    thead='<tr><th>#</th><th>Date</th><th>Libelle</th><th>Categorie</th><th>Methode</th><th>Montant</th></tr>';
+    for(var i=0;i<items.length;i++){
+      var t=items[i];
+      rows+='<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+t.lbl+'</td><td>'+t.cat+'</td><td>'+(t.meth||'-')+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>';
+    }
+    rows+='<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td>'
+      +'<td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    var items=(S.cd||[]).filter(function(c){return c.type===(type==='debt'?'debt':'credit');});
+    if(catFilter==='active') items=items.filter(function(c){return !c.paid;});
+    if(catFilter==='paid')   items=items.filter(function(c){return c.paid;});
+    items.sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+    var total=items.reduce(function(s,c){return s+c.amount;},0);
+    thead='<tr><th>#</th><th>Nom</th><th>Motif</th><th>Methode</th><th>Echeance</th><th>Montant</th><th>Statut</th></tr>';
+    for(var i=0;i<items.length;i++){
+      var c=items[i];
+      rows+='<tr><td>'+(i+1)+'</td><td>'+c.name+'</td><td>'+(c.reason||'-')+'</td><td>'+(c.meth||'-')+'</td>'
+        +'<td>'+c.date+'</td><td style="text-align:right;font-weight:700;">'+fmt(c.amount)+'</td>'
+        +'<td>'+(c.paid?'Regle':'En cours')+'</td></tr>';
+    }
+    rows+='<tr style="font-weight:800;"><td colspan="6" style="text-align:right;">TOTAL</td>'
+      +'<td style="text-align:right;">'+fmt(total)+'</td></tr>';
+  }
+  var content='<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>DiafaGestion</title>'
+    +'<style>body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}'
+    +'h2{font-size:18px;font-weight:800;}'
+    +'table{width:100%;border-collapse:collapse;font-size:12px;}'
+    +'th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;}'
+    +'td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}'
+    +'tr:nth-child(even){background:#f8fafc;}'
+    +'@media print{button{display:none!important;}}'
+    +'</style></head><body>'
+    +'<div style="display:flex;justify-content:space-between;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;">'
+    +'<div style="font-size:22px;font-weight:800;color:#dc2626;">DiafaGestion</div>'
+    +'<div style="text-align:right;font-size:12px;color:#6b7280;"><b>'+clientName+'</b><br>'+now+'</div></div>'
+    +'<h2>'+titles[type]+'</h2>'
+    +'<table><thead>'+thead+'</thead><tbody>'+rows+'</tbody></table>'
+    +'<div style="margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;">DiafaGestion - DIAFA Consulting - wa.me/625518669</div>'
+    +'</body></html>';
+  var w=window.open('','_blank');
+  w.document.write(content);
+  w.document.close(); w.focus(); setTimeout(function(){w.print();},400);
+}
+function calcFpAge(dob){
+  if(!dob) return;
+  var b=new Date(dob),t=new Date(),age=t.getFullYear()-b.getFullYear();
+  if(t.getMonth()-b.getMonth()<0||(t.getMonth()===b.getMonth()&&t.getDate()<b.getDate())) age--;
+  var el=document.getElementById('fpAge'); if(el) el.value=age+' ans';
+}
+
 </script>
 </body>
 </html>
+<script>
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+</script>
