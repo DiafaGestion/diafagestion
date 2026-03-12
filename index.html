@@ -2355,7 +2355,7 @@ function printListPage(){
 <div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
 <table><thead>${thead}</thead><tbody>${rows}</tbody></table>
 <div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
-</body></html>`;
+</html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
@@ -2492,4 +2492,21 @@ function calcFpAge(dob){
   const el=document.getElementById('fpAge'); if(el) el.value=age+' ans';
 }
 
+</script>
+</body>
+</html>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw.addEventListener('statechange', () => {
+        if(sw.state === 'activated') window.location.reload();
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
 </script>
