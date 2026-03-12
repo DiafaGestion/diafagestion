@@ -526,32 +526,18 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="admin-overlay hidden" id="adminPanel">
   <div class="admin-header">
     <h1>🛡️ Panel Admin</h1>
-    <p>Gestion des clients DiafaGestion</p>
-    <button class="admin-logout" onclick="closeAdminPanel()">✕ Fermer</button>
+    <p>DiafaGestion — Gestion des clients</p>
+    <button class="admin-logout" onclick="logoutAdmin()">Déconnexion</button>
   </div>
   <div class="admin-stats">
     <div class="admin-stat">
       <div class="admin-stat-val" id="adminTotalClients">0</div>
-      <div class="admin-stat-lbl">Total clients</div>
-    </div>
-    <div class="admin-stat">
-      <div class="admin-stat-val" id="adminActiveClients">0</div>
-      <div class="admin-stat-lbl">Actifs</div>
-    </div>
-    <div class="admin-stat">
-      <div class="admin-stat-val" id="adminSuspendedClients">0</div>
-      <div class="admin-stat-lbl">Suspendus</div>
+      <div class="admin-stat-lbl">Clients inscrits</div>
     </div>
     <div class="admin-stat">
       <div class="admin-stat-val" id="adminTodayClients">0</div>
       <div class="admin-stat-lbl">Aujourd'hui</div>
     </div>
-  </div>
-  <!-- Filter tabs -->
-  <div style="display:flex;gap:8px;padding:0 16px 10px;">
-    <button onclick="setAdminFilter('all')" id="filterAll" style="flex:1;padding:8px;border-radius:10px;border:2px solid #dc2626;background:#dc2626;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">Tous</button>
-    <button onclick="setAdminFilter('active')" id="filterActive" style="flex:1;padding:8px;border-radius:10px;border:2px solid #e5e7eb;background:#fff;color:#374151;font-weight:700;font-size:12px;cursor:pointer;">Actifs</button>
-    <button onclick="setAdminFilter('suspended')" id="filterSuspended" style="flex:1;padding:8px;border-radius:10px;border:2px solid #e5e7eb;background:#fff;color:#374151;font-weight:700;font-size:12px;cursor:pointer;">Suspendus</button>
   </div>
   <input class="admin-search" type="text" placeholder="🔍 Rechercher un client..." oninput="filterAdminClients(this.value)" id="adminSearch">
   <div class="admin-section-title">Liste des clients</div>
@@ -618,7 +604,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 </div>
 
 <!-- WELCOME SCREEN -->
-<div class="login-overlay hidden" id="loginOverlay">
+<div class="login-overlay" id="loginOverlay">
   <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA">
   <div class="login-title">DiafaGestion</div>
   <div class="login-sub">Gestion Financière Personnelle</div>
@@ -859,14 +845,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div class="menu-icon" style="background:#dcfce7">📂</div>
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
-
-      <div id="adminTabBtn" style="display:none;">
-        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
-        <button class="menu-item" onclick="closeDrawer();openAdminPanel();" style="border:2px solid #dc2626;">
-          <div class="menu-icon" style="background:#fee2e2">🛡️</div>
-          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
-        </button>
-      </div>
 
       <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
       <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
@@ -1116,37 +1094,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <script>
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-function getDataKey(){ return 'diafa_data_' + (localStorage.getItem('diafa_uid') || 'local'); }
-function loadState(){ try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){} }
-function save(){
-  try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}
-  // Also sync to Firebase asynchronously
-  syncDataToFirebase();
-}
-async function syncDataToFirebase(){
-  if(!db) return;
-  const uid = localStorage.getItem('diafa_uid');
-  if(!uid) return;
-  try {
-    const dataToSave = JSON.parse(JSON.stringify(S));
-    delete dataToSave.type; // don't save UI state
-    await db.collection('clients').doc(uid).set({ appData: JSON.stringify(dataToSave), updatedAt: new Date().toISOString() }, { merge: true });
-  } catch(e){ console.warn('Sync data error:', e); }
-}
-async function loadDataFromFirebase(){
-  if(!db) return;
-  const uid = localStorage.getItem('diafa_uid');
-  if(!uid) return;
-  try {
-    const doc = await db.collection('clients').doc(uid).get();
-    if(doc.exists && doc.data().appData){
-      const d = JSON.parse(doc.data().appData);
-      S = {...S, ...d};
-      localStorage.setItem(getDataKey(), JSON.stringify(S));
-    }
-  } catch(e){ console.warn('Load data error:', e); }
-}
-loadState();
+try{const s=localStorage.getItem('diafa_v4');if(s)S={...S,...JSON.parse(s)};}catch(e){}
+function save(){try{localStorage.setItem('diafa_v4',JSON.stringify(S));}catch(e){}}
 
 // ── UTILS ──
 const fmt=n=>new Intl.NumberFormat('fr-FR').format(Math.round(n))+' GNF';
@@ -1418,10 +1367,12 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 // ── RESET ──
 function logoutClient(){
   if(confirm('Voulez-vous vous déconnecter ?\nVos données resteront sauvegardées.')){
-    // Keep all local data - just go back to login screen
+    // Clear per-session data but keep credentials
+    localStorage.removeItem('diafa_profile');
+    localStorage.removeItem('diafa_uid');
     localStorage.removeItem('fp_temp_avatar');
     localStorage.removeItem('ca_temp_avatar');
-    document.getElementById('adminTabBtn').style.display = 'none';
+    // Show login screen
     closeDrawer();
     document.getElementById('loginOverlay').classList.remove('hidden');
   }
@@ -1440,96 +1391,41 @@ function resetApp(){
 
 // ── LOGIN / PASSWORD ──
 async function checkLogin(){
+  // Check admin first
+  if(checkAdminLogin()) return;
+
   const user=document.getElementById('loginUser').value.trim();
   const pass=document.getElementById('loginPass').value;
   const err=document.getElementById('loginError2');
+  const storedUser=localStorage.getItem('diafa_user');
+  const storedPass=localStorage.getItem('diafa_pwd');
 
-  // Check admin FIRST before checking localStorage
-  const isAdmin = (user === ADMIN_LOGIN && pass === ADMIN_PASS);
-
-  if(!isAdmin){
-    const storedUser=localStorage.getItem('diafa_user');
-    const storedPass=localStorage.getItem('diafa_pwd');
-    // No account exists
-    if(!storedUser || !storedPass){
-      err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
-      err.style.display='block';
-      setTimeout(()=>err.style.display='none',4000);
-      return;
-    }
-    if(user!==storedUser || pass!==storedPass){
-      err.textContent='❌ Identifiant ou mot de passe incorrect';
-      err.style.display='block';
-      setTimeout(()=>err.style.display='none',3000);
-      return;
-    }
+  // No account exists
+  if(!storedUser || !storedPass){
+    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',4000);
+    return;
   }
 
-  // Login success
-  if(true){
-    // Login success — NE PAS effacer les données locales
+  if(user===storedUser && pass===storedPass){
+    // Login success - clear old profile so we load fresh from Firebase
+    localStorage.removeItem('diafa_profile');
+    localStorage.removeItem('diafa_uid');
     document.getElementById('loginFormOverlay').classList.add('hidden');
     document.getElementById('loginOverlay').classList.add('hidden');
-
-    if(isAdmin){
-      // Admin: UID fixe pour garder ses données
-      if(!localStorage.getItem('diafa_uid')) localStorage.setItem('diafa_uid', 'admin_uid');
-      loadState();
-      const ap = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-      if(!ap.nom){
-        // Première connexion admin sur cet appareil
-        await loadProfileFromFirebase(ADMIN_LOGIN);
-        const ap2 = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-        if(!ap2.nom){
-          const adminProfile = {prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
-          localStorage.setItem('diafa_profile', JSON.stringify(adminProfile));
-        }
-      }
-      loadProfile();
-      render();
-      loadDataFromFirebase().then(()=>render());
-      document.getElementById('adminTabBtn').style.display = 'flex';
+    // Try to load profile from Firebase first
+    await loadProfileFromFirebase(user);
+    const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    if(!p.nom || !p.prenom || !p.telephone){
+      openFirstTimeProfile();
     } else {
-      // Client normal — vérifier suspension
-      if(db){
-        try {
-          // Chercher le client par login pour vérifier statut
-          const snap = await db.collection('clients').where('login','==',user).limit(1).get();
-          if(!snap.empty){
-            const data = snap.docs[0].data();
-            if(data.uid) localStorage.setItem('diafa_uid', data.uid);
-            if(data.status === 'suspended'){
-              const err2 = document.getElementById('loginError2');
-              err2.textContent = '⛔ Compte suspendu. Contactez l\'administrateur.';
-              err2.style.display = 'block';
-              document.getElementById('loginFormOverlay').classList.remove('hidden');
-              document.getElementById('loginOverlay').classList.add('hidden');
-              setTimeout(()=>err2.style.display='none', 5000);
-              return;
-            }
-            // Mettre à jour profil local avec données Firebase (photo etc.)
-            const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-            if(data.avatar) p.avatar = data.avatar;
-            if(!p.nom && data.nom) p.nom = data.nom;
-            if(!p.prenom && data.prenom) p.prenom = data.prenom;
-            if(!p.telephone && data.telephone) p.telephone = data.telephone;
-            if(data.quartier) p.quartier = data.quartier;
-            if(data.profession) p.profession = data.profession;
-            localStorage.setItem('diafa_profile', JSON.stringify(p));
-          }
-        } catch(e){ console.warn('Check status error:', e); }
-      }
-      loadState();
-      const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-      if(!p.nom || !p.prenom || !p.telephone){
-        openFirstTimeProfile();
-      } else {
-        loadProfile();
-        render();
-        loadDataFromFirebase().then(()=>render());
-      }
-      document.getElementById('adminTabBtn').style.display = 'none';
+      render();
     }
+  } else {
+    err.textContent='❌ Identifiant ou mot de passe incorrect';
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',3000);
   }
 }
 function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
@@ -1675,21 +1571,16 @@ function openCreateAccountForm(){
 // ── SPLASH SCREEN ──
 function showSplash(){
   const splash = document.getElementById('splashScreen');
-  const login = document.getElementById('loginOverlay');
-  const loginForm = document.getElementById('loginFormOverlay');
-  // Make sure login is hidden during splash
-  login.style.display = 'none';
-  loginForm.style.display = 'none';
   setTimeout(() => {
     splash.classList.add('fade-out');
     setTimeout(() => {
       splash.style.display = 'none';
-      // Show login screen
-      login.style.display = 'flex';
-      login.classList.remove('hidden');
     }, 700);
   }, 2800);
 }
+showSplash();
+
+
 
 
 // ══════════════════════════════════════════
@@ -1823,7 +1714,9 @@ function checkAdminLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
   if(u === ADMIN_LOGIN && p === ADMIN_PASS){
-    return true; // handled in checkLogin async flow
+    document.getElementById('loginOverlay').classList.add('hidden');
+    openAdminPanel();
+    return true;
   }
   return false;
 }
@@ -1833,114 +1726,64 @@ function openAdminPanel(){
   loadAdminClients();
 }
 
-function closeAdminPanel(){
-  document.getElementById('adminPanel').classList.add('hidden');
-}
-
 function logoutAdmin(){
   document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
 }
-
-let adminCurrentFilter = 'all';
 
 async function loadAdminClients(){
   const el = document.getElementById('adminClientList');
-  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.</div>'; return; }
+  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.<br>Configurez Firebase pour voir les clients.</div>'; return; }
   el.innerHTML = '<div class="admin-empty">Chargement...</div>';
   try {
     const snap = await db.collection('clients').orderBy('createdAt','desc').get();
-    ALL_CLIENTS = snap.docs.map(d => ({...d.data(), _docId: d.id}))
-      .filter(c => c.login !== 'admin'); // exclude admin from client list
-    updateAdminStats();
-    applyAdminFilter();
+    ALL_CLIENTS = snap.docs.map(d => d.data());
+    renderAdminClients(ALL_CLIENTS);
+    document.getElementById('adminTotalClients').textContent = ALL_CLIENTS.length;
+    const today = new Date().toDateString();
+    const todayCount = ALL_CLIENTS.filter(c => new Date(c.createdAt).toDateString() === today).length;
+    document.getElementById('adminTodayClients').textContent = todayCount;
   } catch(e){
-    el.innerHTML = '<div class="admin-empty">Erreur: ' + e.message + '</div>';
+    el.innerHTML = '<div class="admin-empty">Erreur de chargement: ' + e.message + '</div>';
   }
-}
-
-function updateAdminStats(){
-  const today = new Date().toDateString();
-  document.getElementById('adminTotalClients').textContent = ALL_CLIENTS.length;
-  document.getElementById('adminActiveClients').textContent = ALL_CLIENTS.filter(c=>c.status!=='suspended').length;
-  document.getElementById('adminSuspendedClients').textContent = ALL_CLIENTS.filter(c=>c.status==='suspended').length;
-  document.getElementById('adminTodayClients').textContent = ALL_CLIENTS.filter(c=>new Date(c.createdAt).toDateString()===today).length;
-}
-
-function setAdminFilter(f){
-  adminCurrentFilter = f;
-  ['all','active','suspended'].forEach(x=>{
-    const btn = document.getElementById('filter'+x.charAt(0).toUpperCase()+x.slice(1));
-    if(btn){ btn.style.background = x===f?'#dc2626':'#fff'; btn.style.color = x===f?'#fff':'#374151'; btn.style.borderColor = x===f?'#dc2626':'#e5e7eb'; }
-  });
-  applyAdminFilter();
-}
-
-function applyAdminFilter(){
-  const q = (document.getElementById('adminSearch').value||'').toLowerCase();
-  let clients = ALL_CLIENTS;
-  if(adminCurrentFilter==='active') clients = clients.filter(c=>c.status!=='suspended');
-  if(adminCurrentFilter==='suspended') clients = clients.filter(c=>c.status==='suspended');
-  if(q) clients = clients.filter(c=>
-    (c.nom||'').toLowerCase().includes(q)||(c.prenom||'').toLowerCase().includes(q)||
-    (c.telephone||'').includes(q)||(c.quartier||'').toLowerCase().includes(q)
-  );
-  renderAdminClients(clients);
 }
 
 function renderAdminClients(clients){
   const el = document.getElementById('adminClientList');
-  if(!clients.length){ el.innerHTML = '<div class="admin-empty">Aucun client trouvé</div>'; return; }
+  if(!clients.length){ el.innerHTML = '<div class="admin-empty">Aucun client inscrit</div>'; return; }
   el.innerHTML = clients.map(c => {
     const initials = ((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
     const date = c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : '—';
-    const suspended = c.status === 'suspended';
-    const avatarHtml = c.avatar
-      ? '<img src="'+c.avatar+'" class="admin-avatar" alt="">'
-      : '<div class="admin-avatar-placeholder">'+initials+'</div>';
-    return '<div class="admin-card" style="'+(suspended?'opacity:0.6;border-left:4px solid #f59e0b;':'border-left:4px solid #1a7a4a;')+'">' +
-      avatarHtml +
+    return '<div class="admin-card">' +
+      '<div class="admin-avatar-placeholder">'+initials+'</div>' +
       '<div class="admin-info">' +
         '<div class="admin-name">'+escHtml((c.prenom||'')+' '+(c.nom||''))+'</div>' +
         '<div class="admin-meta">' +
-          '<span>👤 '+escHtml(c.login||'—')+'</span>' +
           '<span>📞 '+(c.telephone||'Non renseigné')+'</span>' +
-          '<span>📍 '+(c.quartier||'—')+' · 💼 '+(c.profession||'—')+'</span>' +
-          '<span>📅 '+date+'</span>' +
+          '<span>📍 '+(c.quartier||'Non renseigné')+'</span>' +
+          '<span>💼 '+(c.profession||'Non renseigné')+'</span>' +
+          '<span>📅 Inscrit le '+date+'</span>' +
         '</div>' +
       '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">' +
-        '<span class="admin-badge" style="background:'+(suspended?'#fef3c7':'#dcfce7')+';color:'+(suspended?'#92400e':'#15803d')+';">'+(suspended?'⏸ Suspendu':'✅ Actif')+'</span>' +
-        '<button onclick="toggleSuspendClient(\'' + c._docId + '\','+ suspended +')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid '+(suspended?'#1a7a4a':'#f59e0b')+';background:'+(suspended?'#dcfce7':'#fef3c7')+';color:'+(suspended?'#15803d':'#92400e')+';cursor:pointer;font-weight:700;">'+(suspended?'▶ Réactiver':'⏸ Suspendre')+'</button>' +
-        '<button onclick="deleteClient(\'' + c._docId + '\')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #ef4444;background:#fee2e2;color:#dc2626;cursor:pointer;font-weight:700;">🗑 Supprimer</button>' +
-      '</div>' +
+      '<span class="admin-badge">Actif</span>' +
     '</div>';
   }).join('');
 }
 
-async function toggleSuspendClient(docId, isSuspended){
-  if(!db) return;
-  const action = isSuspended ? 'réactiver' : 'suspendre';
-  if(!confirm('Voulez-vous '+action+' ce client ?')) return;
-  try {
-    await db.collection('clients').doc(docId).update({ status: isSuspended ? 'active' : 'suspended' });
-    toast('✅', isSuspended ? 'Client réactivé !' : 'Client suspendu !');
-    await loadAdminClients();
-  } catch(e){ toast('❌','Erreur: '+e.message); }
-}
-
-async function deleteClient(docId){
-  if(!db) return;
-  if(!confirm('⚠️ Supprimer définitivement ce client ?\nToutes ses données seront perdues !')) return;
-  try {
-    await db.collection('clients').doc(docId).delete();
-    toast('🗑','Client supprimé !');
-    await loadAdminClients();
-  } catch(e){ toast('❌','Erreur: '+e.message); }
-}
-
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function filterAdminClients(q){ applyAdminFilter(); }
+function filterAdminClients(q){
+  const ql = q.toLowerCase();
+  const filtered = ALL_CLIENTS.filter(c =>
+    (c.nom||'').toLowerCase().includes(ql) ||
+    (c.prenom||'').toLowerCase().includes(ql) ||
+    (c.telephone||'').includes(ql) ||
+    (c.quartier||'').toLowerCase().includes(ql)
+  );
+  renderAdminClients(filtered);
+}
 
 // ── EXPORT / IMPORT DATA ──
 function exportData(){
@@ -2108,10 +1951,9 @@ function saveCreateAccount(){
 
   // Enter app
   document.getElementById('createAccountOverlay').classList.add('hidden');
-  // Reset state for new client
-  S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
   loadProfile();
   render();
+  syncAvatarFromFirebase();
   toast('🎉', 'Bienvenue ' + prenom + ' !');
 }
 
@@ -2168,16 +2010,11 @@ function saveFirstProfile(){
 }
 
 // ── INIT ──
-try {
-  const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};
-  const ml = document.getElementById('monthLabel');
-  if(ml) ml.textContent=fullDateLabel();
-  initFirebase();
-  // Don't render on startup - wait for login
-  // render() and loadProfile() called after successful login
-  try { updateTrashBadge(); } catch(e){}
-  showSplash();
-} catch(e){ console.error('Init error:', e); }
+const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
+initFirebase();
+render();
+loadProfile();
+updateTrashBadge();
 </script>
 </body>
 </html>
