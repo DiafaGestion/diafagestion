@@ -412,7 +412,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
 <!-- CREATE ACCOUNT OVERLAY -->
 <div class="login-overlay hidden" id="createAccountOverlay">
-  <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA" style="height:60px;">
+  <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA" style="height:70px;width:70px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.5);">
   <div class="login-title" style="font-size:20px;">Créer mon compte</div>
   <div class="login-sub">Renseignez vos informations</div>
   <div style="width:100%;max-width:400px;background:#fff;border-radius:20px;padding:20px;box-sizing:border-box;overflow-y:auto;max-height:75vh;">
@@ -469,6 +469,18 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <option value="Divorcé(e)">Divorcé(e)</option>
         <option value="Veuf/Veuve">Veuf/Veuve</option>
       </select>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:6px;text-transform:uppercase;">⚧ Sexe</div>
+      <div style="display:flex;gap:10px;">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px;">
+          <input type="radio" name="caSexe" id="caSexeM" value="Masculin" style="accent-color:#dc2626;width:16px;height:16px;"> 👨 Masculin
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:14px;">
+          <input type="radio" name="caSexe" id="caSexeF" value="Féminin" style="accent-color:#dc2626;width:16px;height:16px;"> 👩 Féminin
+        </label>
+      </div>
     </div>
 
     <!-- Séparateur -->
@@ -592,6 +604,13 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     </div>
     <div class="profile-fg"><label>Quartier</label><input type="text" id="pQuartier" placeholder="Ex: Kaloum, Ratoma..."></div>
     <div class="profile-fg"><label>Profession</label><input type="text" id="pProfession" placeholder="Ex: Ingénieur, Commerçant..."></div>
+    <div class="profile-fg"><label>⚧ Sexe</label>
+      <select id="pSexe">
+        <option value="">-- Sélectionner --</option>
+        <option value="Masculin">👨 Masculin</option>
+        <option value="Féminin">👩 Féminin</option>
+      </select>
+    </div>
     <div class="profile-fg"><label>Situation matrimoniale</label>
       <select id="pSituation">
         <option value="">-- Sélectionner --</option>
@@ -865,10 +884,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         </button>
       </div>
 
-      <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
-      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
+      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;margin:8px 18px 4px;">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
-        <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter</div></div>
+        <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
 
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
@@ -1115,7 +1133,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
 // Clé de données liée au client connecté
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
-try{const s=localStorage.getItem(getDataKey())||localStorage.getItem('diafa_v4');if(s)S={...S,...JSON.parse(s)};}catch(e){}
+// NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
   try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}
   syncDataToFirebase();
@@ -1412,22 +1430,13 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 
 // ── RESET ──
 function logoutClient(){
-  if(confirm('Voulez-vous vous déconnecter ?\nVos données resteront sauvegardées.')){
-    // Clear per-session data but keep credentials
+  if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées.')){
     localStorage.removeItem('diafa_profile');
     localStorage.removeItem('diafa_uid');
     localStorage.removeItem('fp_temp_avatar');
     localStorage.removeItem('ca_temp_avatar');
-    // Show login screen
-    closeDrawer();
-    document.getElementById('loginOverlay').classList.remove('hidden');
-  }
-}
-
-function logoutClient(){
-  if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées.')){
-    localStorage.removeItem('diafa_profile');
-    localStorage.removeItem('diafa_uid');
+    // Réinitialiser S pour éviter fuite de données entre comptes
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     document.getElementById('adminTabBtn').style.display='none';
     closeDrawer();
     document.getElementById('loginOverlay').classList.remove('hidden');
@@ -1561,6 +1570,7 @@ function loadProfile(){
   if(p.dob) { document.getElementById('pDOB').value = p.dob; calcAge(p.dob); }
   if(p.quartier) document.getElementById('pQuartier').value = p.quartier;
   if(p.profession) document.getElementById('pProfession').value = p.profession;
+  if(p.sexe)      document.getElementById('pSexe').value      = p.sexe;
   if(p.situation) document.getElementById('pSituation').value = p.situation;
 }
 function calcAge(dob){
@@ -1602,7 +1612,8 @@ function saveProfile(){
   p.dob        = document.getElementById('pDOB').value;
   p.quartier   = document.getElementById('pQuartier').value.trim();
   p.profession = document.getElementById('pProfession').value.trim();
-  p.matrimonial= document.getElementById('pMatrimonial').value;
+  p.sexe        = document.getElementById('pSexe').value;
+  p.situation   = document.getElementById('pSituation').value;
   if(!p.createdAt) p.createdAt = new Date().toISOString();
   localStorage.setItem('diafa_profile', JSON.stringify(p));
   saveClientToFirebase(p);
@@ -1702,6 +1713,8 @@ async function saveClientToFirebase(profile){
       telephone:  profile.telephone || '',
       quartier:   profile.quartier  || '',
       profession: profile.profession|| '',
+      situation:  profile.situation  || '',
+      sexe:       profile.sexe       || '',
       dob:        profile.dob       || '',
       avatar:     avatarData,
       login:      localStorage.getItem('diafa_user') || '',
@@ -1748,6 +1761,8 @@ async function loadProfileFromFirebase(login){
       if(data.quartier)   p.quartier   = data.quartier;
       if(data.profession) p.profession = data.profession;
       if(data.dob)        p.dob        = data.dob;
+      if(data.situation)  p.situation  = data.situation;
+      if(data.sexe)       p.sexe       = data.sexe;
       if(data.createdAt)  p.createdAt  = data.createdAt;
       localStorage.setItem('diafa_profile', JSON.stringify(p));
     }
@@ -2021,6 +2036,8 @@ async function saveCreateAccount(){
   const quartier   = document.getElementById('caQuartier').value.trim();
   const profession = document.getElementById('caProfession').value.trim();
   const situation  = document.getElementById('caSituation').value;
+  const sexeEl     = document.querySelector('input[name="caSexe"]:checked');
+  const sexe       = sexeEl ? sexeEl.value : '';
   const login      = document.getElementById('caLogin').value.trim();
   const pass       = document.getElementById('caPass').value;
   const passConfirm= document.getElementById('caPassConfirm').value;
@@ -2042,7 +2059,7 @@ async function saveCreateAccount(){
   // Save profile
   const avatar = localStorage.getItem('ca_temp_avatar') || '';
   localStorage.removeItem('ca_temp_avatar');
-  const profile = { prenom, nom, telephone, dob, quartier, profession, situation, avatar, createdAt: new Date().toISOString() };
+  const profile = { prenom, nom, telephone, dob, quartier, profession, situation, sexe, avatar, createdAt: new Date().toISOString() };
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
   // Sync Firebase (await pour que l'UID soit prêt avant d'entrer dans l'app)
