@@ -345,9 +345,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .whatsapp-btn:active{background:#dcfce7;}
 
 /* ── SPLASH SCREEN ── */
-.splash{position:fixed;inset:0;background:linear-gradient(135deg,#1a1d2e 0%,#dc2626 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.6s ease;
-  animation:splashAutoHide 0.01s 3.5s forwards;}
-@keyframes splashAutoHide{to{display:none;opacity:0;pointer-events:none;}}
+.splash{position:fixed;inset:0;background:linear-gradient(135deg,#1a1d2e 0%,#dc2626 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000;transition:opacity 0.7s ease;}
+.splash.fade-out{opacity:0;pointer-events:none;}
+.splash.hidden{display:none;}
 .splash.fade-out{opacity:0;pointer-events:none;}
 .splash-logo{width:140px;height:140px;border-radius:28px;animation:splashPop 0.8s cubic-bezier(.34,1.56,.64,1) forwards;opacity:0;}
 .splash-title{color:#fff;font-size:28px;font-weight:800;margin-top:20px;animation:splashSlide 0.6s 0.5s ease forwards;opacity:0;}
@@ -541,7 +541,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div class="firstprofile-label">📞 Numéro de téléphone *</div>
     <input class="firstprofile-input" type="tel" id="fpTel" placeholder="Ex: 625 00 00 00">
     <div class="firstprofile-label">🎂 Date de naissance</div>
-    <input class="firstprofile-input" type="date" id="fpDOB">
+    <input class="firstprofile-input" type="date" id="fpDOB" onchange="calcFpAge(this.value)">
+    <div class="firstprofile-label">Âge</div>
+    <input class="firstprofile-input" type="text" id="fpAge" placeholder="Calculé automatiquement" readonly style="background:#f5f6fa;color:#6b7280;">
     <div class="firstprofile-label">📍 Quartier</div>
     <input class="firstprofile-input" type="text" id="fpQuartier" placeholder="Ex: Kaloum, Ratoma...">
     <div class="firstprofile-label">💼 Profession</div>
@@ -1617,7 +1619,18 @@ function calcAge(dob){
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if(m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  document.getElementById('pAge').value = age + ' ans';
+  const el = document.getElementById('pAge');
+  if(el) el.value = age + ' ans';
+}
+function calcFpAge(dob){
+  if(!dob) return;
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if(m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  const el = document.getElementById('fpAge');
+  if(el) el.value = age + ' ans';
 }
 function handleAvatar(event){
   const file = event.target.files[0];
@@ -1694,10 +1707,13 @@ function showSplash(){
   if(!splash) return;
   const hide = () => {
     splash.classList.add('fade-out');
-    setTimeout(() => { splash.style.display = 'none'; }, 700);
+    setTimeout(() => { splash.classList.add('hidden'); }, 750);
   };
   setTimeout(hide, 2800);
-  setTimeout(() => { if(splash) splash.style.display = 'none'; }, 5000);
+  // Filet de sécurité absolu : pointer-events:none immédiat après 3.5s
+  setTimeout(() => {
+    if(splash){ splash.classList.add('fade-out'); splash.classList.add('hidden'); }
+  }, 3500);
 }
 showSplash();
 
@@ -2247,12 +2263,17 @@ const catColors = {income:'var(--green)', expense:'var(--red)', debt:'var(--red)
 
 function openCatSheet(type){
   catType = type; catFilter = 'all';
-  document.getElementById('catSheetTitle').textContent = catTitles[type];
-  document.getElementById('catListZone').style.display = 'none';
-  document.getElementById('catBtnAdd').style.background = catAddColors[type];
-  const lb = document.getElementById('catBtnList');
-  lb.style.background='var(--bg)'; lb.style.color='var(--text)'; lb.style.border='2px solid var(--border)';
-  document.getElementById('catSheet').classList.add('open');
+  const title = document.getElementById('catSheetTitle');
+  const zone  = document.getElementById('catListZone');
+  const btnA  = document.getElementById('catBtnAdd');
+  const lb    = document.getElementById('catBtnList');
+  const sheet = document.getElementById('catSheet');
+  if(!sheet){ console.error('catSheet introuvable'); return; }
+  if(title) title.textContent = catTitles[type];
+  if(zone)  zone.style.display = 'none';
+  if(btnA)  btnA.style.background = catAddColors[type];
+  if(lb){ lb.style.background='var(--bg)'; lb.style.color='var(--text)'; lb.style.border='2px solid var(--border)'; }
+  sheet.classList.add('open');
 }
 function catSheetAdd(){
   closeSheet('catSheet');
