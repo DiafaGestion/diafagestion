@@ -527,7 +527,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
   <div class="admin-header">
     <h1>🛡️ Panel Admin</h1>
     <p>DiafaGestion — Gestion des clients</p>
-    <button class="admin-logout" onclick="logoutAdmin()">Déconnexion</button>
+    <button class="admin-logout" onclick="closeAdminPanel()">✕ Fermer</button>
   </div>
   <div class="admin-stats">
     <div class="admin-stat">
@@ -852,6 +852,20 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter et accéder à un autre compte</div></div>
       </button>
 
+      <div id="adminTabBtn" style="display:none;">
+        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
+        <button class="menu-item" onclick="closeDrawer();openAdminPanel();" style="border:2px solid #dc2626;">
+          <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
+          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
+        </button>
+      </div>
+
+      <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
+      <button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
+        <div class="menu-icon" style="background:#dcfce7;">🚪</div>
+        <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter</div></div>
+      </button>
+
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
       <button class="menu-item" onclick="resetApp()" style="border:2px solid #ef4444;">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
@@ -1094,8 +1108,35 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <script>
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-try{const s=localStorage.getItem('diafa_v4');if(s)S={...S,...JSON.parse(s)};}catch(e){}
-function save(){try{localStorage.setItem('diafa_v4',JSON.stringify(S));}catch(e){}}
+// Clé de données liée au client connecté
+function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
+try{const s=localStorage.getItem(getDataKey())||localStorage.getItem('diafa_v4');if(s)S={...S,...JSON.parse(s)};}catch(e){}
+function save(){
+  try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}
+  syncDataToFirebase();
+}
+async function syncDataToFirebase(){
+  if(!db) return;
+  const uid=localStorage.getItem('diafa_uid');
+  if(!uid) return;
+  try{
+    const d=JSON.parse(JSON.stringify(S)); delete d.type;
+    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+  }catch(e){}
+}
+async function loadDataFromFirebase(){
+  if(!db) return;
+  const uid=localStorage.getItem('diafa_uid');
+  if(!uid) return;
+  try{
+    const doc=await db.collection('clients').doc(uid).get();
+    if(doc.exists && doc.data().appData){
+      const d=JSON.parse(doc.data().appData);
+      S={...S,...d};
+      localStorage.setItem(getDataKey(),JSON.stringify(S));
+    }
+  }catch(e){}
+}
 
 // ── UTILS ──
 const fmt=n=>new Intl.NumberFormat('fr-FR').format(Math.round(n))+' GNF';
@@ -1378,6 +1419,16 @@ function logoutClient(){
   }
 }
 
+function logoutClient(){
+  if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées.')){
+    localStorage.removeItem('diafa_profile');
+    localStorage.removeItem('diafa_uid');
+    document.getElementById('adminTabBtn').style.display='none';
+    closeDrawer();
+    document.getElementById('loginOverlay').classList.remove('hidden');
+  }
+}
+
 function resetApp(){
   if(confirm('⚠️ Voulez-vous vraiment effacer TOUTES les données ?\nCette action est irréversible !')){
     localStorage.removeItem('diafa_v4');
@@ -1391,41 +1442,62 @@ function resetApp(){
 
 // ── LOGIN / PASSWORD ──
 async function checkLogin(){
-  // Check admin first
-  if(checkAdminLogin()) return;
-
   const user=document.getElementById('loginUser').value.trim();
   const pass=document.getElementById('loginPass').value;
   const err=document.getElementById('loginError2');
-  const storedUser=localStorage.getItem('diafa_user');
-  const storedPass=localStorage.getItem('diafa_pwd');
+  const isAdmin=checkAdminLogin();
 
-  // No account exists
-  if(!storedUser || !storedPass){
-    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',4000);
-    return;
+  if(!isAdmin){
+    const storedUser=localStorage.getItem('diafa_user');
+    const storedPass=localStorage.getItem('diafa_pwd');
+    if(!storedUser||!storedPass){
+      err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',4000);
+      return;
+    }
+    if(user!==storedUser||pass!==storedPass){
+      err.textContent='❌ Identifiant ou mot de passe incorrect';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',3000);
+      return;
+    }
   }
 
-  if(user===storedUser && pass===storedPass){
-    // Login success - clear old profile so we load fresh from Firebase
+  // Connexion réussie
+  document.getElementById('loginFormOverlay').classList.add('hidden');
+  document.getElementById('loginOverlay').classList.add('hidden');
+
+  if(isAdmin){
+    // Admin: UID fixe, entre dans l'app + affiche bouton panneau
+    localStorage.setItem('diafa_uid','admin_uid');
+    localStorage.setItem('diafa_user', ADMIN_LOGIN);
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
+    let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    if(!ap.nom){
+      ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
+      localStorage.setItem('diafa_profile',JSON.stringify(ap));
+    }
+    loadProfile();
+    render();
+    loadDataFromFirebase().then(()=>render());
+    document.getElementById('adminTabBtn').style.display='flex';
+  } else {
+    // Client normal
     localStorage.removeItem('diafa_profile');
     localStorage.removeItem('diafa_uid');
-    document.getElementById('loginFormOverlay').classList.add('hidden');
-    document.getElementById('loginOverlay').classList.add('hidden');
-    // Try to load profile from Firebase first
     await loadProfileFromFirebase(user);
-    const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-    if(!p.nom || !p.prenom || !p.telephone){
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
+    const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    if(!p.nom||!p.prenom||!p.telephone){
       openFirstTimeProfile();
     } else {
       render();
+      loadDataFromFirebase().then(()=>render());
     }
-  } else {
-    err.textContent='❌ Identifiant ou mot de passe incorrect';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',3000);
+    document.getElementById('adminTabBtn').style.display='none';
   }
 }
 function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
@@ -1713,12 +1785,7 @@ function generateUID(){
 function checkAdminLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
-  if(u === ADMIN_LOGIN && p === ADMIN_PASS){
-    document.getElementById('loginOverlay').classList.add('hidden');
-    openAdminPanel();
-    return true;
-  }
-  return false;
+  return (u === ADMIN_LOGIN && p === ADMIN_PASS);
 }
 
 function openAdminPanel(){
@@ -1726,63 +1793,91 @@ function openAdminPanel(){
   loadAdminClients();
 }
 
+function closeAdminPanel(){
+  document.getElementById('adminPanel').classList.add('hidden');
+}
+
 function logoutAdmin(){
   document.getElementById('adminPanel').classList.add('hidden');
-  document.getElementById('loginOverlay').classList.remove('hidden');
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
 }
 
 async function loadAdminClients(){
   const el = document.getElementById('adminClientList');
-  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.<br>Configurez Firebase pour voir les clients.</div>'; return; }
+  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.</div>'; return; }
   el.innerHTML = '<div class="admin-empty">Chargement...</div>';
   try {
     const snap = await db.collection('clients').orderBy('createdAt','desc').get();
-    ALL_CLIENTS = snap.docs.map(d => d.data());
-    renderAdminClients(ALL_CLIENTS);
+    ALL_CLIENTS = snap.docs.map(d => ({...d.data(), _docId: d.id})).filter(c => c.login !== 'admin');
     document.getElementById('adminTotalClients').textContent = ALL_CLIENTS.length;
     const today = new Date().toDateString();
-    const todayCount = ALL_CLIENTS.filter(c => new Date(c.createdAt).toDateString() === today).length;
-    document.getElementById('adminTodayClients').textContent = todayCount;
+    document.getElementById('adminTodayClients').textContent = ALL_CLIENTS.filter(c=>new Date(c.createdAt).toDateString()===today).length;
+    renderAdminClients(ALL_CLIENTS);
   } catch(e){
-    el.innerHTML = '<div class="admin-empty">Erreur de chargement: ' + e.message + '</div>';
+    el.innerHTML = '<div class="admin-empty">Erreur: ' + e.message + '</div>';
   }
 }
 
 function renderAdminClients(clients){
   const el = document.getElementById('adminClientList');
-  if(!clients.length){ el.innerHTML = '<div class="admin-empty">Aucun client inscrit</div>'; return; }
-  el.innerHTML = clients.map(c => {
+  if(!clients.length){ el.innerHTML = '<div class="admin-empty">Aucun client trouvé</div>'; return; }
+  el.innerHTML = '';
+  clients.forEach(c => {
+    const suspended = c.status === 'suspended';
     const initials = ((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
     const date = c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : '—';
-    return '<div class="admin-card">' +
-      '<div class="admin-avatar-placeholder">'+initials+'</div>' +
+    const card = document.createElement('div');
+    card.className = 'admin-card';
+    card.style.cssText = suspended ? 'opacity:0.65;border-left:4px solid #f59e0b;' : 'border-left:4px solid #1a7a4a;';
+    card.innerHTML =
+      (c.avatar ? '<img src="'+c.avatar+'" class="admin-avatar" alt="">' : '<div class="admin-avatar-placeholder">'+initials+'</div>') +
       '<div class="admin-info">' +
         '<div class="admin-name">'+escHtml((c.prenom||'')+' '+(c.nom||''))+'</div>' +
         '<div class="admin-meta">' +
-          '<span>📞 '+(c.telephone||'Non renseigné')+'</span>' +
-          '<span>📍 '+(c.quartier||'Non renseigné')+'</span>' +
-          '<span>💼 '+(c.profession||'Non renseigné')+'</span>' +
-          '<span>📅 Inscrit le '+date+'</span>' +
+          '<span>👤 '+escHtml(c.login||'—')+'</span>' +
+          '<span>📞 '+(c.telephone||'—')+'</span>' +
+          '<span>📍 '+(c.quartier||'—')+' · 💼 '+(c.profession||'—')+'</span>' +
+          '<span>📅 '+date+'</span>' +
         '</div>' +
       '</div>' +
-      '<span class="admin-badge">Actif</span>' +
-    '</div>';
-  }).join('');
+      '<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">' +
+        '<span class="admin-badge" style="background:'+(suspended?'#fef3c7':'#dcfce7')+';color:'+(suspended?'#92400e':'#15803d')+';">'+(suspended?'⏸ Suspendu':'✅ Actif')+'</span>' +
+        '<button class="btn-susp" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid '+(suspended?'#1a7a4a':'#f59e0b')+';background:'+(suspended?'#dcfce7':'#fef3c7')+';color:'+(suspended?'#15803d':'#92400e')+';cursor:pointer;font-weight:700;">'+(suspended?'▶ Réactiver':'⏸ Suspendre')+'</button>' +
+        '<button class="btn-del2" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #ef4444;background:#fee2e2;color:#dc2626;cursor:pointer;font-weight:700;">🗑 Supprimer</button>' +
+      '</div>';
+    card.querySelector('.btn-susp').addEventListener('click', () => toggleSuspendClient(c._docId, suspended));
+    card.querySelector('.btn-del2').addEventListener('click', () => deleteClient(c._docId));
+    el.appendChild(card);
+  });
+}
+
+async function toggleSuspendClient(docId, isSuspended){
+  if(!db||!docId) return;
+  if(!confirm(isSuspended?'Réactiver ce client ?':'Suspendre ce client ?')) return;
+  try{
+    await db.collection('clients').doc(docId).update({status: isSuspended?'active':'suspended'});
+    toast('✅', isSuspended?'Client réactivé !':'Client suspendu !');
+    await loadAdminClients();
+  }catch(e){ toast('❌','Erreur: '+e.message); }
+}
+
+async function deleteClient(docId){
+  if(!db||!docId) return;
+  if(!confirm('⚠️ Supprimer définitivement ce client ?\nImpossible d\'annuler !')) return;
+  try{
+    await db.collection('clients').doc(docId).delete();
+    toast('🗑','Client supprimé !');
+    await loadAdminClients();
+  }catch(e){ toast('❌','Erreur: '+e.message); }
 }
 
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function filterAdminClients(q){
-  const ql = q.toLowerCase();
-  const filtered = ALL_CLIENTS.filter(c =>
-    (c.nom||'').toLowerCase().includes(ql) ||
-    (c.prenom||'').toLowerCase().includes(ql) ||
-    (c.telephone||'').includes(ql) ||
-    (c.quartier||'').toLowerCase().includes(ql)
-  );
-  renderAdminClients(filtered);
+  const ql=q.toLowerCase();
+  renderAdminClients(ALL_CLIENTS.filter(c=>
+    (c.nom||'').toLowerCase().includes(ql)||(c.prenom||'').toLowerCase().includes(ql)||
+    (c.telephone||'').includes(ql)||(c.quartier||'').toLowerCase().includes(ql)
+  ));
 }
 
 // ── EXPORT / IMPORT DATA ──
