@@ -1675,13 +1675,18 @@ function openCreateAccountForm(){
 // ── SPLASH SCREEN ──
 function showSplash(){
   const splash = document.getElementById('splashScreen');
+  const login = document.getElementById('loginOverlay');
+  const loginForm = document.getElementById('loginFormOverlay');
+  // Make sure login is hidden during splash
+  login.style.display = 'none';
+  loginForm.style.display = 'none';
   setTimeout(() => {
     splash.classList.add('fade-out');
     setTimeout(() => {
       splash.style.display = 'none';
-      // Always show login screen after splash
-      document.getElementById('loginOverlay').classList.remove('hidden');
-      document.getElementById('loginFormOverlay').classList.add('hidden');
+      // Show login screen
+      login.style.display = 'flex';
+      login.classList.remove('hidden');
     }, 700);
   }, 2800);
 }
