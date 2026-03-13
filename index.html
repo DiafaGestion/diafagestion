@@ -935,7 +935,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <!-- ══ PAGES MODALES ══ -->
 <!-- CD page -->
 <div class="overlay" id="pageCD">
-  <div class="sheet" style="max-height:95vh">
+  <div class="sheet" style="max-height:95vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div class="sheet-title" id="pageCDTitle">💸 Créanciers & Débiteurs</div>
@@ -954,13 +954,13 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <button class="cd-tab" id="tabCredit" onclick="filterCD('credit',this)">💰 On me doit</button>
       </div>
     </div>
-    <div id="cdList" style="overflow-y:auto;max-height:60vh"><div class="empty"><div class="empty-emoji">🤝</div><div class="empty-text">Aucune créance enregistrée</div></div></div>
+    <div id="cdList" style="overflow-y:auto;flex:1;min-height:0;"><div class="empty"><div class="empty-emoji">🤝</div><div class="empty-text">Aucune créance enregistrée</div></div></div>
   </div>
 </div>
 
 <!-- Transactions page -->
 <div class="overlay" id="pageTx">
-  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="sheet-handle"></div>
     <div class="sheet-header"><div class="sheet-title">📋 Transactions</div><button class="sheet-close" onclick="closeSheet('pageTx')">✕</button></div>
     <div style="padding:10px 14px 6px">
@@ -976,7 +976,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
 <!-- Planned page -->
 <div class="overlay" id="pagePlanned">
-  <div class="sheet" style="max-height:95vh">
+  <div class="sheet" style="max-height:95vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div class="sheet-title">📅 Dépenses planifiées</div>
@@ -1785,11 +1785,12 @@ const ADMIN_PASS  = 'Diafa@2026';
 
 function initFirebase(){
   try {
+    if(typeof firebase === 'undefined') throw new Error('SDK Firebase non chargé (vérifier connexion internet)');
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     console.log('✅ Firebase connecté');
   } catch(e){
-    console.warn('Firebase non configuré — mode local');
+    console.warn('Firebase non configuré — mode local:', e.message);
     db = null;
   }
 }
@@ -2482,7 +2483,7 @@ function printListPage(){
 
 <!-- PAGE LISTE + PDF -->
 <div class="overlay" id="pageList">
-  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;overflow:hidden;">
     <div class="sheet-handle"></div>
     <div class="sheet-header" style="flex-shrink:0;">
       <div class="sheet-title" id="pageListTitle">📋 Liste</div>
