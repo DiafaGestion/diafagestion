@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 :root{
   --white:#ffffff; --bg:#f5f6fa; --bg2:#eef0f6; --border:#e2e5f0;
@@ -852,16 +853,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <span style="color:#9ca3af;font-size:18px;">›</span>
       </div>
 
-      <div class="drawer-section-label">Ajouter</div>
-      <button class="menu-item" onclick="closeDrawer();openTx('income')">
-        <div class="menu-icon" style="background:var(--green-l)">💰</div>
-        <div><div class="menu-label">Ajouter un revenu</div><div class="menu-sub">Salaire, commerce…</div></div>
-      </button>
-      <button class="menu-item" onclick="closeDrawer();openTx('expense')">
-        <div class="menu-icon" style="background:var(--red-l)">💸</div>
-        <div><div class="menu-label">Ajouter une dépense</div><div class="menu-sub">Loyer, transport…</div></div>
-      </button>
-      <div class="drawer-section-label" style="margin-top:4px;">Planning dépenses</div>
+      <div class="drawer-section-label">Planning dépenses</div>
       <button class="menu-item" onclick="closeDrawer();openPlanned()">
         <div class="menu-icon" style="background:#f3e8ff">📅</div>
         <div><div class="menu-label">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
@@ -2917,7 +2909,7 @@ function jiRenderList(){
   arr.sort((a,b)=>b.date.localeCompare(a.date));
   if(!arr.length){el.innerHTML='<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">Aucune entrée<br><span style="font-size:40px;">📔</span></div>';return;}
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  el.innerHTML=arr.map(e=>'<div class="ji-entry"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;" onclick="openJiEdit(\''+e.id+'\')"><span style="font-size:20px;">'+(e.mood||'📔')+'</span><span class="ji-entry-date">'+jiDateFmt(e.date)+'</span><span class="ji-cat-badge" style="margin-left:auto;background:'+(JI_CAT_COLORS[e.cat]||'#f3f4f6')+'">'+(JI_CAT_EMOJI[e.cat]||'📝')+' '+(e.cat||'Général')+'</span></div>'+(e.photoCount>0?'<div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 4px;"><span style="font-size:11px;color:#db2777;">📷 '+e.photoCount+' photo'+(e.photoCount>1?'s':'')+'</span><button onclick="jiOpenViewer(\''+e.id+'\',\''+e.date+'\')" style="background:#db2777;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Voir &amp; Télécharger</button></div>':'')+'<div class="ji-entry-preview" onclick="openJiEdit(\''+e.id+'\')">'+esc(e.body||'...')+'</div></div>').join('');
+  el.innerHTML=arr.map(e=>'<div class="ji-entry" onclick="openJiEdit(\''+e.id+'\')" ><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><span style="font-size:20px;">'+(e.mood||'📔')+'</span><span class="ji-entry-date">'+jiDateFmt(e.date)+'</span><span class="ji-cat-badge" style="margin-left:auto;background:'+(JI_CAT_COLORS[e.cat]||'#f3f4f6')+'">'+(JI_CAT_EMOJI[e.cat]||'📝')+' '+(e.cat||'Général')+'</span></div>'+(e.photoCount>0?'<div style="font-size:11px;color:#db2777;margin:3px 0;">📷 '+e.photoCount+' photo'+(e.photoCount>1?'s':'')+'</div>':'')+'<div class="ji-entry-preview">'+esc(e.body||'...')+'</div></div>').join('');
 }
 
 function jiDateFmt(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
@@ -3154,24 +3146,54 @@ window.jiMediaSelectAll=function(){
   jiRenderMediaGrid();
 };
 
+// Télécharger une seule photo via Blob (fonctionne sur mobile)
+function jiDownloadBlob(dataUrl, filename){
+  const arr = dataUrl.split(','), mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  const u8arr = new Uint8Array(bstr.length);
+  for(let i=0;i<bstr.length;i++) u8arr[i]=bstr.charCodeAt(i);
+  const blob = new Blob([u8arr], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+
+// Télécharger plusieurs photos → 1 seul fichier ZIP
+async function jiDownloadAsZip(photos, zipName){
+  if(typeof JSZip === 'undefined'){
+    if(typeof toast==='function') toast('⚠️','JSZip non chargé, téléchargement photo par photo');
+    photos.forEach((p,i)=>setTimeout(()=>jiDownloadBlob(p.src,'journal_'+p.date+'_'+(i+1)+'.jpg'),i*600));
+    return;
+  }
+  if(typeof toast==='function') toast('📦','Préparation du ZIP...');
+  const zip = new JSZip();
+  const folder = zip.folder('journal_photos');
+  photos.forEach((p,i)=>{
+    const b64 = p.src.split(',')[1];
+    folder.file('photo_'+p.date+'_'+(i+1)+'.jpg', b64, {base64:true});
+  });
+  const blob = await zip.generateAsync({type:'blob', compression:'STORE'}); // STORE = pas de compression (images déjà compressées)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = zipName+'.zip'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  if(typeof toast==='function') toast('✅', photos.length+' photo'+(photos.length>1?'s':'')+' téléchargées !');
+}
+
 window.jiMediaDownloadOne=function(i){
   const item=jiMediaAllPhotos[i];
-  const a=document.createElement('a');
-  a.href=item.src;
-  a.download='journal_'+(item.entryDate||'photo')+'_'+(item.photoIdx+1)+'.jpg';
-  a.click();
+  jiDownloadBlob(item.src, 'journal_'+(item.entryDate||'photo')+'_'+(item.photoIdx+1)+'.jpg');
 };
 
 window.jiMediaDownloadSelected=function(){
   const sel=jiMediaAllPhotos.filter(item=>jiMediaSelected.has(jiMediaKey(item)));
-  if(!sel.length){if(typeof toast==='function')toast('\u26a0\ufe0f','Selectionnez au moins une photo');return;}
-  sel.forEach((item,i)=>setTimeout(()=>{
-    const a=document.createElement('a');
-    a.href=item.src;
-    a.download='journal_'+(item.entryDate||'photo')+'_'+(item.photoIdx+1)+'.jpg';
-    a.click();
-  },i*400));
-  if(typeof toast==='function')toast('\u2b07',sel.length+' photo'+(sel.length>1?'s':'')+' en cours...');
+  if(!sel.length){if(typeof toast==='function')toast('⚠️','Sélectionnez au moins une photo');return;}
+  if(sel.length===1){
+    jiDownloadBlob(sel[0].src,'journal_'+(sel[0].entryDate||'photo')+'_'+(sel[0].photoIdx+1)+'.jpg');
+  } else {
+    jiDownloadAsZip(sel.map(item=>({src:item.src, date:item.entryDate||'photo'})), 'journal_photos');
+  }
 };
 
 // Expose closeOverlay si pas déjà défini
@@ -3239,22 +3261,21 @@ window.jiViewerPrev = function(){ if(jiViewerIdx>0){ jiViewerIdx--; jiViewerRend
 window.jiViewerNext = function(){ if(jiViewerIdx<jiViewerPhotos.length-1){ jiViewerIdx++; jiViewerRender(); } };
 
 window.jiViewerDownload = function(){
-  const a = document.createElement('a');
-  a.href = jiViewerPhotos[jiViewerIdx];
-  a.download = 'journal_'+(jiViewerEntryDate||'photo')+'_'+(jiViewerIdx+1)+'.jpg';
-  a.click();
+  jiDownloadBlob(
+    jiViewerPhotos[jiViewerIdx],
+    'journal_'+(jiViewerEntryDate||'photo')+'_'+(jiViewerIdx+1)+'.jpg'
+  );
 };
 
 window.jiViewerDownloadAll = function(){
-  jiViewerPhotos.forEach((p,i)=>{
-    setTimeout(()=>{
-      const a = document.createElement('a');
-      a.href = p;
-      a.download = 'journal_'+(jiViewerEntryDate||'photo')+'_'+(i+1)+'.jpg';
-      a.click();
-    }, i * 500);
-  });
-  if(typeof toast==='function') toast('⬇','Téléchargement en cours...');
+  if(jiViewerPhotos.length===1){
+    jiDownloadBlob(jiViewerPhotos[0], 'journal_'+(jiViewerEntryDate||'photo')+'_1.jpg');
+  } else {
+    jiDownloadAsZip(
+      jiViewerPhotos.map((src,i)=>({src, date: jiViewerEntryDate||'photo'})),
+      'journal_'+(jiViewerEntryDate||'photos')
+    );
+  }
 };
 </script>
 
