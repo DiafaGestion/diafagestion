@@ -242,7 +242,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 .menu-item{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;transition:background 0.15s;border:none;outline:none;background:none;width:100%;text-align:left;-webkit-tap-highlight-color:transparent;}
 .menu-item:hover,.menu-item:active{background:var(--bg);}
 .menu-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-.menu-label{font-size:14px;font-weight:600;color:var(--text);}
+.menu-label{font-size:14px;font-weight:700;color:#000000;}
 .menu-sub{font-size:11px;color:var(--text3);margin-top:1px;}
 .menu-badge{margin-left:auto;background:var(--red-l);color:var(--red);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
 .menu-badge.green{background:var(--green-l);color:var(--green);}
@@ -1376,12 +1376,12 @@ function printListPage(){
       <div class="drawer-section-label" style="margin-top:4px;">Planning dépenses</div>
       <button class="menu-item" onclick="closeDrawer();openPlanned()">
         <div class="menu-icon" style="background:#f3e8ff">📅</div>
-        <div><div class="menu-label" style="color:#000000;font-weight:700;">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
+        <div><div class="menu-label">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
         <span class="menu-badge" id="menuPlannedBadge" style="display:none">!</span>
       </button>
       <button class="menu-item" onclick="closeDrawer();openListPage('planned')">
         <div class="menu-icon" style="background:#f3e8ff">📋</div>
-        <div><div class="menu-label" style="color:#000000;font-weight:700;">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
+        <div><div class="menu-label">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
       </button>
 
       <div class="drawer-section-label">Créances & Dettes</div>
@@ -1450,19 +1450,19 @@ function printListPage(){
         <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
         <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
           <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
-          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
+          <div><div class="menu-label">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
         </button>
       </div>
 
       <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
-        <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
+        <div><div class="menu-label">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
 
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
       <button class="menu-item" onclick="resetApp()">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
-        <div><div class="menu-label" style="color:#ef4444;">Réinitialiser tout</div><div class="menu-sub">Effacer toutes les données</div></div>
+        <div><div class="menu-label">Réinitialiser tout</div><div class="menu-sub">Effacer toutes les données</div></div>
       </button>
 
     </div>
@@ -1709,38 +1709,48 @@ function getClientName(){ const p=getProfile(); return ((p.prenom||'')+' '+(p.no
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
-  // Sauvegarde locale immédiate comme filet de sécurité
+  // Sauvegarde locale immédiate comme filet de sécurité (admin inclus)
   const uid=localStorage.getItem('diafa_uid');
-  if(uid&&uid!=='admin_uid'){
-    try{ localStorage.setItem('diafa_data_'+uid, JSON.stringify(S)); }catch(e){}
+  if(uid){
+    const key = (uid==='admin_uid') ? 'diafa_data_admin' : 'diafa_data_'+uid;
+    try{ localStorage.setItem(key, JSON.stringify(S)); }catch(e){}
   }
   syncDataToFirebase();
 }
 async function syncDataToFirebase(){
   if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
-  if(!uid||uid==='admin_uid') return;
+  if(!uid) return;
   try{
     const d=JSON.parse(JSON.stringify(S)); delete d.type;
-    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+    if(uid==='admin_uid'){
+      // Sauvegarde dédiée admin dans la collection 'admin'
+      await db.collection('admin').doc('admin_data').set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+    } else {
+      await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+    }
   }catch(e){
-    // Erreur Firebase — les données sont déjà sauvegardées localement ci-dessus
     console.warn('Sync Firebase échouée — données conservées localement:', e);
     if(typeof toast==='function') toast('⚠️','Sync cloud échouée — données locales OK');
   }
 }
 async function loadDataFromFirebase(){
   const uid=localStorage.getItem('diafa_uid');
-  if(!uid||uid==='admin_uid') return;
+  if(!uid) return;
+  const isAdmin = (uid==='admin_uid');
+  const storageKey = isAdmin ? 'diafa_data_admin' : 'diafa_data_'+uid;
   // Essayer Firebase d'abord
   if(db){
     try{
-      const doc=await db.collection('clients').doc(uid).get();
+      const docRef = isAdmin
+        ? db.collection('admin').doc('admin_data')
+        : db.collection('clients').doc(uid);
+      const doc = await docRef.get();
       if(doc.exists&&doc.data().appData){
         S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
         Object.assign(S,JSON.parse(doc.data().appData));
         // Mettre à jour la sauvegarde locale de secours
-        try{ localStorage.setItem('diafa_data_'+uid, JSON.stringify(S)); }catch(e){}
+        try{ localStorage.setItem(storageKey, JSON.stringify(S)); }catch(e){}
         render();
         return;
       }
@@ -1749,7 +1759,7 @@ async function loadDataFromFirebase(){
     }
   }
   // Fallback : sauvegarde locale de secours
-  const localData = localStorage.getItem('diafa_data_'+uid);
+  const localData = localStorage.getItem(storageKey);
   if(localData){
     try{
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
@@ -2034,9 +2044,13 @@ async function logoutClient(){
   try{
     if(db){
       const uid=localStorage.getItem('diafa_uid');
-      if(uid&&uid!=='admin_uid'){
+      if(uid){
         const d=JSON.parse(JSON.stringify(S)); delete d.type;
-        await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+        if(uid==='admin_uid'){
+          await db.collection('admin').doc('admin_data').set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+        } else {
+          await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+        }
       }
     }
   }catch(e){
@@ -2815,65 +2829,6 @@ render();
 loadProfile();
 updateTrashBadge();
 
-// ── RESTAURATION DE SESSION APRÈS MISE À JOUR ──
-// Après une mise à jour GitHub/déploiement, le SW vide le cache.
-// Si l'utilisateur était connecté, on recharge ses données depuis Firebase
-// sans lui demander de se reconnecter.
-(async function restoreSession(){
-  const uid  = localStorage.getItem('diafa_uid');
-  const user = localStorage.getItem('diafa_user');
-  if(!uid || !user) return; // Pas de session → écran de login normal
-
-  // Masquer l'écran de login, l'utilisateur est déjà authentifié
-  document.getElementById('loginOverlay').classList.add('hidden');
-  document.getElementById('loginFormOverlay').classList.add('hidden');
-
-  const isAdmin = (uid === 'admin_uid');
-  if(isAdmin){
-    document.getElementById('adminTabBtn').style.display = 'block';
-  }
-
-  // Recharger profil + données depuis Firebase
-  if(!isAdmin){
-    await loadProfileFromFirebase(user);
-    loadProfile();
-  }
-
-  // Recharger les données applicatives depuis Firebase
-  if(db && uid && uid !== 'admin_uid'){
-    try{
-      const doc = await db.collection('clients').doc(uid).get();
-      if(doc.exists && doc.data().appData){
-        S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-        Object.assign(S, JSON.parse(doc.data().appData));
-        render();
-        if(typeof toast === 'function') toast('☁️','Données restaurées depuis le cloud');
-      } else {
-        // Pas de données Firebase — essayer la sauvegarde locale de secours
-        const localData = localStorage.getItem('diafa_data_' + uid);
-        if(localData){
-          try{
-            S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-            Object.assign(S, JSON.parse(localData));
-            render();
-            if(typeof toast === 'function') toast('💾','Données locales restaurées');
-          }catch(e){}
-        }
-      }
-    }catch(e){
-      console.warn('Restauration Firebase échouée:', e);
-      // Fallback local
-      const localData = localStorage.getItem('diafa_data_' + uid);
-      if(localData){
-        try{
-          S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-          Object.assign(S, JSON.parse(localData));
-          render();
-        }catch(e2){}
-      }
-    }
-  }
-})();
 
 // ══════════════════════════════════════════
 // PAGES LISTE + PDF
