@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v63';
+const CACHE_NAME = 'diafagestion-v60';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
