@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v78';
+const CACHE_NAME = 'diafagestion-v80';
 const ASSETS = [
   './',
   './index.html',
@@ -7,14 +7,14 @@ const ASSETS = [
   './icon-512.png'
 ];
 
-// URLs externes à ne JAMAIS mettre en cache (Firebase, fonts, CDN tiers)
-const NEVER_CACHE = [
+// Ces domaines ne doivent JAMAIS être interceptés par le SW
+const BYPASS_DOMAINS = [
   'gstatic.com',
   'googleapis.com',
   'firebaseio.com',
-  'firestore.googleapis.com',
-  'firebase.googleapis.com',
-  'cdnjs.cloudflare.com'
+  'cdnjs.cloudflare.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com'
 ];
 
 self.addEventListener('install', e => {
@@ -38,20 +38,21 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // Laisser passer sans cache : Firebase, CDN externes, requêtes POST
-  if (NEVER_CACHE.some(domain => url.includes(domain)) || e.request.method !== 'GET') {
-    e.respondWith(fetch(e.request));
-    return;
+  // Laisser passer Firebase, CDN et Google Fonts sans interception
+  if (BYPASS_DOMAINS.some(d => url.includes(d)) || e.request.method !== 'GET') {
+    return; // Le navigateur gère directement
   }
 
-  // Network-first pour les fichiers locaux
+  // Network-first pour les fichiers locaux de l'app
   e.respondWith(
-    fetch(e.request).then(response => {
-      if (response && response.status === 200) {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-      }
-      return response;
-    }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+    fetch(e.request)
+      .then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
   );
 });
