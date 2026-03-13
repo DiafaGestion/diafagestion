@@ -1032,7 +1032,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <div class="fr">
         <div class="fg"><label>Catégorie</label>
           <select id="txCat">
-            <option value="">-- Choisir --</option>
+            <option value="">Choisir une catégorie</option>
             <!-- Options injectées dynamiquement par setType() -->
           </select>
         </div>
@@ -1305,7 +1305,7 @@ function setType(t){
   // Vider complètement et reconstruire
   while(sel.firstChild) sel.removeChild(sel.firstChild);
   const def = document.createElement('option');
-  def.value=''; def.textContent='-- Choisir une catégorie --';
+  def.value=''; def.textContent='Choisir une catégorie';
   sel.appendChild(def);
   cats.forEach(c=>{
     const o=document.createElement('option');
