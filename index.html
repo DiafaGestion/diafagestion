@@ -1372,11 +1372,10 @@ function printListPage(){
     <div class="topbar-left">
       <div class="menu-btn" onclick="openDrawer()">☰</div>
     </div>
-    <div class="topbar-logo" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
-      <img src="data:image/png;base64,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" alt="DiafaGestion" style="height:38px;width:auto;">
-      <span style="font-size:8px;color:#9ca3af;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;text-align:center;display:block;">Gestion Financière Personnelle</span>
-      <span id="monthLabel" style="font-size:9px;color:#9ca3af;font-weight:600;display:block;text-align:center;"></span>
+    <div class="topbar-logo" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;">
+      <img src="data:image/png;base64,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" alt="DiafaGestion" style="height:32px;width:auto;display:block;">
+      <span style="font-size:6.5px;color:#b0b8c1;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;text-align:center;display:block;line-height:1.2;margin-top:1px;">Gestion Financière Personnelle</span>
+      <span id="monthLabel" style="font-size:8px;color:#9ca3af;font-weight:600;display:block;text-align:center;line-height:1.2;"></span>
     </div>
     </div>
   </div>
@@ -1557,14 +1556,12 @@ function printListPage(){
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
       <div id="adminTabBtn" style="display:none;">
-        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
-        <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
+        <div class="drawer-section-label" style="margin-top:4px;">Administration</div>
+        <button class="menu-item" onclick="closeDrawer();openAdminPanel();" style="border-left:3px solid #dc2626;">
           <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
-          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
+          <div><div class="menu-label" style="color:#dc2626;font-weight:800;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
         </button>
       </div>
-
-
       <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
         <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
@@ -1651,9 +1648,6 @@ function printListPage(){
     </div>
   </div>
 </div>
-    <div id="allPlannedList" style="overflow-y:auto;max-height:75vh"><div class="empty"><div class="empty-emoji">📅</div><div class="empty-text">Aucune dépense planifiée</div></div></div>
-  </div>
-</div>
 
 <!-- History page -->
 <div class="overlay" id="pageHistory">
@@ -1716,8 +1710,9 @@ function printListPage(){
 <div class="overlay" id="plannedOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">📅 Planifier une dépense</div><button class="sheet-close" onclick="closeSheet('plannedOverlay')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="plannedSheetTitle">📅 Planifier une dépense</div><button class="sheet-close" onclick="closeSheet('plannedOverlay')">✕</button></div>
     <div class="sheet-body">
+      <input type="hidden" id="pEditId" value="">
       <div class="fg"><label>Libellé</label><input type="text" id="pLbl" placeholder="Ex : Loyer, Abonnement…"></div>
       <div class="fr">
         <div class="fg"><label>Montant (GNF)</label><input type="number" id="pAmt" placeholder="0" inputmode="numeric"></div>
@@ -1728,7 +1723,7 @@ function printListPage(){
         <div class="fg"><label>Récurrence</label><select id="pRec"><option value="once">Une fois</option><option value="monthly">Mensuelle</option><option value="weekly">Hebdomadaire</option></select></div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-blue" onclick="savePlanned()">Planifier</button></div>
+    <div class="sheet-footer"><button class="cta cta-blue" id="plannedSaveBtn" onclick="savePlanned()">Planifier</button></div>
   </div>
 </div>
 
@@ -1828,44 +1823,42 @@ let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
-  // 1. Local d'abord (instantané, UI réactive)
-  try{ localStorage.setItem(getDataKey(), JSON.stringify(S)); } catch(e){}
-  // 2. Firebase en arrière-plan (source de vérité)
+  // Firebase = seule source de vérité pour les données financières
+  // Pas de cache localStorage → zéro risque de mélange entre clients
   syncDataToFirebase();
 }
 async function syncDataToFirebase(){
   if(!db) return;
   const uid = localStorage.getItem('diafa_uid');
-  if(!uid || uid === 'admin_uid') return; // Admin n'a pas de données financières
+  // Bloquer strictement : uid doit exister et ne pas être admin
+  if(!uid || uid === 'admin_uid' || uid === 'local') return;
   try{
     const d = JSON.parse(JSON.stringify(S));
-    delete d.type; // ne pas stocker le type de tab courant
+    delete d.type;
     await db.collection('clients').doc(uid).set({
       appData:   JSON.stringify(d),
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch(e){
-    // Silencieux — on réessayera au prochain save()
-    console.warn('syncDataToFirebase error:', e.message);
+    console.warn('syncDataToFirebase error (uid='+uid+'):', e.message);
   }
 }
 async function loadDataFromFirebase(){
   if(!db) return;
   const uid = localStorage.getItem('diafa_uid');
-  if(!uid || uid === 'admin_uid') return;
+  if(!uid || uid === 'admin_uid' || uid === 'local') return;
   try{
     const doc = await db.collection('clients').doc(uid).get();
     if(doc.exists && doc.data().appData){
-      // Firebase = source de vérité : on REMPLACE le local par Firebase
+      // Firebase = seule source de vérité — remplace toujours S
       const d = JSON.parse(doc.data().appData);
       const base = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
       S = {...base, ...d};
-      // Mettre à jour le cache local avec les données Firebase
-      try{ localStorage.setItem(getDataKey(), JSON.stringify(S)); } catch(e){}
+      // PAS de cache localStorage → zéro risque de mélange
     }
-    // Si pas de données Firebase → garder le cache local (première connexion)
+    // Si pas de données Firebase → S reste vide (nouveau client)
   } catch(e){
-    console.warn('loadDataFromFirebase error:', e.message);
+    console.warn('loadDataFromFirebase error (uid='+uid+'):', e.message);
   }
 }
 
@@ -2086,7 +2079,19 @@ function renderAllMethods(){
 
 // ── OPEN SHEETS ──
 function openTx(t){S.type=t;setType(t);document.getElementById('txDate').value=new Date().toISOString().split('T')[0];document.getElementById('txAmt').value='';document.getElementById('txLbl').value='';document.getElementById('txOverlay').classList.add('open');}
-function openPlanned(){const d=new Date();d.setDate(d.getDate()+7);document.getElementById('pDate').value=d.toISOString().split('T')[0];document.getElementById('pLbl').value='';document.getElementById('pAmt').value='';document.getElementById('plannedOverlay').classList.add('open');}
+function openPlanned(){
+  // Reset pour un NOUVEAU planifié
+  document.getElementById('pEditId').value = '';
+  document.getElementById('pLbl').value = '';
+  document.getElementById('pAmt').value = '';
+  const d = new Date(); d.setDate(d.getDate()+7);
+  document.getElementById('pDate').value = d.toISOString().split('T')[0];
+  document.getElementById('pCat').value = 'Loyer';
+  document.getElementById('pRec').value = 'once';
+  document.getElementById('plannedSheetTitle').textContent = '📅 Planifier une dépense';
+  document.getElementById('plannedSaveBtn').textContent = 'Planifier';
+  document.getElementById('plannedOverlay').classList.add('open');
+}
 function openMethod(){document.getElementById('mName').value='';document.getElementById('methodOverlay').classList.add('open');updateMFields();}
 function openGoal(){if(S.goal){document.getElementById('gName').value=S.goal.name;document.getElementById('gTarget').value=S.goal.target;document.getElementById('gCurrent').value=S.goal.current;}else{document.getElementById('gName').value='';document.getElementById('gTarget').value='';document.getElementById('gCurrent').value='';}document.getElementById('goalOverlay').classList.add('open');}
 function openBudgets(){document.getElementById('budgetFields').innerHTML=EXPENSE_CATS.map(c=>'<div class="fg"><label>'+ico(c)+' '+c+'</label><input type="number" data-cat="'+c+'" value="'+(S.budgets[c]||'')+'" placeholder="Pas de limite" inputmode="numeric"></div>').join('');document.getElementById('budgetsOverlay').classList.add('open');}
@@ -2102,21 +2107,43 @@ function setCDType(t){cdType2=t;document.getElementById('cdBtnD').className='cd-
 
 // ── SAVE ──
 function saveTx(){const amt=parseFloat(document.getElementById('txAmt').value),lbl=document.getElementById('txLbl').value.trim(),date=document.getElementById('txDate').value,cat=document.getElementById('txCat').value,meth=document.getElementById('txMeth').value;if(!amt||!lbl||!date||!cat){toast('⚠️','Remplissez tous les champs');return;}S.tx.unshift({id:Date.now(),type:S.type,amt,lbl,date,cat,meth,month:date.substring(0,7)});save();closeSheet('txOverlay');toast('✅',S.type==='income'?'Revenu ajouté !':'Dépense ajoutée !');render();}
+function openEditPlanned(id){
+  const p = S.planned.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('pEditId').value = id;
+  document.getElementById('pLbl').value = p.lbl || '';
+  document.getElementById('pAmt').value = p.amt || '';
+  document.getElementById('pDate').value = p.date || '';
+  document.getElementById('pCat').value = p.cat || 'Loyer';
+  document.getElementById('pRec').value = p.rec || 'once';
+  document.getElementById('plannedSheetTitle').textContent = '✏️ Modifier le planifié';
+  document.getElementById('plannedSaveBtn').textContent = 'Enregistrer';
+  document.getElementById('plannedOverlay').classList.add('open');
+}
+
 function savePlanned(){
-  const lbl=document.getElementById('pLbl').value.trim();
-  const amt=parseFloat(document.getElementById('pAmt').value);
-  const date=document.getElementById('pDate').value;
-  if(!lbl||!amt||!date){toast('⚠️','Remplissez tous les champs');return;}
-  S.planned.push({
-    id:Date.now(), lbl, amt, date,
-    cat:document.getElementById('pCat').value,
-    rec:document.getElementById('pRec').value,
-    // Suivi des rappels envoyés
-    notif7:false, notif3:false, notif8h:false
-  });
+  const lbl  = document.getElementById('pLbl').value.trim();
+  const amt  = parseFloat(document.getElementById('pAmt').value);
+  const date = document.getElementById('pDate').value;
+  const editId = document.getElementById('pEditId').value;
+  if(!lbl || !amt || !date){ toast('⚠️','Remplissez tous les champs'); return; }
+  const cat = document.getElementById('pCat').value;
+  const rec = document.getElementById('pRec').value;
+
+  if(editId){
+    // ── MODE ÉDITION ──
+    const idx = S.planned.findIndex(p=>String(p.id)===String(editId));
+    if(idx >= 0){
+      S.planned[idx] = { ...S.planned[idx], lbl, amt, date, cat, rec };
+      toast('✅', 'Planifié modifié !');
+    }
+  } else {
+    // ── MODE CRÉATION ──
+    S.planned.push({ id:Date.now(), lbl, amt, date, cat, rec, notif7:false, notif3:false, notif8h:false });
+    toast('📅', 'Planifié ! Vous serez rappelé 7j, 3j et 8h avant.');
+  }
   save();
   closeSheet('plannedOverlay');
-  toast('📅','Planifié ! Vous serez rappelé 7j, 3j et 8h avant.');
   render();
   renderAllPlanned();
 }
@@ -2165,6 +2192,7 @@ function plannedHTML(p){
     +'</div>'
     +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">'
       +'<div style="font-size:15px;font-weight:800;color:#dc2626;">-'+fmt(p.amt)+'</div>'
+      +'<button class="tx-del" style="background:#eff6ff;color:#1d4ed8;" onclick="openEditPlanned('+p.id+')">✏️</button>'
       +'<button class="tx-del" onclick="delPlanned('+p.id+')">🗑</button>'
     +'</div>'
     +'</div>';
@@ -2312,19 +2340,14 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 // ── RESET ──
 function logoutClient(){
   if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées dans le cloud ☁️')){
-    // Effacer le cache local de session uniquement
-    // Les données financières restent dans Firebase — rien n'est perdu
-    const uid = localStorage.getItem('diafa_uid');
-    if(uid && uid !== 'admin_uid'){
-      localStorage.removeItem('diafa_data_'+uid); // cache financier
+    // Effacer toutes les clés de session — données dans Firebase, rien perdu
+    // Nettoyer TOUTES les clés diafa_data_* pour éviter tout résidu
+    const keysToDelete = [];
+    for(let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('diafa_')) keysToDelete.push(k);
     }
-    localStorage.removeItem('diafa_profile');
-    localStorage.removeItem('diafa_uid');
-    localStorage.removeItem('diafa_user');
-    localStorage.removeItem('diafa_pwd');
-    localStorage.removeItem('fp_temp_avatar');
-    localStorage.removeItem('ca_temp_avatar');
-    localStorage.removeItem('diafa_trash');
+    keysToDelete.forEach(k => localStorage.removeItem(k));
     // Réinitialiser S (sécurité : éviter fuite entre comptes)
     S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     document.getElementById('adminTabBtn').style.display='none';
@@ -2337,9 +2360,7 @@ async function resetApp(){
   if(confirm('⚠️ Effacer toutes vos données financières ?\n(transactions, dettes, crédits, budgets...)\n\nVotre profil sera conservé. Irréversible !')){
     const uid = localStorage.getItem('diafa_uid');
     S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-    // Effacer le cache local
-    if(uid) localStorage.removeItem('diafa_data_'+uid);
-    localStorage.removeItem('diafa_v4');
+    // Effacer la corbeille locale
     localStorage.removeItem('diafa_trash');
     // Effacer aussi dans Firebase (données financières uniquement, profil conservé)
     if(db && uid && uid !== 'admin_uid'){
@@ -2394,17 +2415,19 @@ async function checkLogin(){
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('adminTabBtn').style.display='none';
 
-  const uid = localStorage.getItem('diafa_uid');
-  // Initialiser S vide
+  // S toujours vide à la connexion — Firebase est la seule source
   S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-  // Afficher depuis le cache local immédiatement (interface réactive)
-  try{ const s=localStorage.getItem(getDataKey()); if(s) S={...S,...JSON.parse(s)}; } catch(e){}
   loadProfile();
-  render();
-  // Firebase est la source de vérité — charger en priorité et remplacer le local
-  loadDataFromFirebase().then(()=>{ render(); syncAvatarFromFirebase(); startNotificationScheduler(); });
+  render(); // affiche dashboard vide pendant le chargement
+  // Charger depuis Firebase — seule source de vérité
   const prenom = (JSON.parse(localStorage.getItem('diafa_profile')||'{}')).prenom || user;
-  toast('👋', 'Bienvenue '+prenom+' !');
+  toast('👋', 'Bienvenue '+prenom+' ! Chargement...');
+  loadDataFromFirebase().then(()=>{ 
+    render(); 
+    syncAvatarFromFirebase(); 
+    startNotificationScheduler();
+    toast('✅', 'Données chargées !');
+  });
 }
 function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
 function closePwd(){
@@ -2948,12 +2971,47 @@ async function cmResetPassword(){
   if(!currentClientDoc) return;
   const c = currentClientDoc;
   const DEFAULT_PASS = 'Diafa2026';
-  if(!confirm('Réinitialiser le mot de passe de '+c.prenom+' ?\nLe nouveau mot de passe sera : '+DEFAULT_PASS)) return;
+  if(!confirm('Réinitialiser le mot de passe de '+c.prenom+' '+c.nom+' ?')) return;
   try{
-    await db.collection('clients').doc(c._docId).update({password: DEFAULT_PASS});
-    toast('🔑', 'Mot de passe de '+c.prenom+' réinitialisé !\nNouveau pass : '+DEFAULT_PASS);
+    // Vérifier que _docId est bien défini
+    const docId = c._docId || c.uid;
+    if(!docId){ toast('❌','Erreur : identifiant client introuvable'); return; }
+    await db.collection('clients').doc(docId).update({
+      password: DEFAULT_PASS,
+      updatedAt: new Date().toISOString()
+    });
     closeClientModal();
-  }catch(e){ toast('❌','Erreur: '+e.message); }
+    // Afficher modal de confirmation avec le nouveau mot de passe visible
+    showResetSuccess(c.prenom+' '+c.nom, c.login, DEFAULT_PASS);
+  }catch(e){
+    console.error('Reset password error:', e);
+    toast('❌','Erreur: '+e.message);
+  }
+}
+
+function showResetSuccess(name, login, pass){
+  // Créer un modal de confirmation clair
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3);">'+
+      '<div style="text-align:center;margin-bottom:16px;">'+
+        '<div style="font-size:40px;margin-bottom:8px;">🔑</div>'+
+        '<div style="font-size:18px;font-weight:800;color:#1a1d2e;">Mot de passe réinitialisé</div>'+
+        '<div style="font-size:13px;color:#6b7280;margin-top:4px;">'+escHtml(name)+'</div>'+
+      '</div>'+
+      '<div style="background:#f0fdf4;border:2px solid #86efac;border-radius:14px;padding:16px;margin-bottom:16px;text-align:center;">'+
+        '<div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Nouveau mot de passe</div>'+
+        '<div style="font-size:26px;font-weight:900;color:#15803d;letter-spacing:2px;font-family:monospace;">'+escHtml(pass)+'</div>'+
+        '<div style="font-size:11px;color:#6b7280;margin-top:6px;">Login : <strong>'+escHtml(login||'—')+'</strong></div>'+
+      '</div>'+
+      '<div style="font-size:12px;color:#f59e0b;background:#fffbeb;border-radius:10px;padding:10px;margin-bottom:16px;text-align:center;">'+
+        '⚠️ Communiquez ce mot de passe au client.<br>Il pourra le modifier depuis son profil.'+
+      '</div>'+
+      '<button onclick="this.parentElement.parentElement.remove()" style="width:100%;padding:14px;background:#1a7a4a;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">✅ Compris</button>'+
+    '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 }
 
 async function cmDeleteClient(){
@@ -2978,17 +3036,22 @@ function filterAdminClients(q){
 
 // ── EXPORT / IMPORT DATA ──
 function exportData(){
+  const uid = localStorage.getItem('diafa_uid');
   const data = {
-    diafa_v4: localStorage.getItem('diafa_v4'),
+    uid: uid,
+    appData: JSON.stringify(S), // données en mémoire (Firebase = source de vérité)
     diafa_profile: localStorage.getItem('diafa_profile'),
     diafa_trash: localStorage.getItem('diafa_trash'),
-    exportedAt: new Date().toISOString()
+    exportedAt: new Date().toISOString(),
+    version: 2
   };
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const name = (p.prenom||'client').toLowerCase().replace(/\s+/g,'-');
   const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'diafagestion-sauvegarde-' + new Date().toLocaleDateString('fr-FR').replace(/\//g,'-') + '.json';
+  a.download = 'diafagestion-'+name+'-' + new Date().toLocaleDateString('fr-FR').replace(/\//g,'-') + '.json';
   a.click();
   URL.revokeObjectURL(url);
   toast('💾','Sauvegarde téléchargée !');
@@ -3002,13 +3065,26 @@ function importData(){
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        if(data.diafa_v4) localStorage.setItem('diafa_v4', data.diafa_v4);
+        // Version 2 : clé par UID
+        if(data.version === 2 && data.appData){
+          localStorage.setItem(getDataKey(), data.appData);
+          // Sync vers Firebase immédiatement
+          if(data.appData){
+            const d = JSON.parse(data.appData);
+            const base={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[]};
+            S = {...base, ...d};
+            await syncDataToFirebase();
+          }
+        } else if(data.diafa_v4){
+          // Ancienne version — migrer vers la clé UID actuelle
+          localStorage.setItem(getDataKey(), data.diafa_v4);
+        }
         if(data.diafa_profile) localStorage.setItem('diafa_profile', data.diafa_profile);
-        if(data.diafa_trash) localStorage.setItem('diafa_trash', data.diafa_trash);
-        toast('✅','Données restaurées !');
+        if(data.diafa_trash)   localStorage.setItem('diafa_trash',   data.diafa_trash);
+        toast('✅','Données restaurées et synchronisées !');
         setTimeout(() => location.reload(), 1200);
       } catch(err){
         toast('❌','Fichier invalide !');
@@ -3142,9 +3218,14 @@ async function saveCreateAccount(){
     }catch(e){}
   }
 
-  // Save credentials
+  // Générer un UID UNIQUE pour ce nouveau client (jamais réutiliser un UID existant)
+  const newUid = generateUID();
+  localStorage.setItem('diafa_uid', newUid);
   localStorage.setItem('diafa_user', login);
   localStorage.setItem('diafa_pwd', pass);
+
+  // Initialiser S VIDE pour ce nouveau client
+  S = {tx:[], planned:[], methods:[], goal:null, budgets:{}, seuil:{min:0,pct:80}, cd:[], type:'income'};
 
   // Save profile
   const avatar = localStorage.getItem('ca_temp_avatar') || '';
@@ -3152,7 +3233,7 @@ async function saveCreateAccount(){
   const profile = { prenom, nom, telephone, dob, quartier, profession, situation, sexe, avatar, password: pass, createdAt: new Date().toISOString() };
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
-  // Sync Firebase avec le mot de passe (nécessaire pour connexion multi-appareils)
+  // Sync Firebase — UID déjà défini, pas de conflit possible
   await saveClientToFirebase(profile);
 
   // Enter app
@@ -3218,6 +3299,9 @@ function saveFirstProfile(){
 // ── INIT ──
 const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
 initFirebase();
+// S reste vide au démarrage — les données ne sont chargées qu'après login validé
+// Cela empêche tout affichage de données d'un autre client
+S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
 render();
 loadProfile();
 updateTrashBadge();
