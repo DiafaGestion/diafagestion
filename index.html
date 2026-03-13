@@ -1441,18 +1441,18 @@ function printListPage(){
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
 
-      <div id="adminTabBtn" style="display:none;">
-        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
-        <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
-          <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
-          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
-        </button>
-      </div>
-
       <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
         <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
+
+      <div id="adminTabBtn" style="display:none;">
+        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
+        <button class="menu-item" onclick="closeDrawer();openAdminPanel();" style="border-left:3px solid #dc2626;">
+          <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
+          <div><div class="menu-label" style="color:#dc2626;font-weight:800;">Panneau Admin</div><div class="menu-sub">Gérer les clients DiafaGestion</div></div>
+        </button>
+      </div>
 
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
       <button class="menu-item" onclick="resetApp()">
@@ -1700,30 +1700,32 @@ let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
-  try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}
+  // Firebase uniquement — localStorage JAMAIS pour les données financières
   syncDataToFirebase();
 }
 async function syncDataToFirebase(){
   if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
-  if(!uid) return;
+  if(!uid || uid==='admin_uid') return; // Admin n'a pas de données financières
   try{
     const d=JSON.parse(JSON.stringify(S)); delete d.type;
     await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-  }catch(e){}
+  }catch(e){console.error('syncFirebase error:',e);}
 }
 async function loadDataFromFirebase(){
   if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
-  if(!uid) return;
+  if(!uid || uid==='admin_uid') return;
   try{
     const doc=await db.collection('clients').doc(uid).get();
     if(doc.exists && doc.data().appData){
+      // Firebase remplace entièrement S — aucun résidu du compte précédent
+      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
       const d=JSON.parse(doc.data().appData);
       S={...S,...d};
-      localStorage.setItem(getDataKey(),JSON.stringify(S));
+      // PAS de localStorage pour les données financières
     }
-  }catch(e){}
+  }catch(e){console.error('loadFirebase error:',e);}
 }
 
 // ── UTILS ──
@@ -2055,8 +2057,8 @@ async function checkLogin(){
     // Admin: UID fixe, entre dans l'app + affiche bouton panneau
     localStorage.setItem('diafa_uid','admin_uid');
     localStorage.setItem('diafa_user', ADMIN_LOGIN);
+    // Admin : S vide, pas de données financières personnelles
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-    try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
     let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!ap.nom){
       ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
@@ -2077,7 +2079,7 @@ async function checkLogin(){
       // Profil trouvé (local ou Firebase)
       const uid=localStorage.getItem('diafa_uid');
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      try{const s=localStorage.getItem(getDataKey());if(s)S={...S,...JSON.parse(s)};}catch(e){}
+      // Données chargées depuis Firebase uniquement
       render();
       loadDataFromFirebase().then(()=>render());
     }
