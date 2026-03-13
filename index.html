@@ -853,7 +853,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <span style="color:#9ca3af;font-size:18px;">›</span>
       </div>
 
-      <div class="drawer-section-label">Planning dépenses</div>
+      <div class="drawer-section-label">Gestion</div>
       <button class="menu-item" onclick="closeDrawer();openPlanned()">
         <div class="menu-icon" style="background:#f3e8ff">📅</div>
         <div><div class="menu-label">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
@@ -863,8 +863,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div class="menu-icon" style="background:#f3e8ff">📋</div>
         <div><div class="menu-label">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
       </button>
-
-      <div class="drawer-section-label">Gestion</div>
       <button class="menu-item" onclick="closeDrawer();openPage('transactions')">
         <div class="menu-icon" style="background:var(--bg2)">📋</div>
         <div><div class="menu-label">Transactions</div><div class="menu-sub">Toutes les opérations</div></div>
@@ -874,7 +872,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div><div class="menu-label">Historique mensuel</div><div class="menu-sub">Mois précédents</div></div>
       </button>
 
-      <div class="drawer-section-label">Paramètres</div>
+      <div class="drawer-section-label" style="margin-top:8px;">Paramètres</div>
       <button class="menu-item" onclick="closeDrawer();openGoal()">
         <div class="menu-icon" style="background:var(--green-l)">🎯</div>
         <div><div class="menu-label">Objectif d'épargne</div><div class="menu-sub" id="menuGoal">Non défini</div></div>
@@ -885,32 +883,18 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </button>
       <button class="menu-item" onclick="closeDrawer();openSeuil()">
         <div class="menu-icon" style="background:var(--red-l)">🚨</div>
-        <div><div class="menu-label">Alertes financières</div><div class="menu-sub">Seuils & notifications</div></div>
-      </button>
-      <button class="menu-item" onclick="closeDrawer();openMethod()">
-        <div class="menu-icon" style="background:var(--purple-l)">💳</div>
-        <div><div class="menu-label">Méthodes de paiement</div><div class="menu-sub">Espèces, MoMo…</div></div>
+        <div><div class="menu-label">Alertes financières</div><div class="menu-sub">Seuils &amp; notifications</div></div>
       </button>
 
-      <div class="drawer-section-label" style="margin-top:8px;">Corbeille</div>
-      <button class="menu-item" onclick="closeDrawer();openTrash()">
-        <div class="menu-icon" style="background:#fee2e2">🗑️</div>
-        <div><div class="menu-label">Corbeille</div><div class="menu-sub" id="trashBadge">Vide</div></div>
-      </button>
-
-      <div class="drawer-section-label" style="margin-top:8px;">📓 Personnel</div>
+      <div class="drawer-section-label" style="margin-top:8px;">Personnel</div>
       <button class="menu-item" onclick="closeDrawer();openJournal()">
         <div class="menu-icon" style="background:#fce7f3">📔</div>
         <div><div class="menu-label">Journal Intime</div><div class="menu-sub">Mon journal secret</div></div>
       </button>
-
-      <div class="drawer-section-label" style="margin-top:8px;">Sécurité</div>
       <button class="menu-item" onclick="closeDrawer();openPwd()">
         <div class="menu-icon" style="background:#fef3c7">🔑</div>
-        <div><div class="menu-label">Modifier mes accès</div><div class="menu-sub">Identifiant & mot de passe</div></div>
+        <div><div class="menu-label">Modifier mes accès</div><div class="menu-sub">Identifiant &amp; mot de passe</div></div>
       </button>
-
-      <div class="drawer-section-label" style="margin-top:8px;">💾 Sauvegarde</div>
       <button class="menu-item" onclick="closeDrawer();exportData()">
         <div class="menu-icon" style="background:#dbeafe">💾</div>
         <div><div class="menu-label">Exporter mes données</div><div class="menu-sub">Télécharger une sauvegarde JSON</div></div>
@@ -920,20 +904,21 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
 
+      <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
       <div id="adminTabBtn" style="display:none;">
-        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
         <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
           <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
           <div><div class="menu-label">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
         </button>
       </div>
-
+      <button class="menu-item" onclick="closeDrawer();openTrash()">
+        <div class="menu-icon" style="background:#fee2e2">🗑️</div>
+        <div><div class="menu-label">Corbeille</div><div class="menu-sub" id="trashBadge">Vide</div></div>
+      </button>
       <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
         <div><div class="menu-label">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
-
-      <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
       <button class="menu-item" onclick="resetApp()">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
         <div><div class="menu-label">Réinitialiser tout</div><div class="menu-sub">Effacer toutes les données</div></div>
