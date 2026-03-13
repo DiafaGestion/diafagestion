@@ -1170,11 +1170,8 @@ async function syncDataToFirebase(){
   if(!uid) return;
   try{
     const d=JSON.parse(JSON.stringify(S)); delete d.type;
-    if(uid==='admin_uid'){
-      await db.collection('admin').doc('admin_data').set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-    } else {
-      await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-    }
+    // Admin et clients utilisent la même collection → mêmes règles Firestore
+    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
   }catch(e){
     // Echec silencieux — données conservées localement
     console.warn('Sync Firebase echouée:', e);
@@ -1185,9 +1182,8 @@ async function loadDataFromFirebase(){
   const uid=localStorage.getItem('diafa_uid');
   if(!uid) return;
   try{
-    const docRef=(uid==='admin_uid')
-      ? db.collection('admin').doc('admin_data')
-      : db.collection('clients').doc(uid);
+    // Admin et clients utilisent la même collection
+    const docRef = db.collection('clients').doc(uid);
     const doc=await docRef.get();
     if(doc.exists&&doc.data().appData){
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
@@ -1475,11 +1471,8 @@ async function logoutClient(){
       const uid=localStorage.getItem('diafa_uid');
       if(uid){
         const d=JSON.parse(JSON.stringify(S)); delete d.type;
-        if(uid==='admin_uid'){
-          await db.collection('admin').doc('admin_data').set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-        } else {
-          await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-        }
+        // Admin et clients → même collection
+        await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
       }
     }catch(e){ console.warn('Sync logout echouée:', e); }
   }
