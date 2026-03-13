@@ -1222,7 +1222,6 @@ async function loadDataFromFirebase(){
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
       Object.assign(S, JSON.parse(localData));
       render();
-      if(typeof toast==='function') toast('💾','Mode hors-ligne — données locales');
     }catch(e){}
   }
 }
