@@ -1373,10 +1373,15 @@ function printListPage(){
         <div class="menu-icon" style="background:var(--red-l)">💸</div>
         <div><div class="menu-label">Ajouter une dépense</div><div class="menu-sub">Loyer, transport…</div></div>
       </button>
+      <div class="drawer-section-label" style="margin-top:4px;">Planning dépenses</div>
       <button class="menu-item" onclick="closeDrawer();openPlanned()">
-        <div class="menu-icon" style="background:var(--blue-l)">📅</div>
-        <div><div class="menu-label">Planifier une dépense</div><div class="menu-sub" id="menuPlanned">Échéance future</div></div>
+        <div class="menu-icon" style="background:#f3e8ff">📅</div>
+        <div><div class="menu-label" style="color:#7c3aed;">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
         <span class="menu-badge" id="menuPlannedBadge" style="display:none">!</span>
+      </button>
+      <button class="menu-item" onclick="closeDrawer();openListPage('planned')">
+        <div class="menu-icon" style="background:#f3e8ff">📋</div>
+        <div><div class="menu-label" style="color:#7c3aed;">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
       </button>
 
       <div class="drawer-section-label">Créances & Dettes</div>
@@ -1441,18 +1446,18 @@ function printListPage(){
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
 
+      <div id="adminTabBtn" style="display:none;">
+        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
+        <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
+          <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
+          <div><div class="menu-label" style="color:#dc2626;">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
+        </button>
+      </div>
+
       <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
         <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
-
-      <div id="adminTabBtn" style="display:none;">
-        <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
-        <button class="menu-item" onclick="closeDrawer();openAdminPanel();" style="border-left:3px solid #dc2626;">
-          <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
-          <div><div class="menu-label" style="color:#dc2626;font-weight:800;">Panneau Admin</div><div class="menu-sub">Gérer les clients DiafaGestion</div></div>
-        </button>
-      </div>
 
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
       <button class="menu-item" onclick="resetApp()">
@@ -1700,32 +1705,31 @@ let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
-  // Firebase uniquement — localStorage JAMAIS pour les données financières
   syncDataToFirebase();
 }
 async function syncDataToFirebase(){
   if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
-  if(!uid || uid==='admin_uid') return; // Admin n'a pas de données financières
+  if(!uid||uid==='admin_uid') return;
   try{
     const d=JSON.parse(JSON.stringify(S)); delete d.type;
     await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-  }catch(e){console.error('syncFirebase error:',e);}
+  }catch(e){}
 }
 async function loadDataFromFirebase(){
   if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
-  if(!uid || uid==='admin_uid') return;
-  try{
-    const doc=await db.collection('clients').doc(uid).get();
-    if(doc.exists && doc.data().appData){
-      // Firebase remplace entièrement S — aucun résidu du compte précédent
-      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      const d=JSON.parse(doc.data().appData);
-      S={...S,...d};
-      // PAS de localStorage pour les données financières
-    }
-  }catch(e){console.error('loadFirebase error:',e);}
+  if(!uid||uid==='admin_uid') return;
+  (async()=>{
+    try{
+      const doc=await db.collection('clients').doc(uid).get();
+      if(doc.exists&&doc.data().appData){
+        S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+        Object.assign(S,JSON.parse(doc.data().appData));
+        render();
+      }
+    }catch(e){}
+  })();
 }
 
 // ── UTILS ──
@@ -2057,8 +2061,8 @@ async function checkLogin(){
     // Admin: UID fixe, entre dans l'app + affiche bouton panneau
     localStorage.setItem('diafa_uid','admin_uid');
     localStorage.setItem('diafa_user', ADMIN_LOGIN);
-    // Admin : S vide, pas de données financières personnelles
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    // donnees chargees depuis Firebase
     let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!ap.nom){
       ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
@@ -2079,7 +2083,7 @@ async function checkLogin(){
       // Profil trouvé (local ou Firebase)
       const uid=localStorage.getItem('diafa_uid');
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      // Données chargées depuis Firebase uniquement
+      // donnees chargees depuis Firebase
       render();
       loadDataFromFirebase().then(()=>render());
     }
@@ -2101,22 +2105,28 @@ function savePassword(){
   const nw=document.getElementById('pwdNew').value;
   const cf=document.getElementById('pwdConfirm').value;
   const err=document.getElementById('pwdError');
-  if(old!==(localStorage.getItem('diafa_pwd')||'')){err.textContent='❌ Mot de passe actuel incorrect';return;}
-  let changed=[];
-  if(newUser){
-    if(newUser.length<3){err.textContent='❌ Identifiant : minimum 3 caractères';return;}
-    localStorage.setItem('diafa_user',newUser);
-    changed.push('identifiant');
-  }
-  if(nw||cf){
-    if(nw.length<4){err.textContent='❌ Mot de passe : minimum 4 caractères';return;}
-    if(nw!==cf){err.textContent='❌ Les mots de passe ne correspondent pas';return;}
-    localStorage.setItem('diafa_pwd',nw);
-    changed.push('mot de passe');
-  }
-  if(changed.length===0){err.textContent='ℹ️ Aucune modification';return;}
-  closePwd();
-  toast('🔑', changed.join(' & ') + ' modifié(s) !');
+  const uid=localStorage.getItem('diafa_uid')||'';
+  (async()=>{
+    let curPwd=localStorage.getItem('diafa_pwd')||'';
+    if(db&&uid&&uid!=='admin_uid'){
+      try{const doc=await db.collection('clients').doc(uid).get();
+        if(doc.exists&&doc.data().password)curPwd=doc.data().password;}catch(e){}
+    }
+    if(old!==curPwd){err.textContent='Mot de passe actuel incorrect';return;}
+    if(newUser&&newUser.length<3){err.textContent='Identifiant min 3 caracteres';return;}
+    if((nw||cf)&&nw.length<4){err.textContent='Mot de passe min 4 caracteres';return;}
+    if((nw||cf)&&nw!==cf){err.textContent='Les mots de passe ne correspondent pas';return;}
+    if(!newUser&&!nw){err.textContent='Aucune modification';return;}
+    try{
+      const upd={updatedAt:new Date().toISOString()};
+      if(newUser){upd.login=newUser;localStorage.setItem('diafa_user',newUser);}
+      if(nw){upd.password=nw;localStorage.setItem('diafa_pwd',nw);}
+      if(db&&uid&&uid!=='admin_uid')await db.collection('clients').doc(uid).update(upd);
+      closePwd();
+      const lbl=[newUser?'identifiant':'',nw?'mot de passe':''].filter(Boolean).join(' & ');
+      toast('ok',lbl+' modifie !');
+    }catch(e2){err.textContent='Erreur: '+e2.message;}
+  })();
 }
 
 
@@ -2398,9 +2408,14 @@ async function checkLoginFromFirebase(user, pass, err){
       return false;
     }
     const data = snap.docs[0].data();
-    if(data.login === user){
-      // Restaurer localStorage depuis Firebase
+    if(data.login === user && data.password === pass){
+      if(data.status === 'suspended'){
+        err.textContent='Compte suspendu. Contactez administrateur.';
+        err.style.display='block';
+        return false;
+      }
       localStorage.setItem('diafa_user', user);
+      localStorage.setItem('diafa_pwd', pass);
       if(data.uid) localStorage.setItem('diafa_uid', data.uid);
       err.style.display='none';
       return true;
@@ -2450,47 +2465,47 @@ async function loadAdminClients(){
 
 function renderAdminClients(clients){
   const el=document.getElementById('adminClientList');
-  if(!clients.length){el.innerHTML='<div class="admin-empty">Aucun client trouvé</div>';return;}
+  if(!clients.length){el.innerHTML='<div class="admin-empty">Aucun client</div>';return;}
   el.innerHTML='';
   clients.forEach(c=>{
-    const suspended=c.status==='suspended';
-    const initials=((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
-    const date=c.createdAt?new Date(c.createdAt).toLocaleDateString('fr-FR'):'—';
+    const susp=c.status==='suspended';
+    const ini=((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
+    const dt=c.createdAt?new Date(c.createdAt).toLocaleDateString('fr-FR'):'—';
     const card=document.createElement('div');
     card.className='admin-card';
-    card.style.borderLeft=suspended?'4px solid #f59e0b':'4px solid #1a7a4a';
-    const badge='<span style="padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800;background:'+(suspended?'#fef3c7':'#dcfce7')+';color:'+(suspended?'#92400e':'#15803d')+'">'+(suspended?'Suspendu':'Actif')+'</span>';
+    card.style.borderLeft=susp?'4px solid #f59e0b':'4px solid #1a7a4a';
+    const badge='<span style="padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800;background:'+(susp?'#fef3c7':'#dcfce7')+';color:'+(susp?'#92400e':'#15803d')+'">'+(susp?'Suspendu':'Actif')+'</span>';
     card.innerHTML=
       '<div class="admin-card-row">'+
-        (c.avatar?'<img src="'+c.avatar+'" class="admin-avatar" alt="">':'<div class="admin-avatar-placeholder">'+initials+'</div>')+
+        (c.avatar?'<img src="'+c.avatar+'" class="admin-avatar" alt="">':'<div class="admin-avatar-placeholder">'+ini+'</div>')+
         '<div class="admin-info">'+
           '<div class="admin-name">'+escHtml((c.prenom||'')+' '+(c.nom||''))+' '+badge+'</div>'+
           '<div class="admin-meta">'+
-            '<span>👤 '+escHtml(c.login||'—')+'  📞 '+(c.telephone||'—')+'</span>'+
-            '<span>📅 '+date+'</span>'+
+            '<span>Identifiant: '+escHtml(c.login||'—')+'  Tel: '+(c.telephone||'—')+'</span>'+
+            '<span>Inscrit le '+dt+'</span>'+
           '</div>'+
         '</div>'+
       '</div>'+
       '<div class="admin-card-btns">'+
-        '<button class="btn-ac btn-ac-susp'+(suspended?' is-susp':'')+'">'+(suspended?'▶ Activer':'⏸ Désactiver')+'</button>'+
-        '<button class="btn-ac btn-ac-reset">🔑 Réinit.</button>'+
-        '<button class="btn-ac btn-ac-del">🗑 Supprimer</button>'+
+        '<button class="btn-ac btn-ac-susp'+(susp?' is-susp':'')+'">'+(susp?'Activer':'Desactiver')+'</button>'+
+        '<button class="btn-ac btn-ac-reset">Reinit. Pass</button>'+
+        '<button class="btn-ac btn-ac-del">Supprimer</button>'+
       '</div>';
     card.querySelector('.btn-ac-susp').addEventListener('click',async ev=>{
       ev.stopPropagation();
-      if(!confirm((suspended?'Réactiver':'Désactiver')+' '+c.prenom+' ?'))return;
-      try{const docId=c._docId||c.uid;await db.collection('clients').doc(docId).update({status:suspended?'active':'suspended'});toast('✅',c.prenom+(suspended?' réactivé':' suspendu'));await loadAdminClients();}catch(err){toast('❌','Erreur: '+err.message);}
+      if(!confirm((susp?'Reactiver':'Desactiver')+' '+c.prenom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).update({status:susp?'active':'suspended'});toast('ok',c.prenom+(susp?' reactivé':' suspendu'));await loadAdminClients();}catch(e){toast('err','Erreur: '+e.message);}
     });
     card.querySelector('.btn-ac-reset').addEventListener('click',async ev=>{
       ev.stopPropagation();
       const P='Diafa2026';
-      if(!confirm('Réinitialiser le mot de passe de '+c.prenom+' ?'))return;
-      try{const docId=c._docId||c.uid;await db.collection('clients').doc(docId).update({password:P});alert('✅ Mot de passe réinitialisé\nClient: '+c.prenom+'\nLogin: '+c.login+'\nNouv. pass: '+P);}catch(err){toast('❌','Erreur: '+err.message);}
+      if(!confirm('Reinitialiser le mot de passe de '+c.prenom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});alert('Mot de passe reinitialise. Login: '+c.login+' Pass: '+P);}catch(e){toast('err','Erreur: '+e.message);}
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
-      if(!confirm('Supprimer définitivement '+c.prenom+' '+c.nom+' ?'))return;
-      try{const docId=c._docId||c.uid;await db.collection('clients').doc(docId).delete();toast('✅','Compte supprimé');await loadAdminClients();}catch(err){toast('❌','Erreur: '+err.message);}
+      if(!confirm('Supprimer definitivement '+c.prenom+' '+c.nom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).delete();toast('ok','Compte supprime');await loadAdminClients();}catch(e){toast('err','Erreur: '+e.message);}
     });
     card.addEventListener('click',()=>openClientModal(c));
     el.appendChild(card);
@@ -2775,170 +2790,169 @@ function openListPage(type){
 }
 
 function renderListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
-  const m = month();
-  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
-
-  // Titres et données selon type
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
-  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
-
-  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
-  const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'income' || type === 'expense'){
-    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
-    tabsEl.innerHTML = opts.map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
+  const type=listPageType;
+  const allM=[...new Set(S.tx.map(t=>t.month))].sort().reverse();
+  const titles={income:'Revenus',expense:'Depenses',debt:'Creanciers',credit:'Debiteurs',planned:'Planning Depenses'};
+  const emojis={income:'💰',expense:'💸',debt:'🤲',credit:'🙏',planned:'📅'};
+  document.getElementById('pageListTitle').textContent=(emojis[type]||'📋')+' '+(titles[type]||'Liste');
+  const tabsEl=document.getElementById('pageListTabs');
+  if(type==='planned'){
+    tabsEl.innerHTML=[['all','Tous'],['upcoming','A venir'],['past','Passes']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>').join('');
+  } else if(type==='income'||type==='expense'){
+    const opts=[['all','Tous'],...allM.slice(0,6).map(m=>[m,monthLabel(m)])];
+    tabsEl.innerHTML=opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>').join('');
   } else {
-    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
+    tabsEl.innerHTML=[['all','Tous'],['active','En cours'],['paid','Regles']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>').join('');
   }
-
-  // Event delegation pour les onglets
   tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
-    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+    btn.addEventListener('click',()=>{listPageFilter=btn.dataset.lf;renderListPage();});
   });
-
-  // Données
-  let items = [];
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  const today=new Date().toISOString().split('T')[0];
+  let items=[];
+  if(type==='planned'){
+    if(!S.planned)S.planned=[];
+    items=[...S.planned];
+    if(listPageFilter==='upcoming') items=items.filter(p=>p.date>=today);
+    if(listPageFilter==='past')     items=items.filter(p=>p.date<today);
+    items=items.sort((a,b)=>a.date.localeCompare(b.date));
+  } else if(type==='income'||type==='expense'){
+    items=S.tx.filter(t=>t.type===type);
+    if(listPageFilter!=='all') items=items.filter(t=>t.month===listPageFilter);
+    items=[...items].sort((a,b)=>b.date.localeCompare(a.date));
   } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    if(!S.cd)S.cd=[];
+    items=S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items=items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items=items.filter(c=>c.paid);
+    items=[...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
   }
-
-  // Résumé
-  const sumEl = document.getElementById('pageListSummary');
-  if(type === 'income' || type === 'expense'){
-    const total = items.reduce((s,t)=>s+t.amt, 0);
-    const color = type==='income' ? 'var(--green)' : 'var(--red)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  const sumEl=document.getElementById('pageListSummary');
+  if(type==='planned'){
+    const tot=items.reduce((s,p)=>s+p.amt,0);
+    const upNb=items.filter(p=>p.date>=today).length;
+    sumEl.innerHTML=
+      '<div style="background:#f3e8ff;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+fmt(tot)+' GNF</div></div>'+
+      '<div style="background:#ede9fe;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">A venir</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+upNb+'</div></div>';
+  } else if(type==='income'||type==='expense'){
+    const tot=items.reduce((s,t)=>s+t.amt,0);
+    const col=type==='income'?'var(--green)':'var(--red)';
+    sumEl.innerHTML=
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+col+';">'+fmt(tot)+'</div></div>'+
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Operations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
   } else {
-    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
-    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
-    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+    const tp=items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount,0);
+    const tr=items.filter(c=>c.paid).reduce((s,c)=>s+c.amount,0);
+    const col=type==='debt'?'var(--red)':'var(--green)';
+    sumEl.innerHTML=
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+col+';">'+fmt(tp)+'</div></div>'+
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Regle</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(tr)+'</div></div>';
   }
-
-  // Liste
-  const el = document.getElementById('pageListContent');
-  if(!items.length){
-    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+  const el=document.getElementById('pageListContent');
+  if(!items.length){el.innerHTML='<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entree</div></div>';return;}
+  if(type==='planned'){
+    el.innerHTML=items.map(p=>{
+      const past=p.date<today;
+      const dj=Math.round((new Date(p.date)-new Date())/864e5);
+      const urgent=!past&&dj<=2;
+      const rec=p.rec==='monthly'?'Mensuel':p.rec==='weekly'?'Hebdo':'1x';
+      const col2=past?'#9ca3af':urgent?'#dc2626':'#7c3aed';
+      return '<div class="tx-item" style="border-left:4px solid '+col2+';">'+
+        '<div class="tx-main"><div class="tx-lbl">'+escHtml(p.lbl)+'</div>'+
+        '<div class="tx-meta">'+p.date+' - '+p.cat+' - '+rec+'</div></div>'+
+        '<div class="tx-right"><div class="tx-amt" style="color:'+col2+';">-'+fmt(p.amt)+'</div>'+
+        '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:'+(past?'#f3f4f6':urgent?'#fee2e2':'#f3e8ff')+';color:'+col2+'">'+(past?'Passe':urgent?'Urgent':dj+'j')+'</span></div></div>';
+    }).join('');
     return;
   }
-
-  if(type === 'income' || type === 'expense'){
-    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  if(type==='income'||type==='expense'){
+    el.innerHTML=items.map(t=>txHTML(t)).join('');
   } else {
-    el.innerHTML = items.map(c=>{
-      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
-        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
-        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
-        : '<span class="badge b-ok">📅 '+days+' j</span>';
-      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    el.innerHTML=items.map(c=>{
+      const days=daysTo(c.date),ov=!c.paid&&days<0,sn=!c.paid&&days>=0&&days<=7;
+      const badge=c.paid?'<span class="badge b-paid">Regle</span>':
+        ov?'<span class="badge b-late">Retard '+Math.abs(days)+' j</span>':
+        days===0?'<span class="badge b-urgent">Aujourd hui</span>':
+        sn?'<span class="badge b-soon">'+days+' j</span>':
+        '<span class="badge b-ok">'+days+' j</span>';
+      const ini=c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
       return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
-        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+ini+'</div>'+
         '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-reason">'+c.reason+' - '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' - '+c.date+'</div></div>'+
         '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
     }).join('');
   }
 }
 
 function printListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
-  const title = titles[type] || 'Liste';
-  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-
-  // Construire les lignes du tableau
-  let thead = '', rows = '';
-  let items = [];
-
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-    const total = items.reduce((s,t)=>s+t.amt,0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
-    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  const type=listPageType;
+  const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName=((p.prenom||'')+' '+(p.nom||'')).trim()||'Client';
+  const titlesP={income:'Revenus',expense:'Depenses',debt:'Creanciers',credit:'Debiteurs',planned:'Planning Depenses'};
+  const title=titlesP[type]||'Liste';
+  const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  let thead='',rows='',items=[];
+  const tod=new Date().toISOString().split('T')[0];
+  if(type==='planned'){
+    if(!S.planned)S.planned=[];
+    items=[...S.planned];
+    if(listPageFilter==='upcoming') items=items.filter(x=>x.date>=tod);
+    if(listPageFilter==='past')     items=items.filter(x=>x.date<tod);
+    items=items.sort((a,b)=>a.date.localeCompare(b.date));
+    const totP=items.reduce((s,x)=>s+x.amt,0);
+    const recL={monthly:'Mensuel',weekly:'Hebdo','1x':'1 fois'};
+    thead='<tr><th>#</th><th>Date</th><th>Libelle</th><th>Categorie</th><th>Recurrence</th><th>Montant (GNF)</th></tr>';
+    rows=items.map((x,n)=>'<tr><td>'+(n+1)+'</td><td>'+x.date+'</td><td>'+escHtml(x.lbl)+'</td><td>'+x.cat+'</td><td>'+(recL[x.rec]||x.rec||'—')+'</td><td style="text-align:right;font-weight:700;color:#7c3aed;">'+x.amt.toLocaleString('fr-FR')+'</td></tr>').join('');
+    rows+='<tr style="background:#f3e8ff;font-weight:800"><td colspan="5" style="color:#7c3aed;">TOTAL</td><td style="text-align:right;color:#7c3aed;">'+totP.toLocaleString('fr-FR')+' GNF</td></tr>';
+  } else if(type==='income'||type==='expense'){
+    items=S.tx.filter(t=>t.type===type);
+    if(listPageFilter!=='all') items=items.filter(t=>t.month===listPageFilter);
+    items=[...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const tot=items.reduce((s,t)=>s+t.amt,0);
+    thead='<tr><th>#</th><th>Date</th><th>Libelle</th><th>Categorie</th><th>Methode</th><th>Montant (GNF)</th></tr>';
+    rows=items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+t.cat+'</td><td>'+t.meth+'</td><td style="text-align:right;font-weight:700;">'+t.amt.toLocaleString('fr-FR')+'</td></tr>').join('');
+    rows+='<tr style="background:#f0fdf4;font-weight:800"><td colspan="5">TOTAL</td><td style="text-align:right;">'+tot.toLocaleString('fr-FR')+' GNF</td></tr>';
   } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const total = items.reduce((s,c)=>s+c.amount,0);
-    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
-    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+    if(!S.cd)S.cd=[];
+    items=S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items=items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items=items.filter(c=>c.paid);
+    items=[...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const totP2=items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount,0);
+    thead='<tr><th>#</th><th>Date</th><th>Nom</th><th>Motif</th><th>Statut</th><th>Montant (GNF)</th></tr>';
+    rows=items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+c.date+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason)+'</td><td>'+(c.paid?'Regle':'En cours')+'</td><td style="text-align:right;font-weight:700;">'+c.amount.toLocaleString('fr-FR')+'</td></tr>').join('');
+    rows+='<tr style="background:#fef9c3;font-weight:800"><td colspan="5">TOTAL EN COURS</td><td style="text-align:right;">'+totP2.toLocaleString('fr-FR')+' GNF</td></tr>';
   }
-
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8">
-<title>DiafaGestion — ${title}</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
-  .logo-zone{display:flex;align-items:center;gap:12px;}
-  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
-  .logo-sub{font-size:12px;color:#6b7280;}
-  .meta{text-align:right;font-size:12px;color:#6b7280;}
-  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
-  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
-  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
-  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
-  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
-  tr:nth-child(even){background:#f8fafc;}
-  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
-  @media print{body{padding:10px;}button{display:none!important;}}
+  const filterLbl=listPageFilter==='all'?'Toutes periodes':listPageFilter==='upcoming'?'A venir':listPageFilter==='past'?'Passes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Regles':monthLabel(listPageFilter);
+  const html2=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title} — ${clientName}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;padding:20px;color:#111;}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1a7a4a;}
+.logo{font-size:22px;font-weight:900;}.logo span{color:#dc2626;}
+.meta{text-align:right;font-size:12px;color:#6b7280;}
+h2{font-size:18px;margin-bottom:8px;color:#111;}
+.sub{font-size:12px;color:#6b7280;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:#f8fafc;padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;border-bottom:2px solid #e5e7eb;}
+td{padding:8px 10px;border-bottom:1px solid #f3f4f6;}
+tr:hover td{background:#fafafa;}
+.footer{margin-top:24px;font-size:10px;color:#9ca3af;text-align:center;}
+@media print{body{padding:10px;}}
 </style></head><body>
-<div class="header">
-  <div class="logo-zone">
-    <div>
-      <div class="logo-title">DiafaGestion</div>
-      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div style="font-weight:700;">${clientName}</div>
-    <div>Généré le ${now}</div>
-  </div>
-</div>
-<h2>${title}</h2>
-<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<div class="header"><div class="logo"><span>Diafa</span>Gestion</div>
+<div class="meta"><div><strong>${clientName}</strong></div><div>Liste : ${title}</div><div>Filtre : ${filterLbl}</div><div>Date : ${now}</div></div></div>
+<h2>${title}</h2><div class="sub">Filtre : ${filterLbl} — ${items.length} element(s)</div>
 <table><thead>${thead}</thead><tbody>${rows}</tbody></table>
-<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669</div>
 </body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
+  const win=window.open('','_blank');
+  win.document.write(html2);
   win.document.close();
   win.focus();
-  setTimeout(()=>{ win.print(); }, 400);
+  setTimeout(()=>{win.print();},400);
 }
 
 </script>
