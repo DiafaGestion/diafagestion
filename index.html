@@ -11,7 +11,188 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+</script>
 <style>
 :root{
   --white:#ffffff; --bg:#f5f6fa; --bg2:#eef0f6; --border:#e2e5f0;
@@ -50,14 +231,14 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 /* ── DRAWER MENU (RIGHT) ── */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);z-index:200;display:none;justify-content:flex-start;}
 .drawer-overlay.open{display:flex;}
-.drawer{background:var(--white);width:280px;max-width:85vw;height:100%;display:flex;flex-direction:column;animation:drawerIn 0.28s cubic-bezier(0.34,1.1,0.64,1);}
+.drawer{background:var(--white);width:280px;max-width:85vw;height:100%;display:flex;flex-direction:column;animation:drawerIn 0.25s ease-out;}
 @keyframes drawerIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 .drawer-head{padding:20px 18px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .drawer-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;}
 .drawer-close{width:30px;height:30px;border-radius:50%;background:var(--bg2);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
 .drawer-body{flex:1;overflow-y:auto;padding:10px 0;}
 .drawer-section-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:12px 18px 4px;}
-.menu-item{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;transition:background 0.15s;border:none;background:none;width:100%;text-align:left;}
+.menu-item{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;transition:background 0.15s;border:none;outline:none;background:none;width:100%;text-align:left;-webkit-tap-highlight-color:transparent;}
 .menu-item:hover,.menu-item:active{background:var(--bg);}
 .menu-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 .menu-label{font-size:14px;font-weight:600;color:var(--text);}
@@ -97,12 +278,19 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 .qa-btn{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;box-shadow:var(--sh);}
 .qa-btn:active{transform:scale(0.97);}
 .qa-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.qa-wrap{display:flex;flex-direction:column;gap:5px;}
 .qa-btn.inc .qa-icon{background:var(--green-l);}
 .qa-btn.exp .qa-icon{background:var(--red-l);}
 .qa-btn.debt .qa-icon{background:var(--orange-l);}
 .qa-btn.credit .qa-icon{background:var(--blue-l);}
 .qa-lbl{font-size:13px;font-weight:600;}
 .qa-sub{font-size:11px;color:var(--text3);}
+.qa-list{border:none;border-radius:10px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:4px;}
+.qa-list:active{transform:scale(0.96);}
+.qa-list.inc{background:#dcfce7;color:#15803d;}
+.qa-list.exp{background:#fee2e2;color:#b91c1c;}
+.qa-list.debt{background:#fff7ed;color:#c2410c;}
+.qa-list.credit{background:#dbeafe;color:#1d4ed8;}
 
 /* ── SECTION ── */
 .section{margin-bottom:18px;}
@@ -254,7 +442,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 /* ── OVERLAY / SHEET ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:300;display:none;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
-.sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding-bottom:max(20px,env(safe-area-inset-bottom));animation:sheetUp 0.3s cubic-bezier(0.34,1.2,0.64,1);max-height:92vh;overflow-y:auto;}
+.sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding-bottom:max(20px,env(safe-area-inset-bottom));animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);max-height:92vh;overflow-y:auto;}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .sheet-handle{width:36px;height:4px;background:var(--border);border-radius:100px;margin:12px auto 0;}
 .sheet-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -401,8 +589,370 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .firstprofile-required{color:#dc2626;font-size:11px;margin-top:4px;}
 </style>
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+</script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
+</script>
 </head>
 <body>
 
@@ -412,7 +962,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
 <!-- CREATE ACCOUNT OVERLAY -->
 <div class="login-overlay hidden" id="createAccountOverlay">
-  <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA" style="height:60px;">
+  <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA" style="height:70px;width:70px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.5);">
   <div class="login-title" style="font-size:20px;">Créer mon compte</div>
   <div class="login-sub">Renseignez vos informations</div>
   <div style="width:100%;max-width:400px;background:#fff;border-radius:20px;padding:20px;box-sizing:border-box;overflow-y:auto;max-height:75vh;">
@@ -460,6 +1010,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
     </div>
 
+    <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">💍 Situation matrimoniale</div>
       <select id="caSituation" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
         <option value="">-- Sélectionner --</option>
@@ -546,7 +1097,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
   <div class="admin-header">
     <h1>🛡️ Panel Admin</h1>
     <p>DiafaGestion — Gestion des clients</p>
-    <button class="admin-logout" onclick="logoutAdmin()">Déconnexion</button>
+    <button class="admin-logout" onclick="closeAdminPanel()">✕ Fermer</button>
   </div>
   <div class="admin-stats">
     <div class="admin-stat">
@@ -605,15 +1156,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <option value="">-- Sélectionner --</option>
         <option value="Masculin">👨 Masculin</option>
         <option value="Féminin">👩 Féminin</option>
-      </select>
-    </div>
-    <div class="profile-fg"><label>Situation matrimoniale</label>
-      <select id="pSituation">
-        <option value="">-- Sélectionner --</option>
-        <option value="Célibataire">Célibataire</option>
-        <option value="Marié(e)">Marié(e)</option>
-        <option value="Divorcé(e)">Divorcé(e)</option>
-        <option value="Veuf/Veuve">Veuf/Veuve</option>
       </select>
     </div>
     <div class="profile-fg"><label>Situation matrimoniale</label>
@@ -713,6 +1255,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
       <img src="data:image/png;base64,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" alt="DiafaGestion" style="height:38px;width:auto;">
       <span style="font-size:10px;color:#6b7280;font-weight:700;letter-spacing:0.2px;white-space:nowrap;text-align:center;display:block;">Gestion Financière Personnelle</span>
+      <span id="monthLabel" style="font-size:9px;color:#9ca3af;font-weight:600;display:block;text-align:center;"></span>
     </div>
     </div>
   </div>
@@ -736,10 +1279,22 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <!-- QUICK ACTIONS -->
     <div class="qa-grid">
-      <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
-      <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
-      <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
-      <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
+      <div class="qa-wrap">
+        <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
+        <button class="qa-list inc" onclick="openListPage('income')">📋 Liste</button>
+      </div>
+      <div class="qa-wrap">
+        <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
+        <button class="qa-list exp" onclick="openListPage('expense')">📋 Liste</button>
+      </div>
+      <div class="qa-wrap">
+        <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
+        <button class="qa-list debt" onclick="openListPage('debt')">📋 Liste</button>
+      </div>
+      <div class="qa-wrap">
+        <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
+        <button class="qa-list credit" onclick="openListPage('credit')">📋 Liste</button>
+      </div>
     </div>
 
     <!-- PREVISION -->
@@ -881,9 +1436,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
       </button>
 
-      <div class="drawer-section-label" style="margin-top:8px;">Compte</div>
-      
-            <div id="adminTabBtn" style="display:none;">
+      <div id="adminTabBtn" style="display:none;">
         <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
         <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
           <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
@@ -891,13 +1444,13 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         </button>
       </div>
 
-<button class="menu-item" onclick="logoutClient()" style="border:2px solid #1a7a4a;">
-        <div class="menu-icon" style="background:#dcfce7">🚪</div>
-        <div><div class="menu-label" style="color:#1a7a4a;">Changer de compte</div><div class="menu-sub">Se déconnecter et accéder à un autre compte</div></div>
+      <button class="menu-item" onclick="logoutClient()">
+        <div class="menu-icon" style="background:#dcfce7;">🚪</div>
+        <div><div class="menu-label" style="color:#1a7a4a;">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
       </button>
 
       <div class="drawer-section-label" style="margin-top:8px;">Danger</div>
-      <button class="menu-item" onclick="resetApp()" style="border:2px solid #ef4444;">
+      <button class="menu-item" onclick="resetApp()">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
         <div><div class="menu-label" style="color:#ef4444;">Réinitialiser tout</div><div class="menu-sub">Effacer toutes les données</div></div>
       </button>
@@ -1138,9 +1691,35 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <script>
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-try{const s=localStorage.getItem('diafa_v4');if(s)S={...S,...JSON.parse(s)};}catch(e){}
+// Clé de données liée au client connecté
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
-function save(){try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}}
+// NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
+function save(){
+  try{localStorage.setItem(getDataKey(),JSON.stringify(S));}catch(e){}
+  syncDataToFirebase();
+}
+async function syncDataToFirebase(){
+  if(!db) return;
+  const uid=localStorage.getItem('diafa_uid');
+  if(!uid) return;
+  try{
+    const d=JSON.parse(JSON.stringify(S)); delete d.type;
+    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+  }catch(e){}
+}
+async function loadDataFromFirebase(){
+  if(!db) return;
+  const uid=localStorage.getItem('diafa_uid');
+  if(!uid) return;
+  try{
+    const doc=await db.collection('clients').doc(uid).get();
+    if(doc.exists && doc.data().appData){
+      const d=JSON.parse(doc.data().appData);
+      S={...S,...d};
+      localStorage.setItem(getDataKey(),JSON.stringify(S));
+    }
+  }catch(e){}
+}
 
 // ── UTILS ──
 const fmt=n=>new Intl.NumberFormat('fr-FR').format(Math.round(n))+' GNF';
@@ -1410,237 +1989,17 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 
 
 // ── RESET ──
-async function syncDataToFirebase(){
-  if(!db) return;
-  const uid=localStorage.getItem('diafa_uid');
-  if(!uid) return;
-  try{
-    const d=JSON.parse(JSON.stringify(S)); delete d.type;
-    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-  }catch(e){}
-}
-
-async function loadDataFromFirebase(){
-  if(!db) return;
-  const uid=localStorage.getItem('diafa_uid');
-  if(!uid) return;
-  try{
-    const doc=await db.collection('clients').doc(uid).get();
-    if(doc.exists && doc.data().appData){
-      const d=JSON.parse(doc.data().appData);
-      S={...S,...d};
-      localStorage.setItem(getDataKey(),JSON.stringify(S));
-    }
-  }catch(e){}
-}
-
-function closeAdminPanel(){
-  document.getElementById('adminPanel').classList.add('hidden');
-}
-
-async function toggleSuspendClient(docId, isSuspended){
-  if(!db||!docId) return;
-  if(!confirm(isSuspended?'Réactiver ce client ?':'Suspendre ce client ?')) return;
-  try{
-    await db.collection('clients').doc(docId).update({status: isSuspended?'active':'suspended'});
-    toast('✅', isSuspended?'Client réactivé !':'Client suspendu !');
-    await loadAdminClients();
-  }catch(e){ toast('❌','Erreur: '+e.message); }
-}
-
-async function deleteClient(docId){
-  if(!db||!docId) return;
-  if(!confirm('⚠️ Supprimer définitivement ce client ?\nImpossible d\'annuler !')) return;
-  try{
-    await db.collection('clients').doc(docId).delete();
-    toast('🗑','Client supprimé !');
-    await loadAdminClients();
-  }catch(e){ toast('❌','Erreur: '+e.message); }
-}
-
-function openListPage(type){
-  listPageType = type;
-  listPageFilter = 'all';
-  renderListPage();
-  document.getElementById('pageList').classList.add('open');
-}
-
-function renderListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
-  const m = month();
-  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
-
-  // Titres et données selon type
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
-  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
-
-  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
-  const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'income' || type === 'expense'){
-    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
-    tabsEl.innerHTML = opts.map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  } else {
-    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  }
-
-  // Event delegation pour les onglets
-  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
-    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
-  });
-
-  // Données
-  let items = [];
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-  }
-
-  // Résumé
-  const sumEl = document.getElementById('pageListSummary');
-  if(type === 'income' || type === 'expense'){
-    const total = items.reduce((s,t)=>s+t.amt, 0);
-    const color = type==='income' ? 'var(--green)' : 'var(--red)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
-  } else {
-    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
-    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
-    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
-    sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
-  }
-
-  // Liste
-  const el = document.getElementById('pageListContent');
-  if(!items.length){
-    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
-    return;
-  }
-
-  if(type === 'income' || type === 'expense'){
-    el.innerHTML = items.map(t=>txHTML(t)).join('');
-  } else {
-    el.innerHTML = items.map(c=>{
-      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
-        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
-        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
-        : '<span class="badge b-ok">📅 '+days+' j</span>';
-      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
-        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
-        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
-        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
-    }).join('');
-  }
-}
-
-function printListPage(){
-  const type = listPageType;
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
-  const title = titles[type] || 'Liste';
-  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
-
-  // Construire les lignes du tableau
-  let thead = '', rows = '';
-  let items = [];
-
-  if(type === 'income' || type === 'expense'){
-    items = S.tx.filter(t=>t.type===type);
-    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
-    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
-    const total = items.reduce((s,t)=>s+t.amt,0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
-    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
-  } else {
-    if(!S.cd) S.cd=[];
-    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
-    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
-    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
-    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const total = items.reduce((s,c)=>s+c.amount,0);
-    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
-    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
-    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8">
-<title>DiafaGestion — ${title}</title>
-<style>
-  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
-  .logo-zone{display:flex;align-items:center;gap:12px;}
-  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
-  .logo-sub{font-size:12px;color:#6b7280;}
-  .meta{text-align:right;font-size:12px;color:#6b7280;}
-  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
-  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
-  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
-  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
-  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
-  table{width:100%;border-collapse:collapse;font-size:12px;}
-  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
-  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
-  tr:nth-child(even){background:#f8fafc;}
-  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
-  @media print{body{padding:10px;}button{display:none!important;}}
-</style></head><body>
-<div class="header">
-  <div class="logo-zone">
-    <div>
-      <div class="logo-title">DiafaGestion</div>
-      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div style="font-weight:700;">${clientName}</div>
-    <div>Généré le ${now}</div>
-  </div>
-</div>
-<h2>${title}</h2>
-<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
-<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
-<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
-</body></html>`;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(()=>{ win.print(); }, 400);
-}
-
-
 function logoutClient(){
-  if(confirm('Voulez-vous vous déconnecter ?\nVos données resteront sauvegardées.')){
-    // Clear per-session data but keep credentials
+  if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées.')){
     localStorage.removeItem('diafa_profile');
     localStorage.removeItem('diafa_uid');
+    localStorage.removeItem('diafa_user');
+    localStorage.removeItem('diafa_pwd');
     localStorage.removeItem('fp_temp_avatar');
     localStorage.removeItem('ca_temp_avatar');
-    // Show login screen
+    // Réinitialiser S pour éviter fuite de données entre comptes
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    document.getElementById('adminTabBtn').style.display='none';
     closeDrawer();
     document.getElementById('loginOverlay').classList.remove('hidden');
   }
@@ -1658,43 +2017,6 @@ function resetApp(){
 
 
 // ── LOGIN / PASSWORD ──
-async function checkLoginFromFirebase(user, pass, err){
-  if(!db){
-    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',4000);
-    return false;
-  }
-  try {
-    err.textContent='⏳ Vérification en cours...';
-    err.style.display='block';
-    const snap = await db.collection('clients').where('login','==',user).limit(1).get();
-    if(snap.empty){
-      err.textContent='❌ Identifiant ou mot de passe incorrect';
-      err.style.display='block';
-      setTimeout(()=>err.style.display='none',3000);
-      return false;
-    }
-    const data = snap.docs[0].data();
-    if(data.login === user){
-      // Restaurer localStorage depuis Firebase
-      localStorage.setItem('diafa_user', user);
-      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
-      err.style.display='none';
-      return true;
-    }
-    err.textContent='❌ Identifiant ou mot de passe incorrect';
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',3000);
-    return false;
-  } catch(e){
-    err.textContent='❌ Erreur réseau: ' + e.message;
-    err.style.display='block';
-    setTimeout(()=>err.style.display='none',4000);
-    return false;
-  }
-}
-
 async function checkLogin(){
   const user=document.getElementById('loginUser').value.trim();
   const pass=document.getElementById('loginPass').value;
@@ -1810,6 +2132,7 @@ function loadProfile(){
   if(p.dob) { document.getElementById('pDOB').value = p.dob; calcAge(p.dob); }
   if(p.quartier) document.getElementById('pQuartier').value = p.quartier;
   if(p.profession) document.getElementById('pProfession').value = p.profession;
+  if(p.sexe)      document.getElementById('pSexe').value      = p.sexe;
   if(p.situation) document.getElementById('pSituation').value = p.situation;
 }
 function calcAge(dob){
@@ -1851,7 +2174,8 @@ function saveProfile(){
   p.dob        = document.getElementById('pDOB').value;
   p.quartier   = document.getElementById('pQuartier').value.trim();
   p.profession = document.getElementById('pProfession').value.trim();
-  p.matrimonial= document.getElementById('pMatrimonial').value;
+  p.sexe        = document.getElementById('pSexe').value;
+  p.situation   = document.getElementById('pSituation').value;
   if(!p.createdAt) p.createdAt = new Date().toISOString();
   localStorage.setItem('diafa_profile', JSON.stringify(p));
   saveClientToFirebase(p);
@@ -1865,13 +2189,7 @@ function saveProfile(){
 // ── WELCOME SCREEN NAVIGATION ──
 function showAccessLogin(){
   // If no account exists, suggest creating one first
-  if(!localStorage.getItem('diafa_user')){
-    const err = document.getElementById('loginError');
-    err.textContent = '⚠️ Aucun compte trouvé. Veuillez d\'abord créer un compte.';
-    err.style.display = 'block';
-    setTimeout(()=>err.style.display='none', 4000);
-    return;
-  }
+  // Toujours afficher le formulaire (admin peut se connecter même sans compte client)
   document.getElementById('loginOverlay').classList.add('hidden');
   document.getElementById('loginFormOverlay').classList.remove('hidden');
   setTimeout(()=>document.getElementById('loginUser').focus(), 100);
@@ -1957,9 +2275,12 @@ async function saveClientToFirebase(profile){
       telephone:  profile.telephone || '',
       quartier:   profile.quartier  || '',
       profession: profile.profession|| '',
+      situation:  profile.situation  || '',
+      sexe:       profile.sexe       || '',
       dob:        profile.dob       || '',
       avatar:     avatarData,
       login:      localStorage.getItem('diafa_user') || '',
+      status:     'active',
       createdAt:  profile.createdAt || new Date().toISOString(),
       updatedAt:  new Date().toISOString()
     }, { merge: true });
@@ -1993,7 +2314,9 @@ async function loadProfileFromFirebase(login){
     if(!snap.empty){
       const data = snap.docs[0].data();
       if(data.uid) localStorage.setItem('diafa_uid', data.uid);
-      const p = {};
+      // Fusionner avec le profil local existant (priorité Firebase)
+      const existing = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+      const p = {...existing};
       if(data.avatar)     p.avatar     = data.avatar;
       if(data.nom)        p.nom        = data.nom;
       if(data.prenom)     p.prenom     = data.prenom;
@@ -2001,9 +2324,12 @@ async function loadProfileFromFirebase(login){
       if(data.quartier)   p.quartier   = data.quartier;
       if(data.profession) p.profession = data.profession;
       if(data.dob)        p.dob        = data.dob;
+      if(data.situation)  p.situation  = data.situation;
+      if(data.sexe)       p.sexe       = data.sexe;
       if(data.createdAt)  p.createdAt  = data.createdAt;
       localStorage.setItem('diafa_profile', JSON.stringify(p));
     }
+    // Si pas trouvé Firebase, on garde le profil local tel quel
   } catch(e){ console.warn('Load profile error:', e); }
 }
 
@@ -2040,12 +2366,44 @@ function generateUID(){
 function checkAdminLogin(){
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value.trim();
-  if(u === ADMIN_LOGIN && p === ADMIN_PASS){
-    document.getElementById('loginOverlay').classList.add('hidden');
-    openAdminPanel();
-    return true;
+  return (u === ADMIN_LOGIN && p === ADMIN_PASS);
+}
+
+async function checkLoginFromFirebase(user, pass, err){
+  if(!db){
+    err.textContent='❌ Aucun compte trouvé. Veuillez créer un compte.';
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',4000);
+    return false;
   }
-  return false;
+  try {
+    err.textContent='⏳ Vérification en cours...';
+    err.style.display='block';
+    const snap = await db.collection('clients').where('login','==',user).limit(1).get();
+    if(snap.empty){
+      err.textContent='❌ Identifiant ou mot de passe incorrect';
+      err.style.display='block';
+      setTimeout(()=>err.style.display='none',3000);
+      return false;
+    }
+    const data = snap.docs[0].data();
+    if(data.login === user){
+      // Restaurer localStorage depuis Firebase
+      localStorage.setItem('diafa_user', user);
+      if(data.uid) localStorage.setItem('diafa_uid', data.uid);
+      err.style.display='none';
+      return true;
+    }
+    err.textContent='❌ Identifiant ou mot de passe incorrect';
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',3000);
+    return false;
+  } catch(e){
+    err.textContent='❌ Erreur réseau: ' + e.message;
+    err.style.display='block';
+    setTimeout(()=>err.style.display='none',4000);
+    return false;
+  }
 }
 
 function openAdminPanel(){
@@ -2053,63 +2411,93 @@ function openAdminPanel(){
   loadAdminClients();
 }
 
+function closeAdminPanel(){
+  document.getElementById('adminPanel').classList.add('hidden');
+}
+
 function logoutAdmin(){
   document.getElementById('adminPanel').classList.add('hidden');
-  document.getElementById('loginOverlay').classList.remove('hidden');
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
 }
 
 async function loadAdminClients(){
   const el = document.getElementById('adminClientList');
-  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.<br>Configurez Firebase pour voir les clients.</div>'; return; }
+  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.</div>'; return; }
   el.innerHTML = '<div class="admin-empty">Chargement...</div>';
   try {
-    const snap = await db.collection('clients').orderBy('createdAt','desc').get();
-    ALL_CLIENTS = snap.docs.map(d => d.data());
-    renderAdminClients(ALL_CLIENTS);
+    const snap = await db.collection('clients').get();
+    ALL_CLIENTS = snap.docs.map(d => ({...d.data(), _docId: d.id}))
+      .filter(c => c.login !== 'admin' && c.login !== ADMIN_LOGIN)
+      .sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
     document.getElementById('adminTotalClients').textContent = ALL_CLIENTS.length;
     const today = new Date().toDateString();
-    const todayCount = ALL_CLIENTS.filter(c => new Date(c.createdAt).toDateString() === today).length;
-    document.getElementById('adminTodayClients').textContent = todayCount;
+    document.getElementById('adminTodayClients').textContent = ALL_CLIENTS.filter(c=>new Date(c.createdAt).toDateString()===today).length;
+    renderAdminClients(ALL_CLIENTS);
   } catch(e){
-    el.innerHTML = '<div class="admin-empty">Erreur de chargement: ' + e.message + '</div>';
+    el.innerHTML = '<div class="admin-empty">Erreur: ' + e.message + '</div>';
   }
 }
 
 function renderAdminClients(clients){
   const el = document.getElementById('adminClientList');
-  if(!clients.length){ el.innerHTML = '<div class="admin-empty">Aucun client inscrit</div>'; return; }
-  el.innerHTML = clients.map(c => {
+  if(!clients.length){ el.innerHTML = '<div class="admin-empty">Aucun client trouvé</div>'; return; }
+  el.innerHTML = '';
+  clients.forEach(c => {
+    const suspended = c.status === 'suspended';
     const initials = ((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
     const date = c.createdAt ? new Date(c.createdAt).toLocaleDateString('fr-FR') : '—';
-    return '<div class="admin-card">' +
-      '<div class="admin-avatar-placeholder">'+initials+'</div>' +
+    const card = document.createElement('div');
+    card.className = 'admin-card';
+    card.style.cssText = suspended ? 'opacity:0.65;border-left:4px solid #f59e0b;' : 'border-left:4px solid #1a7a4a;';
+    card.innerHTML =
+      (c.avatar ? '<img src="'+c.avatar+'" class="admin-avatar" alt="">' : '<div class="admin-avatar-placeholder">'+initials+'</div>') +
       '<div class="admin-info">' +
         '<div class="admin-name">'+escHtml((c.prenom||'')+' '+(c.nom||''))+'</div>' +
         '<div class="admin-meta">' +
-          '<span>📞 '+(c.telephone||'Non renseigné')+'</span>' +
-          '<span>📍 '+(c.quartier||'Non renseigné')+'</span>' +
-          '<span>💼 '+(c.profession||'Non renseigné')+'</span>' +
-          '<span>📅 Inscrit le '+date+'</span>' +
+          '<span>👤 '+escHtml(c.login||'—')+'</span>' +
+          '<span>📞 '+(c.telephone||'—')+'</span>' +
+          '<span>📍 '+(c.quartier||'—')+' · 💼 '+(c.profession||'—')+'</span>' +
+          '<span>📅 '+date+'</span>' +
         '</div>' +
       '</div>' +
-      '<span class="admin-badge">Actif</span>' +
-    '</div>';
-  }).join('');
+      '<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">' +
+        '<span class="admin-badge" style="background:'+(suspended?'#fef3c7':'#dcfce7')+';color:'+(suspended?'#92400e':'#15803d')+';">'+(suspended?'⏸ Suspendu':'✅ Actif')+'</span>' +
+        '<button class="btn-susp" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid '+(suspended?'#1a7a4a':'#f59e0b')+';background:'+(suspended?'#dcfce7':'#fef3c7')+';color:'+(suspended?'#15803d':'#92400e')+';cursor:pointer;font-weight:700;">'+(suspended?'▶ Réactiver':'⏸ Suspendre')+'</button>' +
+        '<button class="btn-del2" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid #ef4444;background:#fee2e2;color:#dc2626;cursor:pointer;font-weight:700;">🗑 Supprimer</button>' +
+      '</div>';
+    card.querySelector('.btn-susp').addEventListener('click', () => toggleSuspendClient(c._docId, suspended));
+    card.querySelector('.btn-del2').addEventListener('click', () => deleteClient(c._docId));
+    el.appendChild(card);
+  });
+}
+
+async function toggleSuspendClient(docId, isSuspended){
+  if(!db||!docId) return;
+  if(!confirm(isSuspended?'Réactiver ce client ?':'Suspendre ce client ?')) return;
+  try{
+    await db.collection('clients').doc(docId).update({status: isSuspended?'active':'suspended'});
+    toast('✅', isSuspended?'Client réactivé !':'Client suspendu !');
+    await loadAdminClients();
+  }catch(e){ toast('❌','Erreur: '+e.message); }
+}
+
+async function deleteClient(docId){
+  if(!db||!docId) return;
+  if(!confirm('⚠️ Supprimer définitivement ce client ?\nImpossible d\'annuler !')) return;
+  try{
+    await db.collection('clients').doc(docId).delete();
+    toast('🗑','Client supprimé !');
+    await loadAdminClients();
+  }catch(e){ toast('❌','Erreur: '+e.message); }
 }
 
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function filterAdminClients(q){
-  const ql = q.toLowerCase();
-  const filtered = ALL_CLIENTS.filter(c =>
-    (c.nom||'').toLowerCase().includes(ql) ||
-    (c.prenom||'').toLowerCase().includes(ql) ||
-    (c.telephone||'').includes(ql) ||
-    (c.quartier||'').toLowerCase().includes(ql)
-  );
-  renderAdminClients(filtered);
+  const ql=q.toLowerCase();
+  renderAdminClients(ALL_CLIENTS.filter(c=>
+    (c.nom||'').toLowerCase().includes(ql)||(c.prenom||'').toLowerCase().includes(ql)||
+    (c.telephone||'').includes(ql)||(c.quartier||'').toLowerCase().includes(ql)
+  ));
 }
 
 // ── EXPORT / IMPORT DATA ──
@@ -2344,7 +2732,192 @@ initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
+const _ml=document.getElementById('monthLabel');
+if(_ml){const d=new Date();const j=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const m=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];_ml.textContent=j[d.getDay()]+' '+d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear();}
+
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
 </script>
+
+<!-- PAGE LISTE + PDF -->
 <div class="overlay" id="pageList">
   <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;">
     <div class="sheet-handle"></div>
@@ -2364,5 +2937,16 @@ updateTrashBadge();
     <!-- Liste scrollable -->
     <div id="pageListContent" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
   </div>
-</body>
-</html>
+</div>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    Promise.all(regs.map(function(r){return r.unregister();})).then(function(){
+      if('caches' in window) caches.keys().then(function(keys){keys.forEach(function(k){caches.delete(k);});});
+      navigator.serviceWorker.register('./sw.js');
+    });
+  });
+}
+</script>
+</body></html>
