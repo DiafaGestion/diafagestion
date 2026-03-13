@@ -461,7 +461,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">🎂 Date de naissance</div>
-      <input id="caDOB" type="date" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
+      <input id="caDOB" type="date" onchange="calcAge(this.value,'caAge')" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
+      <div style="margin-top:10px;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;">🎂 Âge</div>
+      <input id="caAge" type="text" readonly placeholder="Calculé automatiquement" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#f5f6fa;color:#9ca3af;">
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -547,7 +549,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div class="firstprofile-label">📞 Numéro de téléphone *</div>
     <input class="firstprofile-input" type="tel" id="fpTel" placeholder="Ex: 625 00 00 00">
     <div class="firstprofile-label">🎂 Date de naissance</div>
-    <input class="firstprofile-input" type="date" id="fpDOB">
+    <input class="firstprofile-input" type="date" id="fpDOB" onchange="calcAge(this.value,'fpAge')">
+    <div class="firstprofile-label">🎂 Âge</div>
+    <input class="firstprofile-input" type="text" id="fpAge" readonly placeholder="Calculé automatiquement" style="background:#1e2235;color:#9ca3af;">
     <div class="firstprofile-label">📍 Quartier</div>
     <input class="firstprofile-input" type="text" id="fpQuartier" placeholder="Ex: Kaloum, Ratoma...">
     <div class="firstprofile-label">💼 Profession</div>
@@ -1651,14 +1655,23 @@ function loadProfile(){
   if(p.sexe)      document.getElementById('pSexe').value      = p.sexe;
   if(p.situation) document.getElementById('pSituation').value = p.situation;
 }
-function calcAge(dob){
+function calcAge(dob, targetId){
   if(!dob) return;
   const birth = new Date(dob);
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const m = today.getMonth() - birth.getMonth();
   if(m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  document.getElementById('pAge').value = age + ' ans';
+  const label = age + ' an' + (age > 1 ? 's' : '');
+  // Mettre à jour le champ cible (pAge par défaut)
+  const id = targetId || 'pAge';
+  const el = document.getElementById(id);
+  if(el) el.value = label;
+  // Toujours aussi mettre à jour pAge si c'est le profil principal
+  if(id !== 'pAge') {
+    const pAge = document.getElementById('pAge');
+    if(pAge) pAge.value = label;
+  }
 }
 function handleAvatar(event){
   const file = event.target.files[0];
@@ -1972,14 +1985,30 @@ function renderAdminClients(clients){
     card.className='admin-card';
     card.style.borderLeft=susp?'4px solid #f59e0b':'4px solid #1a7a4a';
     const badge='<span style="padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800;background:'+(susp?'#fef3c7':'#dcfce7')+';color:'+(susp?'#92400e':'#15803d')+'">'+(susp?'Suspendu':'Actif')+'</span>';
+    // Calcul âge depuis dob
+    let ageLabel = '—';
+    if(c.dob){
+      const birth = new Date(c.dob);
+      const today = new Date();
+      let a = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if(m < 0 || (m === 0 && today.getDate() < birth.getDate())) a--;
+      ageLabel = a + ' an' + (a > 1 ? 's' : '');
+    } else if(c.age) {
+      ageLabel = c.age;
+    }
+    // Téléphone cliquable
+    const telDisplay = c.telephone
+      ? '<a href="tel:'+c.telephone+'" onclick="event.stopPropagation()" style="color:#dc2626;font-weight:700;text-decoration:none;">📞 '+c.telephone+'</a>'
+      : '—';
     card.innerHTML=
       '<div class="admin-card-row">'+
         (c.avatar?'<img src="'+c.avatar+'" class="admin-avatar" alt="">':'<div class="admin-avatar-placeholder">'+ini+'</div>')+
         '<div class="admin-info">'+
           '<div class="admin-name">'+escHtml((c.prenom||'')+' '+(c.nom||''))+' '+badge+'</div>'+
           '<div class="admin-meta">'+
-            '<span>Identifiant: '+escHtml(c.login||'—')+'  Tel: '+(c.telephone||'—')+'</span>'+
-            '<span>Inscrit le '+dt+'</span>'+
+            '<span>ID: '+escHtml(c.login||'—')+'&nbsp;&nbsp;'+telDisplay+'</span>'+
+            '<span>🎂 Âge: '+ageLabel+'&nbsp;&nbsp;Inscrit le '+dt+'</span>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -2200,7 +2229,8 @@ async function saveCreateAccount(){
   // Save profile
   const avatar = localStorage.getItem('ca_temp_avatar') || '';
   localStorage.removeItem('ca_temp_avatar');
-  const profile = { prenom, nom, telephone, dob, quartier, profession, situation, sexe, avatar, createdAt: new Date().toISOString() };
+  const age = document.getElementById('caAge') ? document.getElementById('caAge').value : '';
+  const profile = { prenom, nom, telephone, dob, age, quartier, profession, situation, sexe, avatar, createdAt: new Date().toISOString() };
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
   // Sync Firebase (await pour que l'UID soit prêt avant d'entrer dans l'app)
@@ -2244,10 +2274,11 @@ function saveFirstProfile(){
   if(!telephone){ alert('⚠️ Le numéro de téléphone est obligatoire'); document.getElementById('fpTel').focus(); return; }
 
   const dob = document.getElementById('fpDOB').value;
+  const age = document.getElementById('fpAge') ? document.getElementById('fpAge').value : '';
   const avatar = localStorage.getItem('fp_temp_avatar') || '';
   localStorage.removeItem('fp_temp_avatar');
   const profile = {
-    prenom, nom, telephone, quartier, profession, dob, avatar,
+    prenom, nom, telephone, quartier, profession, dob, age, avatar,
     createdAt: new Date().toISOString()
   };
 
