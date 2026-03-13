@@ -1,11 +1,20 @@
-const CACHE_NAME = 'diafagestion-v77';
+const CACHE_NAME = 'diafagestion-v78';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js'
+  './icon-512.png'
+];
+
+// URLs externes à ne JAMAIS mettre en cache (Firebase, fonts, CDN tiers)
+const NEVER_CACHE = [
+  'gstatic.com',
+  'googleapis.com',
+  'firebaseio.com',
+  'firestore.googleapis.com',
+  'firebase.googleapis.com',
+  'cdnjs.cloudflare.com'
 ];
 
 self.addEventListener('install', e => {
@@ -16,21 +25,26 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  // CORRECTION : supprimer uniquement les ANCIENS caches, pas le cache actuel
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys
-          .filter(k => k !== CACHE_NAME)
-          .map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
       )
     )
   );
   self.clients.claim();
 });
 
-// TOUJOURS network-first pour forcer la dernière version
 self.addEventListener('fetch', e => {
+  const url = e.request.url;
+
+  // Laisser passer sans cache : Firebase, CDN externes, requêtes POST
+  if (NEVER_CACHE.some(domain => url.includes(domain)) || e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Network-first pour les fichiers locaux
   e.respondWith(
     fetch(e.request).then(response => {
       if (response && response.status === 200) {
