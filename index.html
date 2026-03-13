@@ -1275,7 +1275,15 @@ function renderAllMethods(){
 }
 
 // ── OPEN SHEETS ──
-function openTx(t){S.type=t;setType(t);document.getElementById('txDate').value=new Date().toISOString().split('T')[0];document.getElementById('txAmt').value='';document.getElementById('txLbl').value='';document.getElementById('txOverlay').classList.add('open');}
+function openTx(t){
+  S.type=t;
+  document.getElementById('txDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('txAmt').value='';
+  document.getElementById('txLbl').value='';
+  document.getElementById('txOverlay').classList.add('open');
+  // Injecter les catégories après ouverture du panneau
+  setType(t);
+}
 function openPlanned(){const d=new Date();d.setDate(d.getDate()+7);document.getElementById('pDate').value=d.toISOString().split('T')[0];document.getElementById('pLbl').value='';document.getElementById('pAmt').value='';document.getElementById('plannedOverlay').classList.add('open');}
 function openMethod(){document.getElementById('mName').value='';document.getElementById('methodOverlay').classList.add('open');updateMFields();}
 function openGoal(){if(S.goal){document.getElementById('gName').value=S.goal.name;document.getElementById('gTarget').value=S.goal.target;document.getElementById('gCurrent').value=S.goal.current;}else{document.getElementById('gName').value='';document.getElementById('gTarget').value='';document.getElementById('gCurrent').value='';}document.getElementById('goalOverlay').classList.add('open');}
@@ -1290,12 +1298,20 @@ function setType(t){
   document.getElementById('btnInc').className='type-btn'+(t==='income'?' si':'');
   document.getElementById('btnExp').className='type-btn'+(t==='expense'?' se':'');
   document.getElementById('txSheetTitle').textContent=t==='income'?'Ajouter un revenu':'Ajouter une dépense';
-  // Mettre à jour les catégories selon le type sélectionné
   const INCOME_CATS=['Salaire','Commerce','Investissement','Prime / Bonus','Autre revenu'];
-  const cats = t==='income' ? INCOME_CATS : EXPENSE_CATS;
+  const DEPENSE_CATS=['Alimentation','Transport','Logement / Loyer','Santé','Éducation','Loisirs','Épargne / Tontine','Mobile Money','Famille','Business','Autre'];
+  const cats = t==='income' ? INCOME_CATS : DEPENSE_CATS;
   const sel = document.getElementById('txCat');
-  sel.innerHTML = '<option value="">-- Choisir une catégorie --</option>' +
-    cats.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+  // Vider complètement et reconstruire
+  while(sel.firstChild) sel.removeChild(sel.firstChild);
+  const def = document.createElement('option');
+  def.value=''; def.textContent='-- Choisir une catégorie --';
+  sel.appendChild(def);
+  cats.forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c; o.textContent=c;
+    sel.appendChild(o);
+  });
 }
 function updateMFields(){const t=document.getElementById('mType').value;document.getElementById('momoF').style.display=t==='momo'?'block':'none';document.getElementById('cardF').style.display=t==='card'?'block':'none';}
 let cdType2='debt';
