@@ -12,6 +12,186 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
 </script>
 <style>
 :root{
@@ -418,8 +598,368 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 </style>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
 </script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+// ══════════════════════════════════════════
+// PAGES LISTE + PDF
+// ══════════════════════════════════════════
+let listPageType = 'income';
+let listPageFilter = 'all';
+
+function openListPage(type){
+  listPageType = type;
+  listPageFilter = 'all';
+  renderListPage();
+  document.getElementById('pageList').classList.add('open');
+}
+
+function renderListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
+  const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
+
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  const tabsEl = document.getElementById('pageListTabs');
+  if(type === 'income' || type === 'expense'){
+    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    tabsEl.innerHTML = opts.map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else {
+    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  }
+
+  // Event delegation pour les onglets
+  tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
+  });
+
+  // Données
+  let items = [];
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+
+  // Résumé
+  const sumEl = document.getElementById('pageListSummary');
+  if(type === 'income' || type === 'expense'){
+    const total = items.reduce((s,t)=>s+t.amt, 0);
+    const color = type==='income' ? 'var(--green)' : 'var(--red)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+  } else {
+    const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
+    const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
+    const color = type==='debt' ? 'var(--red)' : 'var(--green)';
+    sumEl.innerHTML =
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+  }
+
+  // Liste
+  const el = document.getElementById('pageListContent');
+  if(!items.length){
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    return;
+  }
+
+  if(type === 'income' || type === 'expense'){
+    el.innerHTML = items.map(t=>txHTML(t)).join('');
+  } else {
+    el.innerHTML = items.map(c=>{
+      const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+    }).join('');
+  }
+}
+
+function printListPage(){
+  const type = listPageType;
+  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const title = titles[type] || 'Liste';
+  const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Construire les lignes du tableau
+  let thead = '', rows = '';
+  let items = [];
+
+  if(type === 'income' || type === 'expense'){
+    items = S.tx.filter(t=>t.type===type);
+    if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
+    items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
+    const total = items.reduce((s,t)=>s+t.amt,0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
+  } else {
+    if(!S.cd) S.cd=[];
+    items = S.cd.filter(c=>c.type===(type==='debt'?'debt':'credit'));
+    if(listPageFilter==='active') items = items.filter(c=>!c.paid);
+    if(listPageFilter==='paid')   items = items.filter(c=>c.paid);
+    items = [...items].sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const total = items.reduce((s,c)=>s+c.amount,0);
+    thead = '<tr><th>#</th><th>Nom</th><th>Motif</th><th>Méthode</th><th>Échéance</th><th>Montant (GNF)</th><th>Statut</th></tr>';
+    rows = items.map((c,i)=>'<tr><td>'+(i+1)+'</td><td>'+escHtml(c.name)+'</td><td>'+escHtml(c.reason||'—')+'</td><td>'+escHtml(c.meth||'—')+'</td><td>'+c.date+'</td><td style="text-align:right;font-weight:700;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(c.amount)+'</td><td style="text-align:center;">'+(c.paid?'✅ Réglé':'⏳ En cours')+'</td></tr>').join('');
+    rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='debt'?'#b91c1c':'#15803d')+';">'+fmt(total)+'</td><td></td></tr>';
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>DiafaGestion — ${title}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1f2937;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #dc2626;padding-bottom:12px;margin-bottom:20px;}
+  .logo-zone{display:flex;align-items:center;gap:12px;}
+  .logo-title{font-size:22px;font-weight:800;color:#dc2626;}
+  .logo-sub{font-size:12px;color:#6b7280;}
+  .meta{text-align:right;font-size:12px;color:#6b7280;}
+  h2{font-size:18px;font-weight:800;color:#1f2937;margin:0 0 4px;}
+  .stat-row{display:flex;gap:16px;margin-bottom:20px;}
+  .stat-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 16px;flex:1;}
+  .stat-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;}
+  .stat-val{font-size:20px;font-weight:800;color:#1f2937;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#1f2937;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+  td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
+  tr:nth-child(even){background:#f8fafc;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
+  @media print{body{padding:10px;}button{display:none!important;}}
+</style></head><body>
+<div class="header">
+  <div class="logo-zone">
+    <div>
+      <div class="logo-title">DiafaGestion</div>
+      <div class="logo-sub">Gestion Financière Personnelle — DIAFA Consulting</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="font-weight:700;">${clientName}</div>
+    <div>Généré le ${now}</div>
+  </div>
+</div>
+<h2>${title}</h2>
+<div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
+<table><thead>${thead}</thead><tbody>${rows}</tbody></table>
+<div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 400);
+}
+
 </script>
 </head>
 <body>
@@ -695,7 +1235,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="pwd-overlay hidden" id="pwdOverlay" onclick="if(event.target===this)closePwd()">
   <div class="pwd-sheet">
     <div class="pwd-title">🔑 Modifier mes accès</div>
-    <div class="pwd-fg"><label>Mot de passe actuel</label><input type="password" id="pwdOld" placeholder="Mot de passe actuel"></div>
+    <div id="pwdResetHint" style="display:none;background:#fef3c7;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400e;margin-bottom:10px;font-weight:600;line-height:1.4;"></div><div class="pwd-fg"><label>Mot de passe actuel</label><input type="password" id="pwdOld" placeholder="Mot de passe actuel"></div>
     <div style="background:#f5f6fa;border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;">Nouvel identifiant</div>
       <div class="pwd-fg" style="margin-bottom:0"><label>Identifiant</label><input type="text" id="pwdNewUser" placeholder="Nouvel identifiant"></div>
@@ -1165,7 +1705,7 @@ let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
-  if(window._loadingData) return; // ne pas sauver pendant le chargement
+  if(window._loadingData) return; // ne pas écraser pendant le chargement
   syncDataToFirebase();
 }
 async function syncDataToFirebase(){
@@ -1173,28 +1713,24 @@ async function syncDataToFirebase(){
   const uid=localStorage.getItem('diafa_uid');
   if(!uid||uid==='admin_uid') return;
   try{
-    const d=JSON.parse(JSON.stringify(S));
-    delete d.type;
-    await db.collection('clients').doc(uid).set(
-      {appData:JSON.stringify(d), updatedAt:new Date().toISOString()},
-      {merge:true}
-    );
-  }catch(e){ console.warn('syncFirebase err:',e); }
+    const d=JSON.parse(JSON.stringify(S)); delete d.type;
+    await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+  }catch(e){}
 }
 async function loadDataFromFirebase(){
   if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
   if(!uid||uid==='admin_uid') return;
-  window._loadingData = true;
+  window._loadingData=true;
   try{
     const doc=await db.collection('clients').doc(uid).get();
-    if(doc.exists && doc.data().appData){
+    if(doc.exists&&doc.data().appData){
       const d=JSON.parse(doc.data().appData);
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      Object.assign(S, d);
+      Object.assign(S,d);
     }
   }catch(e){ console.warn('loadFirebase err:',e); }
-  finally{ window._loadingData = false; }
+  finally{ window._loadingData=false; }
 }
 
 // ── UTILS ──
@@ -1507,28 +2043,16 @@ async function checkLogin(){
       err.style.display='block';
       return;
     }
-    // Toujours vérifier Firebase en priorité (source de vérité)
     if(db){
+      // Firebase disponible → seule source de vérité, pas de fallback
       const fbOk=await checkLoginFromFirebase(user,pass,err);
-      if(!fbOk){
-        // Firebase a échoué — tenter fallback localStorage (mode hors-ligne)
-        const storedUser=localStorage.getItem('diafa_user');
-        const storedPass=localStorage.getItem('diafa_pwd');
-        if(user===storedUser && pass===storedPass){
-          // Fallback accepté uniquement si Firebase indisponible (pas d'erreur auth)
-          const fbDown=err.textContent.includes('reseau')||err.textContent.includes('network')||err.textContent.includes('unavailable');
-          if(!fbDown) return; // erreur auth réelle → refuser
-          err.style.display='none'; // hors-ligne → accepter
-        } else {
-          return;
-        }
-      }
+      if(!fbOk) return; // refus définitif
     } else {
-      // Pas de Firebase — mode hors-ligne complet
+      // Hors-ligne → fallback localStorage uniquement
       const storedUser=localStorage.getItem('diafa_user');
       const storedPass=localStorage.getItem('diafa_pwd');
       if(user!==storedUser||pass!==storedPass){
-        err.textContent='Identifiant ou mot de passe incorrect';
+        err.textContent='Identifiant ou mot de passe incorrect (hors-ligne)';
         err.style.display='block';
         return;
       }
@@ -1559,7 +2083,6 @@ async function checkLogin(){
     if(!p.nom||!p.prenom||!p.telephone){
       openFirstTimeProfile();
     } else {
-      const uid=localStorage.getItem('diafa_uid');
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
       render();
       await loadDataFromFirebase();
@@ -1568,7 +2091,29 @@ async function checkLogin(){
     document.getElementById('adminTabBtn').style.display='none';
   }
 }
-function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
+async function openPwd(){
+  document.getElementById('pwdOld').value='';
+  document.getElementById('pwdNew').value='';
+  document.getElementById('pwdConfirm').value='';
+  document.getElementById('pwdError').textContent='';
+  const hint=document.getElementById('pwdResetHint');
+  if(hint) hint.style.display='none';
+  document.getElementById('pwdOld').placeholder='Mot de passe actuel';
+  const uid=localStorage.getItem('diafa_uid')||'';
+  if(db&&uid&&uid!=='admin_uid'){
+    try{
+      const doc=await db.collection('clients').doc(uid).get();
+      if(doc.exists&&doc.data().password==='Diafa2026'){
+        if(hint){
+          hint.textContent='🔑 Mot de passe réinitialisé par l\'admin. Laissez le champ "Actuel" vide et choisissez un nouveau mot de passe.';
+          hint.style.display='block';
+        }
+        document.getElementById('pwdOld').placeholder='Laisser vide (reset admin)';
+      }
+    }catch(e){}
+  }
+  document.getElementById('pwdOverlay').classList.remove('hidden');
+}
 function closePwd(){
   document.getElementById('pwdOverlay').classList.add('hidden');
   document.getElementById('pwdOld').value='';
@@ -1577,38 +2122,52 @@ function closePwd(){
   document.getElementById('pwdConfirm').value='';
   document.getElementById('pwdError').textContent='';
 }
-function savePassword(){
+async function savePassword(){
   const old=document.getElementById('pwdOld').value;
   const newUser=document.getElementById('pwdNewUser').value.trim();
   const nw=document.getElementById('pwdNew').value;
   const cf=document.getElementById('pwdConfirm').value;
   const err=document.getElementById('pwdError');
   const uid=localStorage.getItem('diafa_uid')||'';
-  (async()=>{
-    let curPwd=localStorage.getItem('diafa_pwd')||'';
-    if(db&&uid&&uid!=='admin_uid'){
-      try{const doc=await db.collection('clients').doc(uid).get();
-        if(doc.exists&&doc.data().password)curPwd=doc.data().password;}catch(e){}
-    }
-    if(old!==curPwd){err.textContent='Mot de passe actuel incorrect';return;}
-    if(newUser&&newUser.length<3){err.textContent='Identifiant min 3 caracteres';return;}
-    if((nw||cf)&&nw.length<4){err.textContent='Mot de passe min 4 caracteres';return;}
-    if((nw||cf)&&nw!==cf){err.textContent='Les mots de passe ne correspondent pas';return;}
-    if(!newUser&&!nw){err.textContent='Aucune modification';return;}
+
+  // Lire le vrai mot de passe depuis Firebase (source de vérité)
+  let curPwd=localStorage.getItem('diafa_pwd')||'';
+  let isReset=false;
+  if(db&&uid&&uid!=='admin_uid'){
     try{
-      const upd={updatedAt:new Date().toISOString()};
-      if(newUser) upd.login=newUser;
-      if(nw)      upd.password=nw;
-      // Firebase d'abord — si ça échoue, localStorage reste cohérent
-      if(db&&uid&&uid!=='admin_uid') await db.collection('clients').doc(uid).update(upd);
-      // Puis mettre à jour localStorage (seulement si Firebase a réussi)
-      if(newUser) localStorage.setItem('diafa_user',newUser);
-      if(nw)      localStorage.setItem('diafa_pwd',nw);
-      closePwd();
-      const lbl=[newUser?'identifiant':'',nw?'mot de passe':''].filter(Boolean).join(' & ');
-      toast('ok',lbl+' modifie avec succes !');
-    }catch(e2){err.textContent='Erreur lors de la mise a jour: '+e2.message;}
-  })();
+      const doc=await db.collection('clients').doc(uid).get();
+      if(doc.exists){
+        const data=doc.data();
+        // Lire password même vide ou par défaut
+        if(data.password!==undefined) curPwd=data.password;
+        // Détecter reset admin → pass par défaut Diafa2026
+        isReset=(data.password==='Diafa2026');
+      }
+    }catch(e){}
+  }
+
+  // Si reset admin → ne pas vérifier l'ancien mot de passe
+  if(!isReset&&old!==curPwd){
+    err.textContent='Mot de passe actuel incorrect';
+    return;
+  }
+  if(newUser&&newUser.length<3){err.textContent='Identifiant min 3 caracteres';return;}
+  if(!nw&&!cf&&!newUser){err.textContent='Aucune modification';return;}
+  if((nw||cf)&&nw.length<4){err.textContent='Mot de passe min 4 caracteres';return;}
+  if((nw||cf)&&nw!==cf){err.textContent='Les mots de passe ne correspondent pas';return;}
+  try{
+    const upd={updatedAt:new Date().toISOString()};
+    if(newUser) upd.login=newUser;
+    if(nw)      upd.password=nw;
+    // Firebase d'abord
+    if(db&&uid&&uid!=='admin_uid') await db.collection('clients').doc(uid).update(upd);
+    // Sync localStorage
+    if(newUser) localStorage.setItem('diafa_user',newUser);
+    if(nw)      localStorage.setItem('diafa_pwd',nw);
+    closePwd();
+    const lbl=[newUser?'identifiant':'',nw?'mot de passe':''].filter(Boolean).join(' & ');
+    toast('ok',lbl+' modifié avec succès !');
+  }catch(e2){err.textContent='Erreur: '+e2.message;}
 }
 
 
@@ -1762,8 +2321,6 @@ function initFirebase(){
 async function saveClientToFirebase(profile){
   if(!db) return;
   try {
-    // Réinitialiser S avant de charger le bon compte (isolation entre comptes)
-    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     const uid = localStorage.getItem('diafa_uid') || generateUID();
     localStorage.setItem('diafa_uid', uid);
     // Resize avatar before saving to Firestore (max 80x80px)
@@ -1981,8 +2538,11 @@ function renderAdminClients(clients){
     card.querySelector('.btn-ac-reset').addEventListener('click',async ev=>{
       ev.stopPropagation();
       const P='Diafa2026';
-      if(!confirm('Reinitialiser le mot de passe de '+c.prenom+' ?'))return;
-      try{await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});alert('Mot de passe reinitialise. Login: '+c.login+' Pass: '+P);}catch(e){toast('err','Erreur: '+e.message);}
+      if(!confirm('Réinitialiser le mot de passe de '+c.prenom+' ?\nIl pourra le changer dans "Changer mes accès".'))return;
+      try{
+        await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});
+        alert('✅ Mot de passe réinitialisé !\n\nLogin : '+c.login+'\nMot de passe par défaut : '+P+'\n\nLe client peut le changer dans "Changer mes accès" (champ actuel à laisser vide).');
+      }catch(e){toast('err','Erreur: '+e.message);}
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
@@ -1992,17 +2552,6 @@ function renderAdminClients(clients){
     card.addEventListener('click',()=>openClientModal(c));
     el.appendChild(card);
   });
-}
-function openClientModal(c){
-  // Afficher les infos du client dans une alert simple
-  const lines=[
-    'Client : '+(c.prenom||'')+' '+(c.nom||''),
-    'Login : '+(c.login||'—'),
-    'Tel : '+(c.telephone||'—'),
-    'Statut : '+(c.status==='suspended'?'Suspendu':'Actif'),
-    'Inscrit : '+(c.createdAt?new Date(c.createdAt).toLocaleDateString('fr-FR'):'—'),
-  ];
-  alert(lines.join('\n'));
 }
 
 async function toggleSuspendClient(docId, isSuspended){
@@ -2228,7 +2777,7 @@ function openFirstTimeProfile(){
   document.getElementById('firstProfileOverlay').classList.remove('hidden');
 }
 
-function saveFirstProfile(){
+async function saveFirstProfile(){
   const prenom    = document.getElementById('fpPrenom').value.trim();
   const nom       = document.getElementById('fpNom').value.trim();
   const telephone = document.getElementById('fpTel').value.trim();
@@ -2250,10 +2799,13 @@ function saveFirstProfile(){
   // Save locally
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
-  // Sync to Firebase
-  saveClientToFirebase(profile);
+  // Sync to Firebase (await pour que l'UID soit prêt)
+  await saveClientToFirebase(profile);
 
-  // Also update main profile fields
+  // Charger les données existantes depuis Firebase (ne pas les perdre)
+  await loadDataFromFirebase();
+
+  // Update profile display
   const pFull = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
   loadProfile();
 
@@ -2457,8 +3009,8 @@ tr:hover td{background:#fafafa;}
     <div class="sheet-header" style="flex-shrink:0;">
       <div class="sheet-title" id="pageListTitle">📋 Liste</div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="printListPage()" style="padding:7px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 Imprimer / PDF</button>
-        <button onclick="closeSheet('pageList')" style="padding:7px 14px;border-radius:10px;border:1.5px solid #e5e7eb;font-size:13px;font-weight:800;cursor:pointer;background:#fff;color:#374151;display:flex;align-items:center;gap:4px;">✕ Fermer</button>
+        <button id="pageListPdfBtn" onclick="printListPage()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 PDF</button>
+        <button class="sheet-close" onclick="closeSheet('pageList')">✕</button>
       </div>
     </div>
     <!-- Résumé stat -->
