@@ -2451,8 +2451,18 @@ function printListPage(){
   td{padding:7px 10px;border-bottom:1px solid #f1f5f9;}
   tr:nth-child(even){background:#f8fafc;}
   .footer{margin-top:24px;text-align:center;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:10px;}
-  @media print{body{padding:10px;}button{display:none!important;}}
+  @media print{body{padding:10px;}button{display:none!important;}.action-bar{display:none!important;}}
+  .action-bar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:2px solid #dc2626;padding:10px 20px;display:flex;gap:10px;align-items:center;justify-content:flex-end;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+  .action-bar button{padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-print{background:#dc2626;color:#fff;}
+  .btn-share{background:#2563eb;color:#fff;}
+  .btn-close{background:#f3f4f6;color:#374151;}
 </style></head><body>
+<div class="action-bar">
+  <button class="btn-print" onclick="window.print()">🖨️ Imprimer / Télécharger PDF</button>
+  <button class="btn-share" onclick="(async()=>{ if(navigator.share){ try{ await navigator.share({title:'DiafaGestion — ${title}', text:'Rapport DiafaGestion', url:window.location.href}); }catch(e){} } else { alert('Partage non disponible sur ce navigateur.'); } })()">🔗 Partager</button>
+  <button class="btn-close" onclick="window.close()">✕ Fermer</button>
+</div>
 <div class="header">
   <div class="logo-zone">
     <div>
