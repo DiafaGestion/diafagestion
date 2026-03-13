@@ -478,7 +478,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">💍 Situation matrimoniale</div>
       <select id="caSituation" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
-        <option value="">-- Sélectionner --</option>
+        <option value="">Catégorie...</option>
         <option value="Célibataire">Célibataire</option>
         <option value="Marié(e)">Marié(e)</option>
         <option value="Divorcé(e)">Divorcé(e)</option>
@@ -489,7 +489,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">⚧ Sexe</div>
       <select id="caSexe" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
-        <option value="">-- Sélectionner --</option>
+        <option value="">Catégorie...</option>
         <option value="Masculin">👨 Masculin</option>
         <option value="Féminin">👩 Féminin</option>
       </select>
@@ -618,14 +618,14 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div class="profile-fg"><label>Profession</label><input type="text" id="pProfession" placeholder="Ex: Ingénieur, Commerçant..."></div>
     <div class="profile-fg"><label>⚧ Sexe</label>
       <select id="pSexe">
-        <option value="">-- Sélectionner --</option>
+        <option value="">Catégorie...</option>
         <option value="Masculin">👨 Masculin</option>
         <option value="Féminin">👩 Féminin</option>
       </select>
     </div>
     <div class="profile-fg"><label>Situation matrimoniale</label>
       <select id="pSituation">
-        <option value="">-- Sélectionner --</option>
+        <option value="">Catégorie...</option>
         <option value="Célibataire">Célibataire</option>
         <option value="Marié(e)">Marié(e)</option>
         <option value="Divorcé(e)">Divorcé(e)</option>
@@ -1032,7 +1032,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <div class="fr">
         <div class="fg"><label>Catégorie</label>
           <select id="txCat">
-            <option value="">Choisir une catégorie</option>
+            <option value="">Catégorie...</option>
             <!-- Options injectées dynamiquement par setType() -->
           </select>
         </div>
@@ -1305,7 +1305,7 @@ function setType(t){
   // Vider complètement et reconstruire
   while(sel.firstChild) sel.removeChild(sel.firstChild);
   const def = document.createElement('option');
-  def.value=''; def.textContent='Choisir une catégorie';
+  def.value=''; def.textContent='Catégorie...';
   sel.appendChild(def);
   cats.forEach(c=>{
     const o=document.createElement('option');
