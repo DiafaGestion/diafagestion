@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v78';
+const CACHE_NAME = 'diafagestion-v74';
 const ASSETS = [
   './',
   './index.html',
@@ -16,9 +16,14 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  // CORRECTION : supprimer uniquement les ANCIENS caches, pas le cache actuel
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(k => k !== CACHE_NAME)
+          .map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
