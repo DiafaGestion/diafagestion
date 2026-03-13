@@ -292,7 +292,67 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--text);color:#fff;border-radius:100px;padding:10px 18px;font-size:13px;font-weight:600;z-index:9999;transition:transform 0.3s cubic-bezier(0.34,1.3,0.64,1);display:flex;align-items:center;gap:8px;white-space:nowrap;box-shadow:var(--sh2);}
 .toast.show{transform:translateX(-50%) translateY(0);}
 
-/* ── PDF BTN ── */
+/* ── BLOC NOTE ── */
+.bn-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.bn-overlay.open{display:flex;}
+.bn-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.bn-note-card{background:#fffde7;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #f59e0b;position:relative;}
+.bn-note-card.pinned{border-left-color:#dc2626;background:#fff5f5;}
+.bn-note-title{font-weight:700;font-size:14px;color:#1a1d2e;margin-bottom:4px;}
+.bn-note-preview{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bn-note-meta{display:flex;gap:8px;align-items:center;margin-top:6px;font-size:10px;color:#9ca3af;}
+.bn-cat-badge{padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700;}
+.bn-search{width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;margin-bottom:12px;}
+.bn-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.bn-cat-btn{padding:4px 12px;border-radius:100px;border:1.5px solid #e5e7eb;font-size:11px;font-weight:700;cursor:pointer;background:var(--bg2);}
+.bn-cat-btn.active{background:#1a1d2e;color:#fff;border-color:#1a1d2e;}
+/* ── JOURNAL INTIME ── */
+.ji-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:none;align-items:flex-end;justify-content:center;}
+.ji-overlay.open{display:flex;}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;position:relative;}
+.ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
+.ji-entry-mood{font-size:20px;margin-right:6px;}
+.ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ji-cat-badge{padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;display:inline-block;}
+.mood-picker{display:flex;gap:10px;justify-content:center;margin:10px 0;}
+.mood-btn{font-size:26px;cursor:pointer;opacity:0.35;transition:all 0.15s;border:none;background:none;padding:4px;}
+.mood-btn.selected{opacity:1;transform:scale(1.3);}
+.ji-pin-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px 24px;gap:12px;}
+.ji-pin-dots{display:flex;gap:14px;margin:8px 0;}
+.ji-pin-dot{width:16px;height:16px;border-radius:50%;background:#e5e7eb;transition:all 0.15s;}
+.ji-pin-dot.filled{background:#db2777;transform:scale(1.1);}
+.ji-pin-dot.error{background:#dc2626;}
+.ji-pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:260px;}
+.ji-pin-key{padding:18px;border:1.5px solid #e5e7eb;border-radius:14px;font-size:20px;font-weight:700;cursor:pointer;background:var(--bg2);text-align:center;transition:background 0.1s;}
+.ji-pin-key:active{background:#e5e7eb;}
+.ji-lock-bar{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:12px;color:#c2410c;font-weight:600;}
+.ji-photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+.ji-photo-thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;}
+.ji-photo-thumb img{width:100%;height:100%;object-fit:cover;}
+.ji-photo-del{position:absolute;top:3px;right:3px;background:rgba(220,38,38,0.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ji-settings-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f3f4f6;}
+/* ── CALENDRIER ISLAMIQUE ── */
+.ci-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.ci-overlay.open{display:flex;}
+.ci-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ci-header-card{background:linear-gradient(135deg,#064e3b,#065f46);border-radius:16px;padding:20px;margin-bottom:16px;color:#fff;text-align:center;}
+.ci-hijri-date{font-size:26px;font-weight:800;}
+.ci-hijri-sub{font-size:13px;opacity:0.8;margin-top:4px;}
+.ci-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:16px;}
+.ci-day-header{text-align:center;font-size:10px;font-weight:700;color:#6b7280;padding:4px 0;}
+.ci-day{text-align:center;padding:6px 2px;border-radius:8px;font-size:12px;cursor:pointer;}
+.ci-day.today{background:#065f46;color:#fff;font-weight:800;}
+.ci-day.event{background:#d1fae5;font-weight:700;color:#064e3b;}
+.ci-day.other-month{opacity:0.3;}
+.ci-event-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f0fdf4;border-radius:10px;margin-bottom:8px;border-left:4px solid #065f46;}
+.ci-prayer-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg2);border-radius:10px;margin-bottom:6px;}
+.ci-prayer-name{font-weight:700;font-size:13px;}
+.ci-prayer-time{font-size:13px;color:#065f46;font-weight:700;}
+.ci-tabs{display:flex;gap:6px;margin-bottom:16px;}
+.ci-tab{flex:1;padding:8px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;background:var(--bg2);text-align:center;}
+.ci-tab.active{background:#065f46;color:#fff;border-color:#065f46;}
+
 .pdf-btn{display:flex;align-items:center;gap:5px;background:var(--red-l);color:var(--red);border:1px solid #fca5a5;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
 
 /* ── LOGIN ── */
@@ -885,6 +945,20 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <button class="menu-item" onclick="closeDrawer();openTrash()">
         <div class="menu-icon" style="background:#fee2e2">🗑️</div>
         <div><div class="menu-label">Corbeille</div><div class="menu-sub" id="trashBadge">Vide</div></div>
+      </button>
+
+      <div class="drawer-section-label" style="margin-top:8px;">📓 Personnel</div>
+      <button class="menu-item" onclick="closeDrawer();openBlocNote()">
+        <div class="menu-icon" style="background:#fef9c3">📝</div>
+        <div><div class="menu-label">Bloc Note</div><div class="menu-sub">Notes rapides & mémos</div></div>
+      </button>
+      <button class="menu-item" onclick="closeDrawer();openJournal()">
+        <div class="menu-icon" style="background:#fce7f3">📔</div>
+        <div><div class="menu-label">Journal Intime</div><div class="menu-sub">Mon journal quotidien</div></div>
+      </button>
+      <button class="menu-item" onclick="closeDrawer();openCalIslamique()">
+        <div class="menu-icon" style="background:#d1fae5">🌙</div>
+        <div><div class="menu-label">Calendrier Islamique</div><div class="menu-sub">Dates hijri & événements</div></div>
       </button>
 
       <div class="drawer-section-label" style="margin-top:8px;">Sécurité</div>
@@ -2479,6 +2553,230 @@ function printListPage(){
 <div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Filtre : ${listPageFilter==='all'?'Toutes les périodes':listPageFilter==='active'?'En cours':listPageFilter==='paid'?'Réglés':monthLabel(listPageFilter)}</div>
 <table><thead>${thead}</thead><tbody>${rows}</tbody></table>
 <div class="footer">DiafaGestion — DIAFA Consulting · wa.me/625518669 · Document généré automatiquement</div>
+<!-- ══════════════════════════════════════════ -->
+<!-- BLOC NOTE -->
+<!-- ══════════════════════════════════════════ -->
+<div class="bn-overlay" id="bnOverlay">
+  <div class="bn-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">📝 Bloc Note</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="openBnEdit(null)" style="background:#1a1d2e;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Nouvelle</button>
+        <button class="sheet-close" onclick="closeOverlay('bnOverlay')">✕</button>
+      </div>
+    </div>
+    <div style="padding:12px 16px;flex:1;overflow-y:auto;">
+      <input class="bn-search" id="bnSearch" placeholder="🔍 Rechercher une note..." oninput="renderBnList()">
+      <div class="bn-cats" id="bnCats"></div>
+      <div id="bnList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Éditeur Note -->
+<div class="bn-overlay" id="bnEditOverlay">
+  <div class="bn-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title" id="bnEditTitle">Nouvelle note</div>
+      <div style="display:flex;gap:8px;">
+        <button id="bnPinBtn" onclick="toggleBnPin()" style="background:#fef3c7;border:none;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;" title="Épingler">📌</button>
+        <button onclick="saveBnNote()" style="background:#1a1d2e;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">💾 Sauvegarder</button>
+        <button class="sheet-close" onclick="closeOverlay('bnEditOverlay')">✕</button>
+      </div>
+    </div>
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+      <input id="bnNoteTitle" placeholder="Titre de la note" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:700;outline:none;box-sizing:border-box;">
+      <div style="display:flex;gap:8px;">
+        <select id="bnNoteCat" style="flex:1;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;">
+          <option value="Perso">👤 Perso</option>
+          <option value="Travail">💼 Travail</option>
+          <option value="Finance">💰 Finance</option>
+          <option value="Santé">❤️ Santé</option>
+          <option value="Autre">📌 Autre</option>
+        </select>
+      </div>
+      <textarea id="bnNoteBody" placeholder="Écrivez votre note ici..." style="width:100%;min-height:200px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;box-sizing:border-box;font-family:inherit;line-height:1.6;"></textarea>
+      <button id="bnDeleteBtn" onclick="deleteBnNote()" style="display:none;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Supprimer cette note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- JOURNAL INTIME — ÉCRAN PIN -->
+<!-- ══════════════════════════════════════════ -->
+<div class="ji-overlay" id="jiPinOverlay">
+  <div class="ji-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
+      <div class="sheet-title" style="color:#fff;">🔐 Journal Intime</div>
+      <button class="sheet-close" onclick="jiCloseAll()" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
+    </div>
+    <div class="ji-pin-screen">
+      <div style="font-size:48px;" id="jiPinIcon">🔐</div>
+      <div style="font-weight:800;font-size:17px;color:#1a1d2e;" id="jiPinLabel">Entrez votre code PIN</div>
+      <div style="font-size:12px;color:#9ca3af;text-align:center;" id="jiPinSub">Votre journal est protégé</div>
+      <div id="jiLockBar" style="display:none;" class="ji-lock-bar">⏳ <span id="jiLockMsg">Journal bloqué</span></div>
+      <div class="ji-pin-dots" id="jiPinDots">
+        <div class="ji-pin-dot" id="jd0"></div>
+        <div class="ji-pin-dot" id="jd1"></div>
+        <div class="ji-pin-dot" id="jd2"></div>
+        <div class="ji-pin-dot" id="jd3"></div>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;" id="jiAttemptsMsg"></div>
+      <div class="ji-pin-pad">
+        <button class="ji-pin-key" onclick="jiPinPress('1')">1</button>
+        <button class="ji-pin-key" onclick="jiPinPress('2')">2</button>
+        <button class="ji-pin-key" onclick="jiPinPress('3')">3</button>
+        <button class="ji-pin-key" onclick="jiPinPress('4')">4</button>
+        <button class="ji-pin-key" onclick="jiPinPress('5')">5</button>
+        <button class="ji-pin-key" onclick="jiPinPress('6')">6</button>
+        <button class="ji-pin-key" onclick="jiPinPress('7')">7</button>
+        <button class="ji-pin-key" onclick="jiPinPress('8')">8</button>
+        <button class="ji-pin-key" onclick="jiPinPress('9')">9</button>
+        <button class="ji-pin-key" onclick="jiPinPress('del')" style="color:#dc2626;font-size:16px;">⌫</button>
+        <button class="ji-pin-key" onclick="jiPinPress('0')">0</button>
+        <button class="ji-pin-key" onclick="jiPinPress('ok')" style="background:#db2777;color:#fff;font-size:16px;">✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JOURNAL INTIME — LISTE -->
+<div class="ji-overlay" id="jiOverlay">
+  <div class="ji-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
+      <div class="sheet-title" style="color:#fff;">📔 Journal Intime</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="openJiSettings()" style="background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;">⚙️</button>
+        <button onclick="openJiEdit(null)" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Nouvelle</button>
+        <button class="sheet-close" onclick="jiCloseAll()" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
+      </div>
+    </div>
+    <!-- Filtre catégories -->
+    <div style="padding:10px 14px 6px;flex-shrink:0;overflow-x:auto;display:flex;gap:6px;" id="jiCatFilter"></div>
+    <div style="padding:6px 14px;flex:1;overflow-y:auto;" id="jiList"></div>
+  </div>
+</div>
+
+<!-- JOURNAL INTIME — ÉDITEUR -->
+<div class="ji-overlay" id="jiEditOverlay">
+  <div class="ji-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
+      <div class="sheet-title" style="color:#fff;" id="jiEditTitle">Nouvelle entrée</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="saveJiEntry()" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+        <button class="sheet-close" onclick="closeOverlay('jiEditOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
+      </div>
+    </div>
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
+      <!-- Humeur -->
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:6px;">HUMEUR DU JOUR</div>
+        <div class="mood-picker" id="jiMoodPicker">
+          <button class="mood-btn" data-mood="😍" onclick="selectMood('😍')">😍</button>
+          <button class="mood-btn" data-mood="😄" onclick="selectMood('😄')">😄</button>
+          <button class="mood-btn" data-mood="🙂" onclick="selectMood('🙂')">🙂</button>
+          <button class="mood-btn" data-mood="😐" onclick="selectMood('😐')">😐</button>
+          <button class="mood-btn" data-mood="😔" onclick="selectMood('😔')">😔</button>
+          <button class="mood-btn" data-mood="😢" onclick="selectMood('😢')">😢</button>
+          <button class="mood-btn" data-mood="😡" onclick="selectMood('😡')">😡</button>
+        </div>
+      </div>
+      <!-- Date + Catégorie -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">DATE</div>
+          <input id="jiEntryDate" type="date" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">CATÉGORIE</div>
+          <select id="jiEntryCat" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;">
+            <option value="Général">📝 Général</option>
+            <option value="Amour">❤️ Amour</option>
+            <option value="Famille">👨‍👩‍👧 Famille</option>
+            <option value="Travail">💼 Travail</option>
+            <option value="Intime">🔒 Intime</option>
+          </select>
+        </div>
+      </div>
+      <!-- Texte -->
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">MON ENTRÉE</div>
+        <textarea id="jiEntryBody" placeholder="Écris ici librement... tes pensées, émotions, secrets, souvenirs..." style="width:100%;min-height:180px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;box-sizing:border-box;font-family:inherit;line-height:1.7;"></textarea>
+      </div>
+      <!-- Photos (multiple) -->
+      <div>
+        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:6px;">PHOTOS <span id="jiPhotoCount" style="color:#db2777;">(0/5)</span></div>
+        <div class="ji-photos-grid" id="jiPhotosGrid"></div>
+        <label for="jiPhotoInput" id="jiAddPhotoBtn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#fdf2f8;border:1.5px dashed #f9a8d4;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#db2777;margin-top:8px;">
+          📷 Ajouter une photo
+          <input type="file" id="jiPhotoInput" accept="image/*" multiple style="display:none;" onchange="handleJiPhotos(event)">
+        </label>
+      </div>
+      <button id="jiDeleteBtn" onclick="deleteJiEntry()" style="display:none;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Supprimer cette entrée</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOURNAL INTIME — PARAMÈTRES -->
+<div class="ji-overlay" id="jiSettingsOverlay">
+  <div class="ji-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
+      <div class="sheet-title" style="color:#fff;">⚙️ Paramètres Journal</div>
+      <button class="sheet-close" onclick="closeOverlay('jiSettingsOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
+    </div>
+    <div style="padding:16px;">
+      <div class="ji-settings-row">
+        <div>
+          <div style="font-weight:700;font-size:14px;">🔐 Changer le code PIN</div>
+          <div style="font-size:12px;color:#9ca3af;">Modifier votre PIN de sécurité</div>
+        </div>
+        <button onclick="jiChangePinFlow()" style="background:#db2777;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Modifier</button>
+      </div>
+      <div class="ji-settings-row">
+        <div>
+          <div style="font-weight:700;font-size:14px;">📊 Statistiques</div>
+          <div style="font-size:12px;color:#9ca3af;" id="jiStats">Chargement...</div>
+        </div>
+      </div>
+      <div class="ji-settings-row" style="border:none;margin-top:16px;">
+        <div>
+          <div style="font-weight:700;font-size:14px;color:#dc2626;">🗑️ Supprimer tout le journal</div>
+          <div style="font-size:12px;color:#9ca3af;">Action irréversible</div>
+        </div>
+        <button onclick="jiDeleteAll()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- CALENDRIER ISLAMIQUE -->
+<!-- ══════════════════════════════════════════ -->
+<div class="ci-overlay" id="ciOverlay">
+  <div class="ci-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">🌙 Calendrier Islamique</div>
+      <button class="sheet-close" onclick="closeOverlay('ciOverlay')">✕</button>
+    </div>
+    <div style="padding:14px 16px;flex:1;overflow-y:auto;">
+      <div class="ci-header-card" id="ciHeaderCard"></div>
+      <div class="ci-tabs">
+        <div class="ci-tab active" id="ciTab0" onclick="ciSetTab(0)">📅 Calendrier</div>
+        <div class="ci-tab" id="ciTab1" onclick="ciSetTab(1)">🕌 Événements</div>
+        <div class="ci-tab" id="ciTab2" onclick="ciSetTab(2)">🕐 Prières</div>
+      </div>
+      <div id="ciContent"></div>
+    </div>
+  </div>
+</div>
+
 </body></html>`;
 
   const win = window.open('', '_blank');
@@ -2489,7 +2787,651 @@ function printListPage(){
 }
 
 
-</script>
+
+// ══════════════════════════════════════════
+// UTILITAIRES COMMUNS
+// ══════════════════════════════════════════
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+function openOverlay(id){ document.getElementById(id).classList.add('open'); }
+
+// ══════════════════════════════════════════
+// BLOC NOTE
+// ══════════════════════════════════════════
+let bnNotes = [];
+let bnCurrentId = null;
+let bnActiveCat = 'Toutes';
+
+const BN_CATS = ['Toutes','Perso','Travail','Finance','Santé','Autre'];
+const BN_CAT_COLORS = {Perso:'#dbeafe',Travail:'#fef3c7',Finance:'#dcfce7',Santé:'#fce7f3',Autre:'#f3f4f6'};
+
+function loadBnNotes(){ bnNotes = JSON.parse(localStorage.getItem('diafa_bn_notes')||'[]'); }
+function saveBnNotes(){ localStorage.setItem('diafa_bn_notes', JSON.stringify(bnNotes)); }
+
+function openBlocNote(){
+  loadBnNotes();
+  renderBnCats();
+  renderBnList();
+  openOverlay('bnOverlay');
+}
+
+function renderBnCats(){
+  const el = document.getElementById('bnCats');
+  el.innerHTML = BN_CATS.map(c=>
+    `<button class="bn-cat-btn${bnActiveCat===c?' active':''}" onclick="bnSetCat('${c}')">${c}</button>`
+  ).join('');
+}
+
+function bnSetCat(cat){ bnActiveCat = cat; renderBnCats(); renderBnList(); }
+
+function renderBnList(){
+  const q = (document.getElementById('bnSearch').value||'').toLowerCase();
+  let notes = [...bnNotes];
+  if(bnActiveCat !== 'Toutes') notes = notes.filter(n=>n.cat===bnActiveCat);
+  if(q) notes = notes.filter(n=>(n.title+' '+n.body).toLowerCase().includes(q));
+  notes.sort((a,b)=>{ if(a.pinned&&!b.pinned) return -1; if(!a.pinned&&b.pinned) return 1; return b.updatedAt.localeCompare(a.updatedAt); });
+  const el = document.getElementById('bnList');
+  if(!notes.length){ el.innerHTML = '<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">Aucune note trouvée<br><span style="font-size:30px;">📝</span></div>'; return; }
+  el.innerHTML = notes.map(n=>`
+    <div class="bn-note-card${n.pinned?' pinned':''}" onclick="openBnEdit('${n.id}')">
+      ${n.pinned?'<span style="position:absolute;top:8px;right:10px;font-size:12px;">📌</span>':''}
+      <div class="bn-note-title">${escHtml(n.title||'Sans titre')}</div>
+      <div class="bn-note-preview">${escHtml(n.body||'...')}</div>
+      <div class="bn-note-meta">
+        <span class="bn-cat-badge" style="background:${BN_CAT_COLORS[n.cat]||'#f3f4f6'}">${n.cat}</span>
+        <span>${new Date(n.updatedAt).toLocaleDateString('fr-FR')}</span>
+      </div>
+    </div>`).join('');
+}
+
+function openBnEdit(id){
+  loadBnNotes();
+  bnCurrentId = id;
+  if(id){
+    const n = bnNotes.find(x=>x.id===id);
+    if(!n) return;
+    document.getElementById('bnEditTitle').textContent = 'Modifier la note';
+    document.getElementById('bnNoteTitle').value = n.title||'';
+    document.getElementById('bnNoteBody').value = n.body||'';
+    document.getElementById('bnNoteCat').value = n.cat||'Perso';
+    document.getElementById('bnPinBtn').style.background = n.pinned ? '#fde68a' : '#fef3c7';
+    document.getElementById('bnDeleteBtn').style.display = 'block';
+  } else {
+    document.getElementById('bnEditTitle').textContent = 'Nouvelle note';
+    document.getElementById('bnNoteTitle').value = '';
+    document.getElementById('bnNoteBody').value = '';
+    document.getElementById('bnNoteCat').value = 'Perso';
+    document.getElementById('bnPinBtn').style.background = '#fef3c7';
+    document.getElementById('bnDeleteBtn').style.display = 'none';
+  }
+  openOverlay('bnEditOverlay');
+}
+
+function toggleBnPin(){
+  if(!bnCurrentId) return;
+  loadBnNotes();
+  const n = bnNotes.find(x=>x.id===bnCurrentId);
+  if(n){ n.pinned = !n.pinned; saveBnNotes(); document.getElementById('bnPinBtn').style.background = n.pinned ? '#fde68a' : '#fef3c7'; }
+}
+
+function saveBnNote(){
+  loadBnNotes();
+  const title = document.getElementById('bnNoteTitle').value.trim();
+  const body = document.getElementById('bnNoteBody').value.trim();
+  const cat = document.getElementById('bnNoteCat').value;
+  if(!title && !body){ toast('⚠️','Écrivez quelque chose avant de sauvegarder'); return; }
+  const now = new Date().toISOString();
+  if(bnCurrentId){
+    const n = bnNotes.find(x=>x.id===bnCurrentId);
+    if(n){ n.title=title; n.body=body; n.cat=cat; n.updatedAt=now; }
+  } else {
+    bnNotes.push({ id:'bn_'+Date.now(), title, body, cat, pinned:false, createdAt:now, updatedAt:now });
+  }
+  saveBnNotes();
+  closeOverlay('bnEditOverlay');
+  renderBnList();
+  toast('📝','Note sauvegardée !');
+}
+
+function deleteBnNote(){
+  if(!bnCurrentId) return;
+  if(!confirm('Supprimer cette note ?')) return;
+  loadBnNotes();
+  bnNotes = bnNotes.filter(x=>x.id!==bnCurrentId);
+  saveBnNotes();
+  closeOverlay('bnEditOverlay');
+  renderBnList();
+  toast('🗑️','Note supprimée');
+}
+
+// ══════════════════════════════════════════
+// JOURNAL INTIME — SÉCURISÉ
+// ══════════════════════════════════════════
+let jiEntries = [];
+let jiCurrentId = null;
+let jiCurrentMood = '🙂';
+let jiCurrentPhotos = [];
+let jiPinInput = '';
+let jiPinMode = 'check';
+let jiPinTemp = '';
+let jiAutoLockTimer = null;
+let jiActiveCat = 'Toutes';
+
+const JI_PIN_KEY    = 'diafa_ji_pin';
+const JI_DATA_KEY   = 'diafa_ji_entries';
+const JI_FAIL_KEY   = 'diafa_ji_fails';
+const JI_CATS = ['Toutes','Général','Amour','Famille','Travail','Intime'];
+const JI_CAT_COLORS = {Général:'#f3f4f6',Amour:'#fce7f3',Famille:'#dbeafe',Travail:'#fef3c7',Intime:'#f0fdf4'};
+const JI_CAT_EMOJI  = {Général:'📝',Amour:'❤️',Famille:'👨\u200d👩\u200d👧',Travail:'💼',Intime:'🔒'};
+const JI_MAX_FAILS  = 5;
+const JI_LOCK_MS    = 30 * 60 * 1000;
+const JI_AUTO_LOCK  = 2 * 60 * 1000;
+
+function jiObfuscate(text, pin){
+  if(!pin) return text;
+  let out = '';
+  for(let i=0;i<text.length;i++) out += String.fromCharCode(text.charCodeAt(i) ^ pin.charCodeAt(i%pin.length));
+  return btoa(unescape(encodeURIComponent(out)));
+}
+function jiDeobfuscate(b64, pin){
+  if(!pin) return b64;
+  try {
+    const text = decodeURIComponent(escape(atob(b64)));
+    let out = '';
+    for(let i=0;i<text.length;i++) out += String.fromCharCode(text.charCodeAt(i) ^ pin.charCodeAt(i%pin.length));
+    return out;
+  } catch(e){ return b64; }
+}
+
+function jiGetPin(){ return localStorage.getItem(JI_PIN_KEY)||''; }
+function loadJiEntries(){
+  const pin = jiGetPin();
+  try {
+    const raw = localStorage.getItem(JI_DATA_KEY)||'[]';
+    const data = pin ? jiDeobfuscate(raw, pin) : raw;
+    jiEntries = JSON.parse(data);
+  } catch(e){ jiEntries = []; }
+}
+function saveJiEntries(){
+  const pin = jiGetPin();
+  const data = JSON.stringify(jiEntries);
+  localStorage.setItem(JI_DATA_KEY, pin ? jiObfuscate(data, pin) : data);
+}
+
+function jiGetFails(){ try{ return JSON.parse(localStorage.getItem(JI_FAIL_KEY)||'{"count":0,"until":0}'); }catch(e){ return {count:0,until:0}; } }
+function jiSaveFails(f){ localStorage.setItem(JI_FAIL_KEY, JSON.stringify(f)); }
+function jiIsLocked(){ const f=jiGetFails(); return f.until > Date.now(); }
+function jiLockRemaining(){ const f=jiGetFails(); return Math.ceil((f.until-Date.now())/60000); }
+
+function jiResetAutoLock(){
+  clearTimeout(jiAutoLockTimer);
+  jiAutoLockTimer = setTimeout(()=>{
+    closeOverlay('jiOverlay');
+    closeOverlay('jiEditOverlay');
+    closeOverlay('jiSettingsOverlay');
+    toast('🔐','Journal verrouillé automatiquement');
+  }, JI_AUTO_LOCK);
+}
+function jiCloseAll(){
+  clearTimeout(jiAutoLockTimer);
+  ['jiPinOverlay','jiOverlay','jiEditOverlay','jiSettingsOverlay'].forEach(id=>closeOverlay(id));
+}
+
+function openJournal(){
+  jiPinInput = '';  jiPinTemp = '';
+  if(jiIsLocked()){
+    jiPinMode = 'check';
+    jiShowPinScreen('🔒','Journal bloqué','Réessayez dans '+jiLockRemaining()+' min',true);
+    openOverlay('jiPinOverlay');
+    return;
+  }
+  const pin = jiGetPin();
+  if(pin){
+    jiPinMode = 'check';
+    jiShowPinScreen('🔐','Entrez votre code PIN','Accédez à votre journal');
+  } else {
+    jiPinMode = 'set';
+    jiShowPinScreen('🔏','Créer votre PIN secret','Choisissez 4 chiffres pour protéger votre journal');
+  }
+  updateJiPinDots();
+  openOverlay('jiPinOverlay');
+}
+
+function jiShowPinScreen(icon, label, sub, locked=false){
+  document.getElementById('jiPinIcon').textContent = icon;
+  document.getElementById('jiPinLabel').textContent = label;
+  document.getElementById('jiPinSub').textContent = sub;
+  document.getElementById('jiLockBar').style.display = locked ? 'flex' : 'none';
+  if(locked) document.getElementById('jiLockMsg').textContent = 'Journal bloqué · '+jiLockRemaining()+' min restantes';
+  document.getElementById('jiAttemptsMsg').textContent = '';
+  jiPinInput = '';
+  updateJiPinDots();
+}
+
+function jiPinPress(k){
+  if(jiIsLocked()) return;
+  if(k==='del'){ jiPinInput = jiPinInput.slice(0,-1); updateJiPinDots(); return; }
+  if(k==='ok'){ jiPinConfirm(); return; }
+  if(jiPinInput.length >= 4) return;
+  jiPinInput += k;
+  updateJiPinDots();
+  if(jiPinInput.length === 4) setTimeout(jiPinConfirm, 250);
+}
+
+function updateJiPinDots(){
+  for(let i=0;i<4;i++){
+    const d = document.getElementById('jd'+i);
+    if(d){ d.classList.toggle('filled', i < jiPinInput.length); d.classList.remove('error'); }
+  }
+}
+
+function jiPinError(msg){
+  for(let i=0;i<4;i++){
+    const d = document.getElementById('jd'+i);
+    if(d) d.classList.add('error');
+  }
+  setTimeout(()=>{ jiPinInput=''; updateJiPinDots(); },600);
+  if(msg) document.getElementById('jiAttemptsMsg').textContent = msg;
+}
+
+function jiPinConfirm(){
+  if(jiPinInput.length < 4){ toast('⚠️','Entrez 4 chiffres'); return; }
+  if(jiPinMode==='set'){
+    jiPinTemp = jiPinInput;
+    jiPinMode = 'confirm';
+    jiShowPinScreen('🔏','Confirmez votre PIN','Entrez à nouveau les 4 mêmes chiffres');
+    return;
+  }
+  if(jiPinMode==='confirm'){
+    if(jiPinInput !== jiPinTemp){
+      jiPinTemp = ''; jiPinMode = 'set';
+      jiShowPinScreen('🔏','Codes différents !','Recommencez — choisissez votre PIN');
+      jiPinError('Les codes ne correspondent pas');
+      return;
+    }
+    localStorage.setItem(JI_PIN_KEY, jiPinInput);
+    jiSaveFails({count:0,until:0});
+    toast('🔐','PIN créé ! Votre journal est protégé.');
+    closeOverlay('jiPinOverlay');
+    jiOpenJournal();
+    return;
+  }
+  if(jiPinMode==='check'){
+    const stored = jiGetPin();
+    if(jiPinInput === stored){
+      jiSaveFails({count:0,until:0});
+      closeOverlay('jiPinOverlay');
+      jiOpenJournal();
+    } else {
+      const f = jiGetFails(); f.count++;
+      if(f.count >= JI_MAX_FAILS){
+        f.until = Date.now() + JI_LOCK_MS; f.count = 0;
+        jiSaveFails(f);
+        jiShowPinScreen('🔒','Journal bloqué','Trop de tentatives. Réessayez dans 30 min.',true);
+        jiPinError('');
+      } else {
+        jiSaveFails(f);
+        const rest = JI_MAX_FAILS - f.count;
+        jiPinError('PIN incorrect · '+rest+' tentative'+(rest>1?'s ':' ')+'restante'+(rest>1?'s':''));
+      }
+    }
+    return;
+  }
+  if(jiPinMode==='change_old'){
+    if(jiPinInput !== jiGetPin()){ jiPinError('Ancien PIN incorrect'); return; }
+    jiPinMode = 'change_new';
+    jiShowPinScreen('🔏','Nouveau PIN','Choisissez votre nouveau code');
+    return;
+  }
+  if(jiPinMode==='change_new'){
+    jiPinTemp = jiPinInput; jiPinMode = 'change_confirm';
+    jiShowPinScreen('🔏','Confirmez le nouveau PIN','Entrez à nouveau les 4 chiffres');
+    return;
+  }
+  if(jiPinMode==='change_confirm'){
+    if(jiPinInput !== jiPinTemp){
+      jiPinMode = 'change_new';
+      jiShowPinScreen('🔏','Codes différents !','Entrez à nouveau votre nouveau PIN');
+      jiPinError('Les codes ne correspondent pas'); return;
+    }
+    loadJiEntries();
+    localStorage.setItem(JI_PIN_KEY, jiPinInput);
+    saveJiEntries();
+    closeOverlay('jiPinOverlay'); closeOverlay('jiSettingsOverlay');
+    toast('🔐','PIN modifié avec succès !');
+    return;
+  }
+}
+
+function jiChangePinFlow(){
+  jiPinMode = 'change_old';
+  jiShowPinScreen('🔐','Entrez l\'ancien PIN','Pour confirmer votre identité');
+  closeOverlay('jiSettingsOverlay');
+  openOverlay('jiPinOverlay');
+}
+
+function jiOpenJournal(){
+  loadJiEntries();
+  jiActiveCat = 'Toutes';
+  renderJiCatFilter();
+  renderJiList();
+  jiResetAutoLock();
+  openOverlay('jiOverlay');
+}
+
+function renderJiCatFilter(){
+  const el = document.getElementById('jiCatFilter');
+  el.innerHTML = JI_CATS.map(c=>`<button onclick="jiSetCat('${c}')" style="white-space:nowrap;padding:5px 12px;border-radius:100px;border:1.5px solid ${jiActiveCat===c?'#db2777':'#e5e7eb'};background:${jiActiveCat===c?'#db2777':'var(--bg2)'};color:${jiActiveCat===c?'#fff':'#374151'};font-size:11px;font-weight:700;cursor:pointer;">${c==='Toutes'?'📋':(JI_CAT_EMOJI[c]||'')} ${c}</button>`).join('');
+}
+function jiSetCat(c){ jiActiveCat=c; renderJiCatFilter(); renderJiList(); }
+
+function renderJiList(){
+  loadJiEntries();
+  const el = document.getElementById('jiList');
+  let entries = jiActiveCat==='Toutes' ? [...jiEntries] : jiEntries.filter(e=>e.cat===jiActiveCat);
+  entries.sort((a,b)=>b.date.localeCompare(a.date));
+  if(!entries.length){ el.innerHTML='<div style="text-align:center;padding:40px 0;color:#9ca3af;">Aucune entrée<br><span style="font-size:40px;">📔</span></div>'; return; }
+  el.innerHTML = entries.map(e=>`
+    <div class="ji-entry" onclick="openJiEdit('${e.id}');jiResetAutoLock();">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="font-size:20px;">${e.mood||'📔'}</span>
+        <span class="ji-entry-date">${formatJiDate(e.date)}</span>
+        <span class="ji-cat-badge" style="margin-left:auto;background:${JI_CAT_COLORS[e.cat]||'#f3f4f6'}">${JI_CAT_EMOJI[e.cat]||'📝'} ${e.cat||'Général'}</span>
+      </div>
+      ${(e.photos&&e.photos.length)?`<div style="display:flex;gap:4px;margin:6px 0;">${e.photos.slice(0,3).map(p=>`<img src="${p}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;">`).join('')}${e.photos.length>3?`<div style="width:60px;height:60px;background:#f9a8d4;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#db2777;">+${e.photos.length-3}</div>`:''}</div>`:''}
+      <div class="ji-entry-preview">${escHtml(e.body||'...')}</div>
+    </div>`).join('');
+}
+
+function formatJiDate(d){
+  if(!d) return '—';
+  const dt = new Date(d+'T12:00:00');
+  return dt.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+function openJiEdit(id){
+  jiResetAutoLock();
+  jiCurrentId = id; jiCurrentMood = '🙂'; jiCurrentPhotos = [];
+  if(id){
+    loadJiEntries();
+    const e = jiEntries.find(x=>x.id===id);
+    if(!e) return;
+    document.getElementById('jiEditTitle').textContent = formatJiDate(e.date);
+    document.getElementById('jiEntryDate').value = e.date;
+    document.getElementById('jiEntryBody').value = e.body||'';
+    document.getElementById('jiEntryCat').value = e.cat||'Général';
+    jiCurrentMood = e.mood||'🙂';
+    jiCurrentPhotos = e.photos ? [...e.photos] : [];
+    document.getElementById('jiDeleteBtn').style.display = 'block';
+  } else {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('jiEditTitle').textContent = "Nouvelle entrée";
+    document.getElementById('jiEntryDate').value = today;
+    document.getElementById('jiEntryBody').value = '';
+    document.getElementById('jiEntryCat').value = 'Général';
+    document.getElementById('jiDeleteBtn').style.display = 'none';
+  }
+  selectMood(jiCurrentMood);
+  renderJiPhotosGrid();
+  openOverlay('jiEditOverlay');
+}
+
+function selectMood(m){
+  jiCurrentMood = m;
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.toggle('selected', b.dataset.mood===m));
+}
+
+function renderJiPhotosGrid(){
+  const grid = document.getElementById('jiPhotosGrid');
+  const countEl = document.getElementById('jiPhotoCount');
+  const addBtn = document.getElementById('jiAddPhotoBtn');
+  grid.innerHTML = jiCurrentPhotos.map((p,i)=>`<div class="ji-photo-thumb"><img src="${p}"><button class="ji-photo-del" onclick="jiRemovePhoto(${i})">✕</button></div>`).join('');
+  countEl.textContent = '('+jiCurrentPhotos.length+'/5)';
+  addBtn.style.display = jiCurrentPhotos.length >= 5 ? 'none' : 'flex';
+}
+
+function handleJiPhotos(event){
+  const files = Array.from(event.target.files);
+  const remaining = 5 - jiCurrentPhotos.length;
+  files.slice(0, remaining).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e => { jiCurrentPhotos.push(e.target.result); renderJiPhotosGrid(); };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+  if(files.length > remaining) toast('⚠️','Maximum 5 photos');
+}
+
+function jiRemovePhoto(idx){ jiCurrentPhotos.splice(idx,1); renderJiPhotosGrid(); }
+
+function saveJiEntry(){
+  jiResetAutoLock();
+  loadJiEntries();
+  const date = document.getElementById('jiEntryDate').value;
+  const body = document.getElementById('jiEntryBody').value.trim();
+  const cat = document.getElementById('jiEntryCat').value;
+  if(!date){ toast('⚠️','Choisissez une date'); return; }
+  if(!body && jiCurrentPhotos.length===0){ toast('⚠️','Écrivez quelque chose ou ajoutez une photo'); return; }
+  const now = new Date().toISOString();
+  if(jiCurrentId){
+    const e = jiEntries.find(x=>x.id===jiCurrentId);
+    if(e){ e.date=date; e.body=body; e.mood=jiCurrentMood; e.cat=cat; e.photos=[...jiCurrentPhotos]; e.updatedAt=now; }
+  } else {
+    const existing = jiEntries.find(x=>x.date===date);
+    if(existing){ existing.body=body; existing.mood=jiCurrentMood; existing.cat=cat; existing.photos=[...jiCurrentPhotos]; existing.updatedAt=now; }
+    else jiEntries.push({ id:'ji_'+Date.now(), date, body, mood:jiCurrentMood, cat, photos:[...jiCurrentPhotos], createdAt:now, updatedAt:now });
+  }
+  saveJiEntries();
+  closeOverlay('jiEditOverlay');
+  renderJiList();
+  toast('📔','Entrée sauvegardée !');
+}
+
+function deleteJiEntry(){
+  if(!jiCurrentId) return;
+  if(!confirm('Supprimer cette entrée définitivement ?')) return;
+  loadJiEntries();
+  jiEntries = jiEntries.filter(x=>x.id!==jiCurrentId);
+  saveJiEntries();
+  closeOverlay('jiEditOverlay');
+  renderJiList();
+  toast('🗑️','Entrée supprimée');
+}
+
+function openJiSettings(){
+  jiResetAutoLock();
+  loadJiEntries();
+  const total = jiEntries.length;
+  const photos = jiEntries.reduce((s,e)=>s+(e.photos?e.photos.length:0),0);
+  document.getElementById('jiStats').textContent = total+' entrée'+(total>1?'s ':' ')+'· '+photos+' photo'+(photos>1?'s':'');
+  openOverlay('jiSettingsOverlay');
+}
+
+function jiDeleteAll(){
+  if(!confirm('Supprimer TOUTES les entrées ? Action irréversible.')) return;
+  jiEntries = []; saveJiEntries();
+  closeOverlay('jiSettingsOverlay');
+  renderJiList();
+  toast('🗑️','Journal supprimé');
+}
+
+// CALENDRIER ISLAMIQUE
+// ══════════════════════════════════════════
+let ciTab = 0;
+
+// Conversion Grégorien → Hijri (algorithme standard)
+function toHijri(gDate){
+  let day = gDate.getDate(), month = gDate.getMonth()+1, year = gDate.getFullYear();
+  if((year + (month-1)/12 + (day-1)/365.25) < (1948439.5-1948438)/365.25 + 622) return {d:1,m:1,y:1};
+  let jd = Math.floor((1461*(year+4800+Math.floor((month-14)/12)))/4)
+    + Math.floor((367*(month-2-12*Math.floor((month-14)/12)))/12)
+    - Math.floor((3*Math.floor((year+4900+Math.floor((month-14)/12))/100))/4)
+    + day - 32075;
+  let l = jd - 1948440 + 10632;
+  let n = Math.floor((l-1)/10631);
+  l = l - 10631*n + 354;
+  let j = Math.floor((10985-l)/5316)*Math.floor((50*l)/17719) + Math.floor(l/5670)*Math.floor((43*l)/15238);
+  l = l - Math.floor((30-j)/15)*Math.floor((17719*j)/50) - Math.floor(j/16)*Math.floor((15238*j)/43) + 29;
+  let hMonth = Math.floor((24*l)/709);
+  let hDay = l - Math.floor((709*hMonth)/24);
+  let hYear = 30*n + j - 30;
+  return {d:hDay, m:hMonth, y:hYear};
+}
+
+const HIJRI_MONTHS = ['Mouharram','Safar','Rabi\' al-Awal','Rabi\' al-Thani','Joumada al-Oula','Joumada al-Thania','Rajab','Cha\'ban','Ramadan','Chawwal','Dhou al-Qi\'da','Dhou al-Hijja'];
+
+// Événements islamiques fixes (mois hijri, jour hijri, nom, emoji)
+const ISLAMIC_EVENTS = [
+  {m:1, d:1, name:'Nouvel An Hijri (Ras as-Sana)', emoji:'🎊'},
+  {m:1, d:10, name:'Achoura', emoji:'🕌'},
+  {m:3, d:12, name:'Mawlid an-Nabawi', emoji:'🌹'},
+  {m:7, d:27, name:'Nuit du Mi\'raj (Laylat al-Mi\'raj)', emoji:'✨'},
+  {m:8, d:15, name:'Nuit du Bara\'a', emoji:'🌕'},
+  {m:9, d:1, name:'Début du Ramadan', emoji:'🌙'},
+  {m:9, d:27, name:'Nuit du Destin (Laylat al-Qadr)', emoji:'⭐'},
+  {m:10, d:1, name:'Aïd al-Fitr (fin Ramadan)', emoji:'🎉'},
+  {m:12, d:9, name:'Jour d\'Arafat', emoji:'🕋'},
+  {m:12, d:10, name:'Aïd al-Adha', emoji:'🐑'},
+];
+
+function getIslamicEventsForYear(hYear){
+  // Chercher les dates grégoriennes des événements hijri pour l'année courante
+  const events = [];
+  for(let dayOfYear=0; dayOfYear<400; dayOfYear++){
+    const gd = new Date(new Date().getFullYear()-1, 0, 1+dayOfYear);
+    const h = toHijri(gd);
+    if(h.y === hYear){
+      const ev = ISLAMIC_EVENTS.find(e=>e.m===h.m && e.d===h.d);
+      if(ev) events.push({...ev, gDate: gd});
+    }
+  }
+  return events;
+}
+
+// Calcul simplifié des heures de prière (Conakry: lat=9.6412, lon=-13.5784)
+function calcPrayers(date, lat, lon){
+  lat = lat || 9.6412; lon = lon || -13.5784;
+  const D2R = Math.PI/180, R2D = 180/Math.PI;
+  const jd = date.getTime()/86400000 + 2440587.5;
+  const d = jd - 2451545.0;
+  const g = (357.529 + 0.98560028*d) % 360;
+  const q = (280.459 + 0.98564736*d) % 360;
+  const L = (q + 1.915*Math.sin(g*D2R) + 0.020*Math.sin(2*g*D2R)) % 360;
+  const e = 23.439 - 0.00000036*d;
+  const RA = Math.atan2(Math.cos(e*D2R)*Math.sin(L*D2R), Math.cos(L*D2R))*R2D/15;
+  const decl = Math.asin(Math.sin(e*D2R)*Math.sin(L*D2R))*R2D;
+  const eqt = q/15 - ((RA+24)%24);
+  const transit = 12 - eqt - lon/15;
+  const sunriseA = Math.acos((-Math.sin(-0.8333*D2R) - Math.sin(lat*D2R)*Math.sin(decl*D2R))/(Math.cos(lat*D2R)*Math.cos(decl*D2R)))*R2D/15;
+  const fajrA = Math.acos((-Math.sin(-18*D2R) - Math.sin(lat*D2R)*Math.sin(decl*D2R))/(Math.cos(lat*D2R)*Math.cos(decl*D2R)))*R2D/15;
+  const ishaA = Math.acos((-Math.sin(-17*D2R) - Math.sin(lat*D2R)*Math.sin(decl*D2R))/(Math.cos(lat*D2R)*Math.cos(decl*D2R)))*R2D/15;
+  const asrFactor = 1/Math.tan((Math.abs(lat - decl)+1)*D2R);
+  const asrA = Math.acos((Math.sin(Math.atan(asrFactor)) - Math.sin(lat*D2R)*Math.sin(decl*D2R))/(Math.cos(lat*D2R)*Math.cos(decl*D2R)))*R2D/15;
+  const fmt = h => { const hh=Math.floor(h), mm=Math.round((h-hh)*60); return (hh%24).toString().padStart(2,'0')+':'+(mm<0?'00':mm.toString().padStart(2,'0')); };
+  return [
+    {name:'Fajr (Subh)', time: fmt(transit - fajrA), emoji:'🌅'},
+    {name:'Chourouk (Lever)', time: fmt(transit - sunriseA), emoji:'☀️'},
+    {name:'Dhouhr (Midi)', time: fmt(transit), emoji:'🌤️'},
+    {name:'Asr', time: fmt(transit + asrA), emoji:'🌇'},
+    {name:'Maghrib (Coucher)', time: fmt(transit + sunriseA), emoji:'🌆'},
+    {name:'Icha', time: fmt(transit + ishaA), emoji:'🌙'},
+  ];
+}
+
+function openCalIslamique(){
+  ciTab = 0;
+  renderCiTab();
+  openOverlay('ciOverlay');
+}
+
+function ciSetTab(t){
+  ciTab = t;
+  [0,1,2].forEach(i=>{ document.getElementById('ciTab'+i).classList.toggle('active', i===t); });
+  renderCiContent();
+}
+
+function renderCiTab(){
+  const today = new Date();
+  const h = toHijri(today);
+  const hm = HIJRI_MONTHS[h.m-1]||'';
+  // Moon phase
+  const lun = (today.getTime()/86400000 - 10) % 29.53;
+  let moonEmoji = lun < 3.7 ? '🌑' : lun < 7.4 ? '🌒' : lun < 11.1 ? '🌓' : lun < 14.8 ? '🌔' : lun < 18.4 ? '🌕' : lun < 22.1 ? '🌖' : lun < 25.8 ? '🌗' : '🌘';
+  document.getElementById('ciHeaderCard').innerHTML = `
+    <div style="font-size:13px;opacity:0.7;margin-bottom:4px;">${today.toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+    <div class="ci-hijri-date">${h.d} ${hm} ${h.y} H</div>
+    <div class="ci-hijri-sub">${moonEmoji} Phase lunaire · Conakry, Guinée</div>
+  `;
+  [0,1,2].forEach(i=>{ document.getElementById('ciTab'+i).classList.toggle('active', i===ciTab); });
+  renderCiContent();
+}
+
+function renderCiContent(){
+  const el = document.getElementById('ciContent');
+  const today = new Date();
+  if(ciTab===0){
+    // Calendrier mensuel
+    const y = today.getFullYear(), m = today.getMonth();
+    const first = new Date(y, m, 1), last = new Date(y, m+1, 0);
+    const jours = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    let html = `<div style="text-align:center;font-weight:800;font-size:15px;margin-bottom:10px;">${today.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</div>`;
+    html += '<div class="ci-grid">';
+    jours.forEach(j=>{ html += `<div class="ci-day-header">${j}</div>`; });
+    // Empty cells
+    for(let i=0;i<first.getDay();i++) html += '<div></div>';
+    for(let d=1; d<=last.getDate(); d++){
+      const gd = new Date(y, m, d);
+      const h = toHijri(gd);
+      const isToday = d===today.getDate();
+      const isEv = ISLAMIC_EVENTS.some(e=>e.m===h.m && e.d===h.d);
+      html += `<div class="ci-day${isToday?' today':isEv?' event':''}" title="${h.d} ${HIJRI_MONTHS[h.m-1]}">${d}<br><span style="font-size:8px;opacity:0.7;">${h.d}</span></div>`;
+    }
+    html += '</div>';
+    html += `<div style="font-size:11px;color:#6b7280;margin-top:8px;">Le chiffre en bas = jour hijri correspondant · <span style="background:#d1fae5;padding:1px 5px;border-radius:4px;">Vert</span> = événement islamique</div>`;
+    el.innerHTML = html;
+  } else if(ciTab===1){
+    // Événements à venir
+    const h = toHijri(today);
+    let events = [];
+    // Chercher sur 365 jours
+    for(let i=0; i<400; i++){
+      const gd = new Date(today.getFullYear(), today.getMonth(), today.getDate()+i);
+      const hd = toHijri(gd);
+      const ev = ISLAMIC_EVENTS.find(e=>e.m===hd.m && e.d===hd.d);
+      if(ev) events.push({...ev, gDate:gd, hDate:hd, diff:i});
+      if(events.length >= 8) break;
+    }
+    el.innerHTML = events.map(e=>`
+      <div class="ci-event-card">
+        <div style="font-size:28px;">${e.emoji}</div>
+        <div>
+          <div style="font-weight:700;font-size:13px;">${e.name}</div>
+          <div style="font-size:11px;color:#6b7280;">${e.gDate.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div style="font-size:11px;color:#065f46;font-weight:700;">${e.diff===0?'Aujourd\'hui !':e.diff===1?'Demain':'Dans '+e.diff+' jours'}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    // Heures de prière
+    const prayers = calcPrayers(today);
+    const now = today.getHours()*60+today.getMinutes();
+    el.innerHTML = `
+      <div style="font-size:12px;color:#6b7280;margin-bottom:12px;text-align:center;">📍 Conakry, Guinée · ${today.toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}</div>
+      ${prayers.map(p=>{
+        const [hh,mm] = p.time.split(':').map(Number);
+        const tmin = hh*60+mm;
+        const isPast = now > tmin;
+        return `<div class="ci-prayer-row" style="${isPast?'opacity:0.5':''}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">${p.emoji}</span>
+            <span class="ci-prayer-name">${p.name}</span>
+          </div>
+          <span class="ci-prayer-time">${p.time}</span>
+        </div>`;
+      }).join('')}
+      <div style="font-size:10px;color:#9ca3af;margin-top:12px;text-align:center;">⚠️ Heures calculées automatiquement · vérifiez avec votre mosquée locale</div>`;
+  }
+}
+
+
 
 <!-- PAGE LISTE + PDF -->
 <div class="overlay" id="pageList">
