@@ -1033,8 +1033,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div class="fg"><label>Catégorie</label>
           <select id="txCat">
             <option value="">-- Choisir --</option>
-            <optgroup label="Revenus"><option>Salaire</option><option>Commerce</option><option>Investissement</option><option>Prime / Bonus</option><option>Autre revenu</option></optgroup>
-            <optgroup label="Dépenses"><option>Alimentation</option><option>Transport</option><option>Logement / Loyer</option><option>Santé</option><option>Éducation</option><option>Loisirs</option><option>Épargne / Tontine</option><option>Mobile Money</option><option>Famille</option><option>Business</option><option>Autre</option></optgroup>
+            <!-- Options injectées dynamiquement par setType() -->
           </select>
         </div>
         <div class="fg"><label>Paiement</label>
@@ -1286,7 +1285,18 @@ function openCD(t){setCDType(t||'debt');document.getElementById('cdAmount').valu
 function closeSheet(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 
-function setType(t){S.type=t;document.getElementById('btnInc').className='type-btn'+(t==='income'?' si':'');document.getElementById('btnExp').className='type-btn'+(t==='expense'?' se':'');document.getElementById('txSheetTitle').textContent=t==='income'?'Ajouter un revenu':'Ajouter une dépense';}
+function setType(t){
+  S.type=t;
+  document.getElementById('btnInc').className='type-btn'+(t==='income'?' si':'');
+  document.getElementById('btnExp').className='type-btn'+(t==='expense'?' se':'');
+  document.getElementById('txSheetTitle').textContent=t==='income'?'Ajouter un revenu':'Ajouter une dépense';
+  // Mettre à jour les catégories selon le type sélectionné
+  const INCOME_CATS=['Salaire','Commerce','Investissement','Prime / Bonus','Autre revenu'];
+  const cats = t==='income' ? INCOME_CATS : EXPENSE_CATS;
+  const sel = document.getElementById('txCat');
+  sel.innerHTML = '<option value="">-- Choisir une catégorie --</option>' +
+    cats.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+}
 function updateMFields(){const t=document.getElementById('mType').value;document.getElementById('momoF').style.display=t==='momo'?'block':'none';document.getElementById('cardF').style.display=t==='card'?'block':'none';}
 let cdType2='debt';
 function setCDType(t){cdType2=t;document.getElementById('cdBtnD').className='cd-tab'+(t==='debt'?' ad':'');document.getElementById('cdBtnC').className='cd-tab'+(t==='credit'?' ac':'');document.getElementById('cdTitle').textContent=t==='debt'?'💸 Ajouter un créancier':'💰 Ajouter un débiteur';document.getElementById('cdPersonLbl').textContent=t==='debt'?'Nom du créancier (à qui je dois)':'Nom du débiteur (qui me doit)';}
