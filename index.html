@@ -864,18 +864,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div><div class="menu-label">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
       </button>
 
-      <div class="drawer-section-label">Créances & Dettes</div>
-      <button class="menu-item" onclick="closeDrawer();openPageCD('debt')">
-        <div class="menu-icon" style="background:var(--orange-l)">🤲</div>
-        <div><div class="menu-label">Créanciers</div><div class="menu-sub" id="menuOwe">0 GNF en attente</div></div>
-        <span class="menu-badge" id="menuOweBadge" style="display:none">!</span>
-      </button>
-      <button class="menu-item" onclick="closeDrawer();openPageCD('credit')">
-        <div class="menu-icon" style="background:var(--blue-l)">🙏</div>
-        <div><div class="menu-label">Débiteurs</div><div class="menu-sub" id="menuOwned">0 GNF à récupérer</div></div>
-        <span class="menu-badge green" id="menuOwnedBadge" style="display:none">!</span>
-      </button>
-
       <div class="drawer-section-label">Gestion</div>
       <button class="menu-item" onclick="closeDrawer();openPage('transactions')">
         <div class="menu-icon" style="background:var(--bg2)">📋</div>
@@ -1242,18 +1230,10 @@ function openDrawer(){updateDrawerBadges();document.getElementById('drawerOverla
 function closeDrawer(e){if(!e||e.target===document.getElementById('drawerOverlay'))document.getElementById('drawerOverlay').classList.remove('open');}
 function updateDrawerBadges(){
   if(!S.cd)S.cd=[];
-  const owe=S.cd.filter(c=>c.type==='debt'&&!c.paid).reduce((s,c)=>s+c.amount,0);
-  const owned=S.cd.filter(c=>c.type==='credit'&&!c.paid).reduce((s,c)=>s+c.amount,0);
-  document.getElementById('menuOwe').textContent=fmt(owe)+' en attente';
-  document.getElementById('menuOwned').textContent=fmt(owned)+' à récupérer';
-  const oweBadge=document.getElementById('menuOweBadge');
-  const ownedBadge=document.getElementById('menuOwnedBadge');
-  oweBadge.style.display=owe>0?'inline':'none';
-  ownedBadge.style.display=owned>0?'inline':'none';
   const urgentP=S.planned.filter(p=>{const d=daysTo(p.date);return d>=0&&d<=3;}).length;
-  document.getElementById('menuPlanned').textContent=S.planned.length+' dépense(s) planifiée(s)';
-  document.getElementById('menuPlannedBadge').style.display=urgentP>0?'inline':'none';
-  document.getElementById('menuGoal').textContent=S.goal?S.goal.name+' — '+(S.goal.current/S.goal.target*100).toFixed(0)+'%':'Non défini';
+  const pl=document.getElementById('menuPlanned'); if(pl) pl.textContent=S.planned.length+' dépense(s) planifiée(s)';
+  const plb=document.getElementById('menuPlannedBadge'); if(plb) plb.style.display=urgentP>0?'inline':'none';
+  const gl=document.getElementById('menuGoal'); if(gl) gl.textContent=S.goal?S.goal.name+' — '+(S.goal.current/S.goal.target*100).toFixed(0)+'%':'Non défini';
 }
 
 // ── PAGES ──
