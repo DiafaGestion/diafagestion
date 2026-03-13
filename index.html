@@ -1502,19 +1502,36 @@ async function checkLogin(){
   const isAdmin=checkAdminLogin();
 
   if(!isAdmin){
-    const storedUser=localStorage.getItem('diafa_user');
-    const storedPass=localStorage.getItem('diafa_pwd');
-    // Vérifier d'abord localStorage
-    if(storedUser && storedPass){
-      if(user!==storedUser||pass!==storedPass){
-        // Essayer Firebase si localStorage ne correspond pas
-        const fbOk = await checkLoginFromFirebase(user, pass, err);
-        if(!fbOk) return;
+    if(!user||!pass){
+      err.textContent='Identifiant et mot de passe requis';
+      err.style.display='block';
+      return;
+    }
+    // Toujours vérifier Firebase en priorité (source de vérité)
+    if(db){
+      const fbOk=await checkLoginFromFirebase(user,pass,err);
+      if(!fbOk){
+        // Firebase a échoué — tenter fallback localStorage (mode hors-ligne)
+        const storedUser=localStorage.getItem('diafa_user');
+        const storedPass=localStorage.getItem('diafa_pwd');
+        if(user===storedUser && pass===storedPass){
+          // Fallback accepté uniquement si Firebase indisponible (pas d'erreur auth)
+          const fbDown=err.textContent.includes('reseau')||err.textContent.includes('network')||err.textContent.includes('unavailable');
+          if(!fbDown) return; // erreur auth réelle → refuser
+          err.style.display='none'; // hors-ligne → accepter
+        } else {
+          return;
+        }
       }
     } else {
-      // Pas de compte local — essayer Firebase directement
-      const fbOk = await checkLoginFromFirebase(user, pass, err);
-      if(!fbOk) return;
+      // Pas de Firebase — mode hors-ligne complet
+      const storedUser=localStorage.getItem('diafa_user');
+      const storedPass=localStorage.getItem('diafa_pwd');
+      if(user!==storedUser||pass!==storedPass){
+        err.textContent='Identifiant ou mot de passe incorrect';
+        err.style.display='block';
+        return;
+      }
     }
   }
 
@@ -1523,11 +1540,9 @@ async function checkLogin(){
   document.getElementById('loginOverlay').classList.add('hidden');
 
   if(isAdmin){
-    // Admin: UID fixe, entre dans l'app + affiche bouton panneau
     localStorage.setItem('diafa_uid','admin_uid');
-    localStorage.setItem('diafa_user', ADMIN_LOGIN);
+    localStorage.setItem('diafa_user',ADMIN_LOGIN);
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-    // donnees chargees depuis Firebase
     let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!ap.nom){
       ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
@@ -1535,22 +1550,20 @@ async function checkLogin(){
     }
     loadProfile();
     render();
-    await loadDataFromFirebase(); render();
+    await loadDataFromFirebase();
+    render();
     document.getElementById('adminTabBtn').style.display='block';
   } else {
-    // Client normal — on essaie Firebase, sinon on garde le profil local
     await loadProfileFromFirebase(user);
     const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!p.nom||!p.prenom||!p.telephone){
-      // Aucun profil ni local ni Firebase → première connexion
       openFirstTimeProfile();
     } else {
-      // Profil trouvé (local ou Firebase)
       const uid=localStorage.getItem('diafa_uid');
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      // donnees chargees depuis Firebase
       render();
-      await loadDataFromFirebase(); render();
+      await loadDataFromFirebase();
+      render();
     }
     document.getElementById('adminTabBtn').style.display='none';
   }
@@ -1584,13 +1597,17 @@ function savePassword(){
     if(!newUser&&!nw){err.textContent='Aucune modification';return;}
     try{
       const upd={updatedAt:new Date().toISOString()};
-      if(newUser){upd.login=newUser;localStorage.setItem('diafa_user',newUser);}
-      if(nw){upd.password=nw;localStorage.setItem('diafa_pwd',nw);}
-      if(db&&uid&&uid!=='admin_uid')await db.collection('clients').doc(uid).update(upd);
+      if(newUser) upd.login=newUser;
+      if(nw)      upd.password=nw;
+      // Firebase d'abord — si ça échoue, localStorage reste cohérent
+      if(db&&uid&&uid!=='admin_uid') await db.collection('clients').doc(uid).update(upd);
+      // Puis mettre à jour localStorage (seulement si Firebase a réussi)
+      if(newUser) localStorage.setItem('diafa_user',newUser);
+      if(nw)      localStorage.setItem('diafa_pwd',nw);
       closePwd();
       const lbl=[newUser?'identifiant':'',nw?'mot de passe':''].filter(Boolean).join(' & ');
-      toast('ok',lbl+' modifie !');
-    }catch(e2){err.textContent='Erreur: '+e2.message;}
+      toast('ok',lbl+' modifie avec succes !');
+    }catch(e2){err.textContent='Erreur lors de la mise a jour: '+e2.message;}
   })();
 }
 
