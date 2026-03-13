@@ -1235,7 +1235,7 @@ function printListPage(){
 <div class="pwd-overlay hidden" id="pwdOverlay" onclick="if(event.target===this)closePwd()">
   <div class="pwd-sheet">
     <div class="pwd-title">🔑 Modifier mes accès</div>
-    <div id="pwdResetHint" style="display:none;background:#fef3c7;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400e;margin-bottom:10px;font-weight:600;line-height:1.4;"></div><div class="pwd-fg"><label>Mot de passe actuel</label><input type="password" id="pwdOld" placeholder="Mot de passe actuel"></div>
+    <div class="pwd-fg"><label>Mot de passe actuel</label><input type="password" id="pwdOld" placeholder="Mot de passe actuel"></div>
     <div style="background:#f5f6fa;border-radius:12px;padding:14px;margin-bottom:14px;">
       <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;">Nouvel identifiant</div>
       <div class="pwd-fg" style="margin-bottom:0"><label>Identifiant</label><input type="text" id="pwdNewUser" placeholder="Nouvel identifiant"></div>
@@ -1376,12 +1376,12 @@ function printListPage(){
       <div class="drawer-section-label" style="margin-top:4px;">Planning dépenses</div>
       <button class="menu-item" onclick="closeDrawer();openPlanned()">
         <div class="menu-icon" style="background:#f3e8ff">📅</div>
-        <div><div class="menu-label" style="color:#7c3aed;">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
+        <div><div class="menu-label" style="color:#000000;font-weight:700;">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
         <span class="menu-badge" id="menuPlannedBadge" style="display:none">!</span>
       </button>
       <button class="menu-item" onclick="closeDrawer();openListPage('planned')">
         <div class="menu-icon" style="background:#f3e8ff">📋</div>
-        <div><div class="menu-label" style="color:#7c3aed;">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
+        <div><div class="menu-label" style="color:#000000;font-weight:700;">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
       </button>
 
       <div class="drawer-section-label">Créances & Dettes</div>
@@ -1701,11 +1701,19 @@ function printListPage(){
 <script>
 // ── STATE ──
 let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+// ── UTILITAIRES (évite la duplication de code) ──
+function getProfile(){ return JSON.parse(localStorage.getItem('diafa_profile')||'{}'); }
+function getAllMonths(){ return [...new Set(S.tx.map(t=>t.month))].sort().reverse(); }
+function getClientName(){ const p=getProfile(); return ((p.prenom||'')+' '+(p.nom||'')).trim()||'Client'; }
 // Clé de données liée au client connecté
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
 function save(){
-  if(window._loadingData) return; // ne pas écraser pendant le chargement
+  // Sauvegarde locale immédiate comme filet de sécurité
+  const uid=localStorage.getItem('diafa_uid');
+  if(uid&&uid!=='admin_uid'){
+    try{ localStorage.setItem('diafa_data_'+uid, JSON.stringify(S)); }catch(e){}
+  }
   syncDataToFirebase();
 }
 async function syncDataToFirebase(){
@@ -1715,22 +1723,41 @@ async function syncDataToFirebase(){
   try{
     const d=JSON.parse(JSON.stringify(S)); delete d.type;
     await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
-  }catch(e){}
+  }catch(e){
+    // Erreur Firebase — les données sont déjà sauvegardées localement ci-dessus
+    console.warn('Sync Firebase échouée — données conservées localement:', e);
+    if(typeof toast==='function') toast('⚠️','Sync cloud échouée — données locales OK');
+  }
 }
 async function loadDataFromFirebase(){
-  if(!db) return;
   const uid=localStorage.getItem('diafa_uid');
   if(!uid||uid==='admin_uid') return;
-  window._loadingData=true;
-  try{
-    const doc=await db.collection('clients').doc(uid).get();
-    if(doc.exists&&doc.data().appData){
-      const d=JSON.parse(doc.data().appData);
-      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-      Object.assign(S,d);
+  // Essayer Firebase d'abord
+  if(db){
+    try{
+      const doc=await db.collection('clients').doc(uid).get();
+      if(doc.exists&&doc.data().appData){
+        S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+        Object.assign(S,JSON.parse(doc.data().appData));
+        // Mettre à jour la sauvegarde locale de secours
+        try{ localStorage.setItem('diafa_data_'+uid, JSON.stringify(S)); }catch(e){}
+        render();
+        return;
+      }
+    }catch(e){
+      console.warn('Firebase load échoué, tentative locale:', e);
     }
-  }catch(e){ console.warn('loadFirebase err:',e); }
-  finally{ window._loadingData=false; }
+  }
+  // Fallback : sauvegarde locale de secours
+  const localData = localStorage.getItem('diafa_data_'+uid);
+  if(localData){
+    try{
+      S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+      Object.assign(S, JSON.parse(localData));
+      render();
+      if(typeof toast==='function') toast('💾','Mode hors-ligne — données locales');
+    }catch(e){}
+  }
 }
 
 // ── UTILS ──
@@ -2001,22 +2028,33 @@ function toast(icon,text){document.getElementById('toastIcon').textContent=icon;
 
 
 // ── RESET ──
-function logoutClient(){
-  if(confirm('Voulez-vous vous déconnecter ?\nVos données sont sauvegardées dans le cloud ☁️')){
-    // Effacer TOUTES les clés liées à ce compte
-    const uid = localStorage.getItem('diafa_uid') || '';
-    const keysToDelete = [];
-    for(let i=0; i<localStorage.length; i++){
-      const k = localStorage.key(i);
-      if(k && (k.startsWith('diafa_') || k === 'diafa_v4')) keysToDelete.push(k);
+async function logoutClient(){
+  if(!confirm('Voulez-vous vous déconnecter ?\nVos données vont être sauvegardées avant la déconnexion ☁️')) return;
+  // CORRECTION CRITIQUE : attendre la sauvegarde Firebase avant de vider le localStorage
+  try{
+    if(db){
+      const uid=localStorage.getItem('diafa_uid');
+      if(uid&&uid!=='admin_uid'){
+        const d=JSON.parse(JSON.stringify(S)); delete d.type;
+        await db.collection('clients').doc(uid).set({appData:JSON.stringify(d),updatedAt:new Date().toISOString()},{merge:true});
+      }
     }
-    keysToDelete.forEach(k => localStorage.removeItem(k));
-    // Réinitialiser S — aucune donnée ne doit fuir vers le compte suivant
-    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
-    document.getElementById('adminTabBtn').style.display='none';
-    closeDrawer();
-    document.getElementById('loginOverlay').classList.remove('hidden');
+  }catch(e){
+    alert('⚠️ La sauvegarde cloud a échoué.\nVérifiez votre connexion internet et réessayez.\nDéconnexion annulée pour protéger vos données.');
+    return;
   }
+  // Seulement après confirmation de sauvegarde, vider le localStorage
+  const keysToDelete = [];
+  for(let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && (k.startsWith('diafa_') || k === 'diafa_v4')) keysToDelete.push(k);
+  }
+  keysToDelete.forEach(k => localStorage.removeItem(k));
+  // Réinitialiser S — aucune donnée ne doit fuir vers le compte suivant
+  S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+  document.getElementById('adminTabBtn').style.display='none';
+  closeDrawer();
+  document.getElementById('loginOverlay').classList.remove('hidden');
 }
 
 function resetApp(){
@@ -2038,24 +2076,19 @@ async function checkLogin(){
   const isAdmin=checkAdminLogin();
 
   if(!isAdmin){
-    if(!user||!pass){
-      err.textContent='Identifiant et mot de passe requis';
-      err.style.display='block';
-      return;
-    }
-    if(db){
-      // Firebase disponible → seule source de vérité, pas de fallback
-      const fbOk=await checkLoginFromFirebase(user,pass,err);
-      if(!fbOk) return; // refus définitif
-    } else {
-      // Hors-ligne → fallback localStorage uniquement
-      const storedUser=localStorage.getItem('diafa_user');
-      const storedPass=localStorage.getItem('diafa_pwd');
+    const storedUser=localStorage.getItem('diafa_user');
+    const storedPass=localStorage.getItem('diafa_pwd');
+    // Vérifier d'abord localStorage
+    if(storedUser && storedPass){
       if(user!==storedUser||pass!==storedPass){
-        err.textContent='Identifiant ou mot de passe incorrect (hors-ligne)';
-        err.style.display='block';
-        return;
+        // Essayer Firebase si localStorage ne correspond pas
+        const fbOk = await checkLoginFromFirebase(user, pass, err);
+        if(!fbOk) return;
       }
+    } else {
+      // Pas de compte local — essayer Firebase directement
+      const fbOk = await checkLoginFromFirebase(user, pass, err);
+      if(!fbOk) return;
     }
   }
 
@@ -2064,9 +2097,11 @@ async function checkLogin(){
   document.getElementById('loginOverlay').classList.add('hidden');
 
   if(isAdmin){
+    // Admin: UID fixe, entre dans l'app + affiche bouton panneau
     localStorage.setItem('diafa_uid','admin_uid');
-    localStorage.setItem('diafa_user',ADMIN_LOGIN);
+    localStorage.setItem('diafa_user', ADMIN_LOGIN);
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+    // donnees chargees depuis Firebase
     let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!ap.nom){
       ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
@@ -2074,46 +2109,27 @@ async function checkLogin(){
     }
     loadProfile();
     render();
-    await loadDataFromFirebase();
-    render();
+    loadDataFromFirebase().then(()=>render());
     document.getElementById('adminTabBtn').style.display='block';
   } else {
+    // Client normal — on essaie Firebase, sinon on garde le profil local
     await loadProfileFromFirebase(user);
     const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
     if(!p.nom||!p.prenom||!p.telephone){
+      // Aucun profil ni local ni Firebase → première connexion
       openFirstTimeProfile();
     } else {
+      // Profil trouvé (local ou Firebase)
+      const uid=localStorage.getItem('diafa_uid');
       S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+      // donnees chargees depuis Firebase
       render();
-      await loadDataFromFirebase();
-      render();
+      loadDataFromFirebase().then(()=>render());
     }
     document.getElementById('adminTabBtn').style.display='none';
   }
 }
-async function openPwd(){
-  document.getElementById('pwdOld').value='';
-  document.getElementById('pwdNew').value='';
-  document.getElementById('pwdConfirm').value='';
-  document.getElementById('pwdError').textContent='';
-  const hint=document.getElementById('pwdResetHint');
-  if(hint) hint.style.display='none';
-  document.getElementById('pwdOld').placeholder='Mot de passe actuel';
-  const uid=localStorage.getItem('diafa_uid')||'';
-  if(db&&uid&&uid!=='admin_uid'){
-    try{
-      const doc=await db.collection('clients').doc(uid).get();
-      if(doc.exists&&doc.data().password==='Diafa2026'){
-        if(hint){
-          hint.textContent='🔑 Mot de passe réinitialisé par l\'admin. Laissez le champ "Actuel" vide et choisissez un nouveau mot de passe.';
-          hint.style.display='block';
-        }
-        document.getElementById('pwdOld').placeholder='Laisser vide (reset admin)';
-      }
-    }catch(e){}
-  }
-  document.getElementById('pwdOverlay').classList.remove('hidden');
-}
+function openPwd(){document.getElementById('pwdOverlay').classList.remove('hidden');}
 function closePwd(){
   document.getElementById('pwdOverlay').classList.add('hidden');
   document.getElementById('pwdOld').value='';
@@ -2122,52 +2138,34 @@ function closePwd(){
   document.getElementById('pwdConfirm').value='';
   document.getElementById('pwdError').textContent='';
 }
-async function savePassword(){
+function savePassword(){
   const old=document.getElementById('pwdOld').value;
   const newUser=document.getElementById('pwdNewUser').value.trim();
   const nw=document.getElementById('pwdNew').value;
   const cf=document.getElementById('pwdConfirm').value;
   const err=document.getElementById('pwdError');
   const uid=localStorage.getItem('diafa_uid')||'';
-
-  // Lire le vrai mot de passe depuis Firebase (source de vérité)
-  let curPwd=localStorage.getItem('diafa_pwd')||'';
-  let isReset=false;
-  if(db&&uid&&uid!=='admin_uid'){
+  (async()=>{
+    let curPwd=localStorage.getItem('diafa_pwd')||'';
+    if(db&&uid&&uid!=='admin_uid'){
+      try{const doc=await db.collection('clients').doc(uid).get();
+        if(doc.exists&&doc.data().password)curPwd=doc.data().password;}catch(e){}
+    }
+    if(old!==curPwd){err.textContent='Mot de passe actuel incorrect';return;}
+    if(newUser&&newUser.length<3){err.textContent='Identifiant min 3 caracteres';return;}
+    if((nw||cf)&&nw.length<4){err.textContent='Mot de passe min 4 caracteres';return;}
+    if((nw||cf)&&nw!==cf){err.textContent='Les mots de passe ne correspondent pas';return;}
+    if(!newUser&&!nw){err.textContent='Aucune modification';return;}
     try{
-      const doc=await db.collection('clients').doc(uid).get();
-      if(doc.exists){
-        const data=doc.data();
-        // Lire password même vide ou par défaut
-        if(data.password!==undefined) curPwd=data.password;
-        // Détecter reset admin → pass par défaut Diafa2026
-        isReset=(data.password==='Diafa2026');
-      }
-    }catch(e){}
-  }
-
-  // Si reset admin → ne pas vérifier l'ancien mot de passe
-  if(!isReset&&old!==curPwd){
-    err.textContent='Mot de passe actuel incorrect';
-    return;
-  }
-  if(newUser&&newUser.length<3){err.textContent='Identifiant min 3 caracteres';return;}
-  if(!nw&&!cf&&!newUser){err.textContent='Aucune modification';return;}
-  if((nw||cf)&&nw.length<4){err.textContent='Mot de passe min 4 caracteres';return;}
-  if((nw||cf)&&nw!==cf){err.textContent='Les mots de passe ne correspondent pas';return;}
-  try{
-    const upd={updatedAt:new Date().toISOString()};
-    if(newUser) upd.login=newUser;
-    if(nw)      upd.password=nw;
-    // Firebase d'abord
-    if(db&&uid&&uid!=='admin_uid') await db.collection('clients').doc(uid).update(upd);
-    // Sync localStorage
-    if(newUser) localStorage.setItem('diafa_user',newUser);
-    if(nw)      localStorage.setItem('diafa_pwd',nw);
-    closePwd();
-    const lbl=[newUser?'identifiant':'',nw?'mot de passe':''].filter(Boolean).join(' & ');
-    toast('ok',lbl+' modifié avec succès !');
-  }catch(e2){err.textContent='Erreur: '+e2.message;}
+      const upd={updatedAt:new Date().toISOString()};
+      if(newUser){upd.login=newUser;localStorage.setItem('diafa_user',newUser);}
+      if(nw){upd.password=nw;localStorage.setItem('diafa_pwd',nw);}
+      if(db&&uid&&uid!=='admin_uid')await db.collection('clients').doc(uid).update(upd);
+      closePwd();
+      const lbl=[newUser?'identifiant':'',nw?'mot de passe':''].filter(Boolean).join(' & ');
+      toast('ok',lbl+' modifie !');
+    }catch(e2){err.textContent='Erreur: '+e2.message;}
+  })();
 }
 
 
@@ -2321,6 +2319,8 @@ function initFirebase(){
 async function saveClientToFirebase(profile){
   if(!db) return;
   try {
+    // Réinitialiser S avant de charger le bon compte (isolation entre comptes)
+    S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     const uid = localStorage.getItem('diafa_uid') || generateUID();
     localStorage.setItem('diafa_uid', uid);
     // Resize avatar before saving to Firestore (max 80x80px)
@@ -2538,11 +2538,8 @@ function renderAdminClients(clients){
     card.querySelector('.btn-ac-reset').addEventListener('click',async ev=>{
       ev.stopPropagation();
       const P='Diafa2026';
-      if(!confirm('Réinitialiser le mot de passe de '+c.prenom+' ?\nIl pourra le changer dans "Changer mes accès".'))return;
-      try{
-        await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});
-        alert('✅ Mot de passe réinitialisé !\n\nLogin : '+c.login+'\nMot de passe par défaut : '+P+'\n\nLe client peut le changer dans "Changer mes accès" (champ actuel à laisser vide).');
-      }catch(e){toast('err','Erreur: '+e.message);}
+      if(!confirm('Reinitialiser le mot de passe de '+c.prenom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});alert('Mot de passe reinitialise. Login: '+c.login+' Pass: '+P);}catch(e){toast('err','Erreur: '+e.message);}
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
@@ -2777,7 +2774,7 @@ function openFirstTimeProfile(){
   document.getElementById('firstProfileOverlay').classList.remove('hidden');
 }
 
-async function saveFirstProfile(){
+function saveFirstProfile(){
   const prenom    = document.getElementById('fpPrenom').value.trim();
   const nom       = document.getElementById('fpNom').value.trim();
   const telephone = document.getElementById('fpTel').value.trim();
@@ -2799,13 +2796,10 @@ async function saveFirstProfile(){
   // Save locally
   localStorage.setItem('diafa_profile', JSON.stringify(profile));
 
-  // Sync to Firebase (await pour que l'UID soit prêt)
-  await saveClientToFirebase(profile);
+  // Sync to Firebase
+  saveClientToFirebase(profile);
 
-  // Charger les données existantes depuis Firebase (ne pas les perdre)
-  await loadDataFromFirebase();
-
-  // Update profile display
+  // Also update main profile fields
   const pFull = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
   loadProfile();
 
@@ -2820,6 +2814,66 @@ initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
+
+// ── RESTAURATION DE SESSION APRÈS MISE À JOUR ──
+// Après une mise à jour GitHub/déploiement, le SW vide le cache.
+// Si l'utilisateur était connecté, on recharge ses données depuis Firebase
+// sans lui demander de se reconnecter.
+(async function restoreSession(){
+  const uid  = localStorage.getItem('diafa_uid');
+  const user = localStorage.getItem('diafa_user');
+  if(!uid || !user) return; // Pas de session → écran de login normal
+
+  // Masquer l'écran de login, l'utilisateur est déjà authentifié
+  document.getElementById('loginOverlay').classList.add('hidden');
+  document.getElementById('loginFormOverlay').classList.add('hidden');
+
+  const isAdmin = (uid === 'admin_uid');
+  if(isAdmin){
+    document.getElementById('adminTabBtn').style.display = 'block';
+  }
+
+  // Recharger profil + données depuis Firebase
+  if(!isAdmin){
+    await loadProfileFromFirebase(user);
+    loadProfile();
+  }
+
+  // Recharger les données applicatives depuis Firebase
+  if(db && uid && uid !== 'admin_uid'){
+    try{
+      const doc = await db.collection('clients').doc(uid).get();
+      if(doc.exists && doc.data().appData){
+        S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+        Object.assign(S, JSON.parse(doc.data().appData));
+        render();
+        if(typeof toast === 'function') toast('☁️','Données restaurées depuis le cloud');
+      } else {
+        // Pas de données Firebase — essayer la sauvegarde locale de secours
+        const localData = localStorage.getItem('diafa_data_' + uid);
+        if(localData){
+          try{
+            S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+            Object.assign(S, JSON.parse(localData));
+            render();
+            if(typeof toast === 'function') toast('💾','Données locales restaurées');
+          }catch(e){}
+        }
+      }
+    }catch(e){
+      console.warn('Restauration Firebase échouée:', e);
+      // Fallback local
+      const localData = localStorage.getItem('diafa_data_' + uid);
+      if(localData){
+        try{
+          S = {tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+          Object.assign(S, JSON.parse(localData));
+          render();
+        }catch(e2){}
+      }
+    }
+  }
+})();
 
 // ══════════════════════════════════════════
 // PAGES LISTE + PDF
