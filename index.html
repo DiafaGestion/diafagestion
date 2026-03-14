@@ -2308,17 +2308,20 @@ function openListPage(type){
 function renderListPage(){
   const type = listPageType;
   const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
-  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
-  const m = month();
   const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
+  const today = new Date().toISOString().split('T')[0];
 
-  // Titres et données selon type
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
+  // Titre
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs', planned:'📅 Planning Dépenses'};
   document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
 
-  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
+  // Onglets
   const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'income' || type === 'expense'){
+  if(type === 'planned'){
+    tabsEl.innerHTML = [['all','Tous'],['upcoming','À venir'],['past','Passés']].map(([v,l])=>
+      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+    ).join('');
+  } else if(type === 'income' || type === 'expense'){
     const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
     tabsEl.innerHTML = opts.map(([v,l])=>
       '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
@@ -2328,15 +2331,19 @@ function renderListPage(){
       '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
     ).join('');
   }
-
-  // Event delegation pour les onglets
   tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
     btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
   });
 
   // Données
   let items = [];
-  if(type === 'income' || type === 'expense'){
+  if(type === 'planned'){
+    if(!S.planned) S.planned=[];
+    items = [...S.planned];
+    if(listPageFilter === 'upcoming') items = items.filter(x=>x.date >= today);
+    if(listPageFilter === 'past')     items = items.filter(x=>x.date < today);
+    items = items.sort((a,b)=>a.date.localeCompare(b.date));
+  } else if(type === 'income' || type === 'expense'){
     items = S.tx.filter(t=>t.type===type);
     if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
     items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
@@ -2350,18 +2357,24 @@ function renderListPage(){
 
   // Résumé
   const sumEl = document.getElementById('pageListSummary');
-  if(type === 'income' || type === 'expense'){
+  if(type === 'planned'){
+    const tot = items.reduce((s,x)=>s+x.amt, 0);
+    const upNb = items.filter(x=>x.date>=today).length;
+    sumEl.innerHTML =
+      '<div style="background:#f3e8ff;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+fmt(tot)+' GNF</div></div>'+
+      '<div style="background:#ede9fe;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">À venir</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+upNb+'</div></div>';
+  } else if(type === 'income' || type === 'expense'){
     const total = items.reduce((s,t)=>s+t.amt, 0);
     const color = type==='income' ? 'var(--green)' : 'var(--red)';
     sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>'+
       '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
   } else {
     const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
     const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
     const color = type==='debt' ? 'var(--red)' : 'var(--green)';
     sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>'+
       '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
   }
 
@@ -2372,16 +2385,33 @@ function renderListPage(){
     return;
   }
 
-  if(type === 'income' || type === 'expense'){
+  if(type === 'planned'){
+    const recL = {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois'};
+    el.innerHTML = items.map(x=>{
+      const past = x.date < today;
+      const dj = Math.round((new Date(x.date) - new Date()) / 864e5);
+      const urgent = !past && dj <= 2;
+      const col = past ? '#9ca3af' : urgent ? '#dc2626' : '#7c3aed';
+      const badge = past
+        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3f4f6;color:#9ca3af;">Passé</span>'
+        : urgent
+        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#fee2e2;color:#dc2626;">Urgent</span>'
+        : '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3e8ff;color:#7c3aed;">'+dj+'j</span>';
+      return '<div class="tx-item" style="border-left:4px solid '+col+';">'+
+        '<div class="tx-main"><div class="tx-lbl">'+escHtml(x.lbl)+'</div>'+
+        '<div class="tx-meta">'+x.date+' · '+(x.cat||'')+' · '+(recL[x.rec]||x.rec||'—')+'</div></div>'+
+        '<div class="tx-right"><div class="tx-amt" style="color:'+col+';">-'+fmt(x.amt)+'</div>'+badge+'</div></div>';
+    }).join('');
+  } else if(type === 'income' || type === 'expense'){
     el.innerHTML = items.map(t=>txHTML(t)).join('');
   } else {
     el.innerHTML = items.map(c=>{
       const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
-        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
-        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
-        : '<span class="badge b-ok">📅 '+days+' j</span>';
+      const badge = c.paid ? '<span class="badge b-paid">Réglé</span>'
+        : overdue ? '<span class="badge b-late">Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">Auj.</span>'
+        : soon ? '<span class="badge b-soon">'+days+' j</span>'
+        : '<span class="badge b-ok">'+days+' j</span>';
       const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
       return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
         '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
@@ -2397,7 +2427,7 @@ function printListPage(){
   const type = listPageType;
   const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
   const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs', planned:'Planning Dépenses'};
   const title = titles[type] || 'Liste';
   const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
 
@@ -2405,7 +2435,19 @@ function printListPage(){
   let thead = '', rows = '';
   let items = [];
 
-  if(type === 'income' || type === 'expense'){
+  if(type === 'planned'){
+    if(!S.planned) S.planned=[];
+    const todayP = new Date().toISOString().split('T')[0];
+    const recLP = {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois'};
+    items = [...S.planned].sort((a,b)=>a.date.localeCompare(b.date));
+    const totP = items.reduce((s,x)=>s+x.amt, 0);
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Récurrence</th><th>Montant (GNF)</th></tr>';
+    rows = items.map((x,n)=>
+      '<tr><td>'+(n+1)+'</td><td>'+x.date+'</td><td>'+escHtml(x.lbl)+'</td><td>'+(x.cat||'—')+'</td><td>'+(recLP[x.rec]||x.rec||'—')+'</td>'+
+      '<td style="text-align:right;font-weight:700;color:#7c3aed;">'+x.amt.toLocaleString('fr-FR')+'</td></tr>'
+    ).join('');
+    rows += '<tr style="background:#f3e8ff;font-weight:800"><td colspan="5" style="color:#7c3aed;">TOTAL</td><td style="text-align:right;color:#7c3aed;">'+totP.toLocaleString('fr-FR')+' GNF</td></tr>';
+  } else if(type === 'income' || type === 'expense'){
     items = S.tx.filter(t=>t.type===type);
     if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
     items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
