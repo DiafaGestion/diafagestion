@@ -1324,9 +1324,29 @@ function saveCD(){const name=document.getElementById('cdName').value.trim(),amou
 // ── DELETE ──
 function delTx(id){if(!confirm('Supprimer cette transaction ?'))return;const item=S.tx.find(t=>t.id===id);if(item)moveToTrash({...item},item.type);S.tx=S.tx.filter(t=>t.id!==id);save();toast('🗑️','Déplacé vers la corbeille');render();renderAllTx();}
 function delPlanned(id){if(!confirm('Supprimer cette dépense planifiée ?'))return;const item=S.planned.find(p=>p.id===id);if(item)moveToTrash({...item},'planned');S.planned=S.planned.filter(p=>p.id!==id);save();render();renderAllPlanned();}
+function delPlannedFromList(id){
+  if(!confirm('Supprimer cette dépense planifiée ?')) return;
+  const item = S.planned.find(p=>p.id===id);
+  if(item) moveToTrash({...item},'planned');
+  S.planned = S.planned.filter(p=>p.id!==id);
+  save();
+  render();
+  renderAllPlanned();
+  renderListPage(); // Rafraîchir la liste ouverte
+}
 function delMethod(id){S.methods=S.methods.filter(m=>m.id!==id);save();renderAllMethods();}
 function markCDPaid(id){const item=S.cd.find(c=>c.id===id);if(item){item.paid=!item.paid;save();renderCD();toast('✅','Statut mis à jour !');}}
 function deleteCD(id){if(!confirm('Supprimer cette créance / dette ?'))return;const item=S.cd.find(c=>c.id===id);if(item)moveToTrash({...item},item.type);S.cd=S.cd.filter(c=>c.id!==id);save();renderCD();toast('🗑️','Déplacé vers la corbeille');}
+function deleteCDFromList(id){
+  if(!confirm('Supprimer cette entrée ?')) return;
+  const item = S.cd.find(c=>c.id===id);
+  if(item) moveToTrash({...item}, item.type);
+  S.cd = S.cd.filter(c=>c.id!==id);
+  save();
+  renderCD();
+  renderListPage(); // Rafraîchir la liste ouverte
+  toast('🗑️','Déplacé vers la corbeille');
+}
 
 // ── HTML HELPERS ──
 function txHTML(t){return'<div class="tx-item"><div class="tx-icon" style="background:'+col(t.cat)+'18">'+ico(t.cat)+'</div><div class="tx-info"><div class="tx-name">'+t.lbl+'</div><div class="tx-meta">'+t.date+' · '+t.cat+' · '+t.meth+'</div></div><div class="tx-right"><div class="tx-amount '+(t.type==='income'?'pos':'neg')+'">'+(t.type==='income'?'+':'-')+fmt(t.amt)+'</div><button class="tx-del" onclick="delTx('+t.id+')">🗑 Supprimer</button></div></div>';}
@@ -2004,7 +2024,7 @@ function renderAdminClients(clients){
       '</div>'+
       '<div class="admin-card-btns">'+
         '<button class="btn-ac btn-ac-susp'+(susp?' is-susp':'')+'">'+(susp?'Activer':'Desactiver')+'</button>'+
-        '<button class="btn-ac btn-ac-reset">Reinit. Pass</button>'+
+        '<button class="btn-ac btn-ac-reset">Reset</button>'+
         '<button class="btn-ac btn-ac-del">Supprimer</button>'+
       '</div>';
     card.querySelector('.btn-ac-susp').addEventListener('click',async ev=>{
@@ -2014,9 +2034,29 @@ function renderAdminClients(clients){
     });
     card.querySelector('.btn-ac-reset').addEventListener('click',async ev=>{
       ev.stopPropagation();
-      const P='Diafa2026';
-      if(!confirm('Reinitialiser le mot de passe de '+c.prenom+' ?'))return;
-      try{await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});alert('Mot de passe reinitialise. Login: '+c.login+' Pass: '+P);}catch(e){toast('err','Erreur: '+e.message);}
+      const docId = c._docId || c.uid;
+      // Demander : reset Mot de passe ou PIN Journal ?
+      const choix = confirm(
+        'Réinitialiser pour '+c.prenom+' '+c.nom+' :\n\n'+
+        'OK  →  Mot de passe (connexion)\n'+
+        'Annuler  →  Code PIN (journal intime)'
+      );
+      if(choix){
+        // ── Reset mot de passe ──
+        if(!confirm('Confirmer la réinitialisation du mot de passe de '+c.prenom+' ?')) return;
+        const P = 'Diafa2026';
+        try{
+          await db.collection('clients').doc(docId).update({password:P, updatedAt:new Date().toISOString()});
+          alert('✅ Mot de passe réinitialisé !\n\nLogin : '+c.login+'\nMot de passe : '+P+'\n\nLe client peut le changer dans "Changer mes accès".');
+        }catch(e){ toast('err','Erreur: '+e.message); }
+      } else {
+        // ── Reset PIN Journal Intime ──
+        if(!confirm('Confirmer la réinitialisation du PIN journal de '+c.prenom+' ?\nLe PIN sera supprimé.')) return;
+        try{
+          await db.collection('clients').doc(docId).update({jiPin:'', updatedAt:new Date().toISOString()});
+          alert('✅ PIN journal réinitialisé !\n\n'+c.prenom+' pourra définir un nouveau PIN à la prochaine ouverture du journal.');
+        }catch(e){ toast('err','Erreur: '+e.message); }
+      }
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
@@ -2397,10 +2437,14 @@ function renderListPage(){
         : urgent
         ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#fee2e2;color:#dc2626;">Urgent</span>'
         : '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3e8ff;color:#7c3aed;">'+dj+'j</span>';
-      return '<div class="tx-item" style="border-left:4px solid '+col+';">'+
-        '<div class="tx-main"><div class="tx-lbl">'+escHtml(x.lbl)+'</div>'+
-        '<div class="tx-meta">'+x.date+' · '+(x.cat||'')+' · '+(recL[x.rec]||x.rec||'—')+'</div></div>'+
-        '<div class="tx-right"><div class="tx-amt" style="color:'+col+';">-'+fmt(x.amt)+'</div>'+badge+'</div></div>';
+      return '<div class="tx-item" style="border-left:4px solid '+col+';display:flex;align-items:center;gap:8px;">'+
+        '<div style="flex:1;">'+
+          '<div class="tx-main"><div class="tx-lbl">'+escHtml(x.lbl)+'</div>'+
+          '<div class="tx-meta">'+x.date+' · '+(x.cat||'')+' · '+(recL[x.rec]||x.rec||'—')+'</div></div>'+
+          '<div class="tx-right"><div class="tx-amt" style="color:'+col+';">-'+fmt(x.amt)+'</div>'+badge+'</div>'+
+        '</div>'+
+        '<button onclick="delPlannedFromList('+x.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="Supprimer">🗑️</button>'+
+      '</div>';
     }).join('');
   } else if(type === 'income' || type === 'expense'){
     el.innerHTML = items.map(t=>txHTML(t)).join('');
@@ -2413,12 +2457,16 @@ function renderListPage(){
         : soon ? '<span class="badge b-soon">'+days+' j</span>'
         : '<span class="badge b-ok">'+days+' j</span>';
       const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
-        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
-        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
-        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+';display:flex;align-items:center;gap:8px;">'+
+        '<div style="flex:1;display:flex;align-items:center;gap:10px;">'+
+          '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+          '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+          '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+          '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+          '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div>'+
+        '</div>'+
+        '<button onclick="deleteCDFromList('+c.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="Supprimer">🗑️</button>'+
+      '</div>';
     }).join('');
   }
 }
@@ -2686,7 +2734,7 @@ function printListPage(){
   <div class="ji-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
-      <div class="sheet-title" style="color:#fff;">⚙️ Paramètres Journal</div>
+      <div class="sheet-title" style="color:#fff;">⚙️ Para⚙️ Paramètres Journal</div>
       <button class="sheet-close" onclick="closeOverlay('jiSettingsOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
     </div>
     <div style="padding:16px;">
@@ -2738,6 +2786,32 @@ function jiDec(b64,pin){
 }
 
 function jiGetPin(){return localStorage.getItem(JI_PIN_KEY)||'';}
+
+// Sync PIN avec Firebase
+function jiSyncPinToFirebase(pin){
+  try{
+    const uid=localStorage.getItem('diafa_uid');
+    if(!uid||uid==='admin_uid'||!window.db) return;
+    window.db.collection('clients').doc(uid).update({jiPin:pin, updatedAt:new Date().toISOString()})
+      .catch(()=>{});
+  }catch(e){}
+}
+
+// Charger PIN depuis Firebase (au cas où admin a resetté)
+async function jiLoadPinFromFirebase(){
+  try{
+    const uid=localStorage.getItem('diafa_uid');
+    if(!uid||uid==='admin_uid'||!window.db) return;
+    const doc=await window.db.collection('clients').doc(uid).get();
+    if(doc.exists){
+      const data=doc.data();
+      if(data.jiPin !== undefined){
+        // Si admin a resetté (jiPin='') → vider le localStorage aussi
+        localStorage.setItem(JI_PIN_KEY, data.jiPin);
+      }
+    }
+  }catch(e){}
+}
 
 // ── IndexedDB pour les photos (pas de limite de taille) ──
 const JI_IDB_NAME = 'diafa_journal_db';
@@ -2828,8 +2902,9 @@ window.jiCloseAll=function(){
 function jiOpen(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
 function jiClose(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
 
-window.openJournal=function(){
+window.openJournal=async function(){
   jiPinInput='';jiPinTemp='';
+  await jiLoadPinFromFirebase(); // Sync PIN depuis Firebase (reset admin)
   if(jiIsLocked()){
     jiShowPin('🔒','Journal bloqué','Réessayez dans '+jiLockMin()+' min',true);
     jiOpen('jiPinOverlay');return;
@@ -2874,7 +2949,7 @@ function jiPinConfirm(){
   if(jiPinMode==='set'){jiPinTemp=jiPinInput;jiPinMode='confirm';jiShowPin('🔏','Confirmez votre PIN','Entrez à nouveau les 4 mêmes chiffres');return;}
   if(jiPinMode==='confirm'){
     if(jiPinInput!==jiPinTemp){jiPinTemp='';jiPinMode='set';jiShowPin('🔏','Codes différents !','Recommencez');jiPinErr('Les codes ne correspondent pas');return;}
-    localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSaveFails({count:0,until:0});
+    localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSaveFails({count:0,until:0});jiSyncPinToFirebase(jiPinInput);
     if(typeof toast==='function')toast('🔐','PIN créé !');
     jiClose('jiPinOverlay');jiOpenJournal();return;
   }
@@ -2890,7 +2965,7 @@ function jiPinConfirm(){
   if(jiPinMode==='change_new'){jiPinTemp=jiPinInput;jiPinMode='change_confirm';jiShowPin('🔏','Confirmez le nouveau PIN','Entrez à nouveau les 4 chiffres');return;}
   if(jiPinMode==='change_confirm'){
     if(jiPinInput!==jiPinTemp){jiPinMode='change_new';jiShowPin('🔏','Codes différents !','Entrez à nouveau votre nouveau PIN');jiPinErr('Ne correspond pas');return;}
-    jiLoadEntries();localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSaveEntries();
+    jiLoadEntries();localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSyncPinToFirebase(jiPinInput);jiSaveEntries();
     jiClose('jiPinOverlay');jiClose('jiSettingsOverlay');
     if(typeof toast==='function')toast('🔐','PIN modifié !');return;
   }
@@ -3208,7 +3283,7 @@ if(typeof window.closeOverlay==='undefined'){
   window.closeOverlay=function(id){const el=document.getElementById(id);if(el)el.classList.remove('open');};
 }
 })();
-</script>
+t>
 
 <!-- ── VISIONNEUSE PHOTOS JOURNAL ── -->
 <div class="ji-overlay" id="jiViewerOverlay">
