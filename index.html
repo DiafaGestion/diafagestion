@@ -3361,5 +3361,30 @@ window.jiViewerDownloadAll = function(){
 };
 </script>
 
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg=>{
+        // Détecter mise à jour disponible
+        reg.addEventListener('updatefound',()=>{
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange',()=>{
+            if(newSW.state==='installed' && navigator.serviceWorker.controller){
+              // Nouvelle version dispo — recharger automatiquement
+              navigator.serviceWorker.addEventListener('controllerchange',()=>{
+                window.location.reload();
+              });
+              newSW.postMessage({type:'SKIP_WAITING'});
+            }
+          });
+        });
+      })
+      .catch(e=>console.warn('SW non enregistré:',e));
+  });
+}
+</script>
+
 </body>
 </html>
