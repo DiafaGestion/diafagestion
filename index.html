@@ -2765,9 +2765,13 @@ function printListPage(){
       <div class="ji-settings-row">
         <div><div style="font-weight:700;font-size:14px;">📊 Statistiques</div><div style="font-size:12px;color:#9ca3af;" id="jiStats">—</div></div>
       </div>
-      <div class="ji-settings-row" style="border:none;margin-top:8px;">
-        <div><div style="font-weight:700;font-size:14px;color:#dc2626;">🗑️ Tout supprimer</div><div style="font-size:12px;color:#9ca3af;">Supprime toutes les entrées</div></div>
-        <button onclick="jiDeleteAll()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Supprimer</button>
+      <div class="ji-settings-row">
+        <div><div style="font-weight:700;font-size:14px;color:#92400e;">🗑️ Corbeille</div><div style="font-size:12px;color:#9ca3af;" id="jiTrashCount">Vide</div></div>
+        <button onclick="closeOverlay('jiSettingsOverlay');openJiTrash()" style="background:#fff7ed;color:#c2410c;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Ouvrir</button>
+      </div>
+      <div class="ji-settings-row" style="border:none;margin-top:4px;">
+        <div><div style="font-weight:700;font-size:14px;color:#dc2626;">🗑️ Tout déplacer</div><div style="font-size:12px;color:#9ca3af;">Vers la corbeille</div></div>
+        <button onclick="jiDeleteAll()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Déplacer</button>
       </div>
     </div>
   </div>
@@ -2778,6 +2782,7 @@ function printListPage(){
 (function(){
 const JI_PIN_KEY  = 'diafa_ji_pin';
 const JI_DATA_KEY = 'diafa_ji_entries';
+const JI_TRASH_KEY = 'diafa_ji_trash';
 const JI_FAIL_KEY = 'diafa_ji_fails';
 const JI_MAX_FAILS = 5;
 const JI_LOCK_MS   = 30 * 60 * 1000;
@@ -2828,23 +2833,15 @@ async function jiLoadPinFromFirebase(){
       if(data.jiPin !== undefined){
         const localPin = localStorage.getItem(JI_PIN_KEY)||'';
         const firebasePin = data.jiPin||'';
-        // Si admin a resetté (Firebase jiPin='') mais on a encore un PIN local
-        // → déchiffrer les données avec l'ancien PIN AVANT de vider le PIN
         if(firebasePin === '' && localPin !== ''){
-          try{
-            const raw = localStorage.getItem(JI_DATA_KEY)||'[]';
-            // Déchiffrer avec l'ancien PIN
-            const decoded = jiDec(raw, localPin);
-            const entries = JSON.parse(decoded);
-            // Re-sauvegarder EN CLAIR (sans PIN) pour ne pas perdre les données
-            localStorage.setItem(JI_DATA_KEY, JSON.stringify(entries));
-          }catch(e){
-            // Si déchiffrement échoue, on garde les données telles quelles
-            // (elles seront peut-être illisibles, mais pas pire qu'avant)
-            console.warn('jiLoadPinFromFirebase: déchiffrement échoué', e);
-          }
+          // Admin a resetté → sauvegarder l'ancien PIN dans clé temporaire
+          // Le déchiffrement se fera dans jiPinConfirm avec cet ancien PIN
+          localStorage.setItem('diafa_ji_pin_bak', localPin);
+        } else {
+          // Aucun reset → nettoyer la clé temporaire si elle traîne
+          localStorage.removeItem('diafa_ji_pin_bak');
         }
-        // Maintenant on peut mettre à jour le PIN en localStorage
+        // Mettre à jour le PIN
         localStorage.setItem(JI_PIN_KEY, firebasePin);
       }
     }
@@ -2901,6 +2898,89 @@ async function jiDeletePhotosIDB(entryId){
   } catch(e){}
 }
 
+// ── CORBEILLE JOURNAL ──
+function jiGetTrash(){
+  const pin=jiGetPin();
+  try{
+    const raw=localStorage.getItem(JI_TRASH_KEY)||'[]';
+    const decoded=pin?jiDec(raw,pin):raw;
+    return JSON.parse(decoded);
+  }catch(e){return[];}
+}
+function jiSaveTrash(arr){
+  const pin=jiGetPin();
+  const d=JSON.stringify(arr);
+  localStorage.setItem(JI_TRASH_KEY,pin?jiEnc(d,pin):d);
+}
+function jiMoveToTrash(entry){
+  const trash=jiGetTrash();
+  trash.unshift({...entry, deletedAt:new Date().toISOString()});
+  // Garder max 50 entrées dans la corbeille
+  if(trash.length>50) trash.splice(50);
+  jiSaveTrash(trash);
+}
+function jiRestoreFromTrash(id){
+  const trash=jiGetTrash();
+  const idx=trash.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  const entry=trash[idx];
+  delete entry.deletedAt;
+  jiLoadEntries();
+  jiEntries.push(entry);
+  jiSaveEntries();
+  trash.splice(idx,1);
+  jiSaveTrash(trash);
+  jiRenderList();
+  jiRenderTrash();
+  if(typeof toast==='function') toast('♻️','Entrée restaurée !');
+}
+function jiDeleteForever(id){
+  const trash=jiGetTrash();
+  const entry=trash.find(x=>x.id===id);
+  if(entry) jiDeletePhotosIDB(entry.id);
+  jiSaveTrash(trash.filter(x=>x.id!==id));
+  jiRenderTrash();
+  if(typeof toast==='function') toast('🗑️','Supprimé définitivement');
+}
+function jiEmptyTrash(){
+  const trash=jiGetTrash();
+  trash.forEach(e=>jiDeletePhotosIDB(e.id));
+  jiSaveTrash([]);
+  jiRenderTrash();
+  if(typeof toast==='function') toast('🗑️','Corbeille vidée');
+}
+function jiRenderTrash(){
+  const el=document.getElementById('jiTrashList');
+  if(!el) return;
+  const trash=jiGetTrash();
+  const cnt=document.getElementById('jiTrashCount');
+  if(cnt) cnt.textContent=trash.length>0?trash.length+' élément'+(trash.length>1?'s':''):'Vide';
+  if(!trash.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">Corbeille vide<br><span style="font-size:40px;">🗑️</span></div>';
+    return;
+  }
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  el.innerHTML=trash.map(e=>{
+    const delDate=e.deletedAt?new Date(e.deletedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'—';
+    return '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid #e5e7eb;">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'+
+        '<span style="font-size:18px;">'+(e.mood||'📔')+'</span>'+
+        '<span style="font-size:13px;font-weight:700;color:#1a1d2e;">'+jiDateFmt(e.date)+'</span>'+
+      '</div>'+
+      '<div style="font-size:12px;color:#6b7280;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(e.body||'...')+'</div>'+
+      '<div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Supprimé le '+delDate+'</div>'+
+      '<div style="display:flex;gap:6px;">'+
+        '<button onclick="jiRestoreFromTrash(''+e.id+'')" style="flex:1;background:#dcfce7;color:#15803d;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;">♻️ Restaurer</button>'+
+        '<button onclick="jiDeleteForever(''+e.id+'')" style="flex:1;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Supprimer</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+window.openJiTrash=function(){
+  jiRenderTrash();
+  jiOpen('jiTrashOverlay');
+};
+
 function jiLoadEntries(){
   const pin=jiGetPin();
   try{
@@ -2934,7 +3014,7 @@ function jiResetAutoLock(){
 
 window.jiCloseAll=function(){
   clearTimeout(jiAutoLockTimer);
-  ['jiPinOverlay','jiOverlay','jiEditOverlay','jiSettingsOverlay'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
+  ['jiPinOverlay','jiOverlay','jiEditOverlay','jiSettingsOverlay','jiTrashOverlay'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
 };
 
 function jiOpen(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
@@ -2987,16 +3067,19 @@ function jiPinConfirm(){
   if(jiPinMode==='set'){jiPinTemp=jiPinInput;jiPinMode='confirm';jiShowPin('🔏','Confirmez votre PIN','Entrez à nouveau les 4 mêmes chiffres');return;}
   if(jiPinMode==='confirm'){
     if(jiPinInput!==jiPinTemp){jiPinTemp='';jiPinMode='set';jiShowPin('🔏','Codes différents !','Recommencez');jiPinErr('Les codes ne correspondent pas');return;}
-    // Préserver les données existantes avant de changer le PIN
-    const oldPin=jiGetPin();
-    const savedRaw=localStorage.getItem(JI_DATA_KEY)||'[]';
+    // Récupérer l'ancien PIN : clé temp (reset admin) OU PIN courant
+    const oldPin = localStorage.getItem('diafa_ji_pin_bak') || jiGetPin();
+    const savedRaw = localStorage.getItem(JI_DATA_KEY)||'[]';
     let savedEntries=[];
     try{
-      const decoded=oldPin?jiDec(savedRaw,oldPin):savedRaw;
-      savedEntries=JSON.parse(decoded);
+      const decoded = oldPin ? jiDec(savedRaw, oldPin) : savedRaw;
+      savedEntries = JSON.parse(decoded);
     }catch(e){
       try{savedEntries=JSON.parse(savedRaw);}catch(e2){savedEntries=[];}
     }
+    // Nettoyer la clé temporaire
+    localStorage.removeItem('diafa_ji_pin_bak');
+    // Poser le nouveau PIN et re-chiffrer les données
     localStorage.setItem(JI_PIN_KEY,jiPinInput);
     jiSaveFails({count:0,until:0});
     jiSyncPinToFirebase(jiPinInput);
@@ -3038,6 +3121,8 @@ window.jiSetCat=function(c){jiActiveCat=c;jiRenderCatFilter();jiRenderList();};
 
 function jiRenderList(){
   jiLoadEntries();
+  // Mettre à jour compteur corbeille dans settings
+  const trashCnt=document.getElementById('jiTrashCount');if(trashCnt){const t=jiGetTrash();trashCnt.textContent=t.length>0?t.length+' élément'+(t.length>1?'s':''):'Vide';}
   const el=document.getElementById('jiList');if(!el)return;
   let arr=jiActiveCat==='Toutes'?[...jiEntries]:jiEntries.filter(e=>e.cat===jiActiveCat);
   arr.sort((a,b)=>b.date.localeCompare(a.date));
@@ -3168,30 +3253,30 @@ window.saveJiEntry=function(){
 
 window.deleteJiEntry=function(){
   if(!jiCurrentId)return;
-  if(!confirm('Supprimer cette entrée définitivement ?'))return;
   jiLoadEntries();
-  jiDeletePhotosIDB(jiCurrentId); // supprimer les photos dans IDB
-  jiEntries=jiEntries.filter(x=>x.id!==jiCurrentId);jiSaveEntries();
+  const entry=jiEntries.find(x=>x.id===jiCurrentId);
+  if(!entry) return;
+  jiMoveToTrash(entry);
+  jiEntries=jiEntries.filter(x=>x.id!==jiCurrentId);
+  jiSaveEntries();
   jiClose('jiEditOverlay');jiRenderList();
-  if(typeof toast==='function')toast('🗑️','Entrée supprimée');
+  if(typeof toast==='function')toast('🗑️','Déplacé vers la corbeille');
 };
 
 window.openJiSettings=function(){
   jiResetAutoLock();jiLoadEntries();
   const t=jiEntries.length,p=jiEntries.reduce((s,e)=>s+(e.photos?e.photos.length:0),0);
   const st=document.getElementById('jiStats');if(st)st.textContent=t+' entrée'+(t>1?'s':'')+' · '+p+' photo'+(p>1?'s':'');
+  const trashCnt=document.getElementById('jiTrashCount');if(trashCnt){const tr=jiGetTrash();trashCnt.textContent=tr.length>0?tr.length+' élément'+(tr.length>1?'s':''):'Vide';}
   jiOpen('jiSettingsOverlay');
 };
 
 window.jiDeleteAll=function(){
-  if(!confirm('Supprimer TOUTES les entrées ? Action irréversible.'))return;
-  // Supprimer toutes les photos dans IDB
-  jiOpenDB().then(db=>{
-    const tx=db.transaction(JI_IDB_STORE,'readwrite');
-    tx.objectStore(JI_IDB_STORE).clear();
-  }).catch(()=>{});
+  if(!confirm('Déplacer toutes les entrées vers la corbeille ?'))return;
+  jiLoadEntries();
+  jiEntries.forEach(e=>jiMoveToTrash(e));
   jiEntries=[];jiSaveEntries();jiClose('jiSettingsOverlay');jiRenderList();
-  if(typeof toast==='function')toast('🗑️','Journal supprimé');
+  if(typeof toast==='function')toast('🗑️','Entrées déplacées vers la corbeille');
 };
 
 
@@ -3575,7 +3660,25 @@ window.jiViewerDownloadAll = function(){
     }
   };
 })();
+</script>
 
+<!-- ── CORBEILLE JOURNAL INTIME ── -->
+<div class="ji-overlay" id="jiTrashOverlay">
+  <div class="ji-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="background:linear-gradient(135deg,#7f1d1d,#dc2626);border-radius:24px 24px 0 0;">
+      <div class="sheet-title" style="color:#fff;">🗑️ Corbeille Journal</div>
+      <button class="sheet-close" onclick="closeOverlay('jiTrashOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
+    </div>
+    <div style="padding:10px 14px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div style="font-size:12px;color:#6b7280;font-weight:600;">Entrées supprimées — restaurables</div>
+      <button onclick="if(confirm('Vider définitivement la corbeille ?'))jiEmptyTrash()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">Vider tout</button>
+    </div>
+    <div id="jiTrashList" style="flex:1;overflow-y:auto;padding:6px 14px 20px;"></div>
+  </div>
+</div>
+
+<script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('./sw.js')
