@@ -2826,8 +2826,26 @@ async function jiLoadPinFromFirebase(){
     if(doc.exists){
       const data=doc.data();
       if(data.jiPin !== undefined){
-        // Si admin a resetté (jiPin='') → vider le localStorage aussi
-        localStorage.setItem(JI_PIN_KEY, data.jiPin);
+        const localPin = localStorage.getItem(JI_PIN_KEY)||'';
+        const firebasePin = data.jiPin||'';
+        // Si admin a resetté (Firebase jiPin='') mais on a encore un PIN local
+        // → déchiffrer les données avec l'ancien PIN AVANT de vider le PIN
+        if(firebasePin === '' && localPin !== ''){
+          try{
+            const raw = localStorage.getItem(JI_DATA_KEY)||'[]';
+            // Déchiffrer avec l'ancien PIN
+            const decoded = jiDec(raw, localPin);
+            const entries = JSON.parse(decoded);
+            // Re-sauvegarder EN CLAIR (sans PIN) pour ne pas perdre les données
+            localStorage.setItem(JI_DATA_KEY, JSON.stringify(entries));
+          }catch(e){
+            // Si déchiffrement échoue, on garde les données telles quelles
+            // (elles seront peut-être illisibles, mais pas pire qu'avant)
+            console.warn('jiLoadPinFromFirebase: déchiffrement échoué', e);
+          }
+        }
+        // Maintenant on peut mettre à jour le PIN en localStorage
+        localStorage.setItem(JI_PIN_KEY, firebasePin);
       }
     }
   }catch(e){}
