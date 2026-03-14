@@ -39,7 +39,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 @media(min-width:500px){
   body{padding:24px 0 40px;}
   .app{min-height:auto;border-radius:28px;border:1px solid #d1d5e8;box-shadow:0 4px 6px rgba(0,0,0,0.04),0 20px 60px rgba(0,0,0,0.12);overflow:hidden;position:relative;}
-  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay,.reset-modal-overlay,.ji-overlay{position:absolute!important;width:100%!important;height:100%!important;}
+  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay,.reset-modal-overlay{position:absolute!important;width:100%!important;height:100%!important;}
 }
 
 /* ── TOPBAR ── */
@@ -83,10 +83,6 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 /* ── SCROLL ── */
 .scroll-content{flex:1;overflow-y:auto;padding:14px 14px 40px;-webkit-overflow-scrolling:touch;}
 @media(min-width:500px){.scroll-content{max-height:78vh;}}
-@media(min-width:500px){
-  .ji-overlay{top:48px!important;}
-  .ji-sheet{border-radius:24px 24px 0 0;}
-}
 
 /* ── HERO ── */
 .hero{background:linear-gradient(145deg,#1a1d2e 0%,#2d3250 100%);border-radius:18px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
@@ -423,9 +419,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .firstprofile-btn{width:100%;padding:14px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;margin-top:20px;}
 .firstprofile-required{color:#dc2626;font-size:11px;margin-top:4px;}
 /* ── JOURNAL INTIME ── */
-.ji-overlay{position:fixed;top:calc(env(safe-area-inset-top,0px) + 48px);left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:600;display:none;-webkit-box-align:end;align-items:flex-end;-webkit-justify-content:center;justify-content:center;}
+.ji-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:600;display:none;-webkit-box-align:end;align-items:flex-end;-webkit-justify-content:center;justify-content:center;}
 .ji-overlay.open{display:-webkit-flex;display:flex;}
-.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;height:100%;min-height:100%;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;-webkit-animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;-webkit-animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
 .ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;}
 .ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
 .ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -3739,7 +3735,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=103')
+    navigator.serviceWorker.register('./sw.js?v=104')
       .then(reg=>{
         // Détecter mise à jour disponible
         reg.addEventListener('updatefound',()=>{
