@@ -36,7 +36,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 @media(min-width:500px){
   body{padding:24px 0 40px;}
   .app{min-height:auto;border-radius:28px;border:1px solid #d1d5e8;box-shadow:0 4px 6px rgba(0,0,0,0.04),0 20px 60px rgba(0,0,0,0.12);overflow:hidden;position:relative;}
-  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay{position:absolute !important;width:100%!important;height:100%!important;}
+  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay,.reset-modal-overlay{position:absolute !important;width:100%!important;height:100%!important;}
 }
 
 /* ── TOPBAR ── */
@@ -445,6 +445,48 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .ji-media-check{position:absolute;top:5px;left:5px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.4);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;}
 .ji-media-thumb.selected .ji-media-check{background:#db2777;border-color:#db2777;}
 .ji-media-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.6));color:#fff;font-size:9px;padding:12px 4px 4px;text-align:center;}
+
+/* ── RESET MODAL ── */
+.reset-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:9999;display:none;align-items:flex-end;justify-content:center;padding:0;}
+.reset-modal-overlay.open{display:flex;}
+.reset-modal-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:0 0 24px;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.reset-modal-handle{width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:10px auto 0;}
+.reset-modal-head{padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
+.reset-modal-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1a1d2e;}
+.reset-modal-close{width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:14px;color:#6b7280;display:flex;align-items:center;justify-content:center;}
+.reset-modal-client{display:flex;align-items:center;gap:10px;margin:0 16px 16px;padding:12px;background:#f8f9fc;border-radius:14px;border:1px solid #e5e7eb;}
+.reset-modal-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#dc2626,#1a7a4a);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:800;flex-shrink:0;}
+.reset-modal-cname{font-size:14px;font-weight:700;color:#1a1d2e;}
+.reset-modal-cmeta{font-size:11px;color:#6b7280;margin-top:2px;}
+.reset-opt-list{display:flex;flex-direction:column;gap:10px;padding:0 16px 14px;}
+.reset-opt{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:2px solid #e5e7eb;cursor:pointer;transition:all 0.18s;background:#fff;}
+.reset-opt:hover,.reset-opt:active{border-color:#dc2626;background:#fff5f5;}
+.reset-opt-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.reset-opt-icon.pwd{background:#dbeafe;}
+.reset-opt-icon.pin{background:#ede9fe;}
+.reset-opt-body{flex:1;}
+.reset-opt-title{font-size:14px;font-weight:700;color:#1a1d2e;}
+.reset-opt-sub{font-size:12px;color:#6b7280;margin-top:2px;}
+.reset-opt-arrow{color:#d1d5db;font-size:16px;}
+/* Confirm step */
+.reset-confirm-box{padding:0 16px 0;}
+.reset-confirm-warn{background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;}
+.reset-confirm-warn-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+.reset-confirm-warn-text{font-size:13px;color:#92400e;font-weight:600;line-height:1.5;}
+.reset-confirm-btns{display:flex;gap:8px;}
+.reset-btn-cancel{flex:1;padding:13px;background:#f3f4f6;color:#374151;border:none;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;}
+.reset-btn-confirm{flex:1;padding:13px;border:none;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;}
+.reset-btn-confirm.pwd{background:linear-gradient(135deg,#2563eb,#1d4ed8);}
+.reset-btn-confirm.pin{background:linear-gradient(135deg,#7c3aed,#6d28d9);}
+/* Success step */
+.reset-success{display:flex;flex-direction:column;align-items:center;padding:8px 20px 6px;text-align:center;}
+.reset-success-icon{width:64px;height:64px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:14px;}
+.reset-success-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1a1d2e;margin-bottom:6px;}
+.reset-success-msg{font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:18px;}
+.reset-success-info{background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;width:100%;text-align:left;margin-bottom:16px;}
+.reset-success-info .info-row{font-size:12px;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.reset-success-info .info-row:last-child{margin-bottom:0;}
+.reset-btn-done{width:100%;padding:14px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer;}
 
 </style>
   <!-- Firebase -->
@@ -2032,31 +2074,9 @@ function renderAdminClients(clients){
       if(!confirm((susp?'Reactiver':'Desactiver')+' '+c.prenom+' ?'))return;
       try{await db.collection('clients').doc(c._docId||c.uid).update({status:susp?'active':'suspended'});toast('ok',c.prenom+(susp?' reactivé':' suspendu'));await loadAdminClients();}catch(e){toast('err','Erreur: '+e.message);}
     });
-    card.querySelector('.btn-ac-reset').addEventListener('click',async ev=>{
+    card.querySelector('.btn-ac-reset').addEventListener('click',ev=>{
       ev.stopPropagation();
-      const docId = c._docId || c.uid;
-      // Demander : reset Mot de passe ou PIN Journal ?
-      const choix = confirm(
-        'Réinitialiser pour '+c.prenom+' '+c.nom+' :\n\n'+
-        'OK  →  Mot de passe (connexion)\n'+
-        'Annuler  →  Code PIN (journal intime)'
-      );
-      if(choix){
-        // ── Reset mot de passe ──
-        if(!confirm('Confirmer la réinitialisation du mot de passe de '+c.prenom+' ?')) return;
-        const P = 'Diafa2026';
-        try{
-          await db.collection('clients').doc(docId).update({password:P, updatedAt:new Date().toISOString()});
-          alert('✅ Mot de passe réinitialisé !\n\nLogin : '+c.login+'\nMot de passe : '+P+'\n\nLe client peut le changer dans "Changer mes accès".');
-        }catch(e){ toast('err','Erreur: '+e.message); }
-      } else {
-        // ── Reset PIN Journal Intime ──
-        if(!confirm('Confirmer la réinitialisation du PIN journal de '+c.prenom+' ?\nLe PIN sera supprimé.')) return;
-        try{
-          await db.collection('clients').doc(docId).update({jiPin:'', updatedAt:new Date().toISOString()});
-          alert('✅ PIN journal réinitialisé !\n\n'+c.prenom+' pourra définir un nouveau PIN à la prochaine ouverture du journal.');
-        }catch(e){ toast('err','Erreur: '+e.message); }
-      }
+      openResetModal(c);
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
@@ -3283,7 +3303,7 @@ if(typeof window.closeOverlay==='undefined'){
   window.closeOverlay=function(id){const el=document.getElementById(id);if(el)el.classList.remove('open');};
 }
 })();
-t>
+</script>
 
 <!-- ── VISIONNEUSE PHOTOS JOURNAL ── -->
 <div class="ji-overlay" id="jiViewerOverlay">
@@ -3362,7 +3382,173 @@ window.jiViewerDownloadAll = function(){
 </script>
 
 
+<!-- ── RESET MODAL ── -->
+<div class="reset-modal-overlay" id="resetModalOverlay" onclick="if(event.target===this)closeResetModal()">
+  <div class="reset-modal-sheet" id="resetModalBody"></div>
+</div>
+
 <script>
+// ── RESET MODAL ──
+(function(){
+  let _resetClient = null, _resetStep = 'choose'; // steps: choose | confirm_pwd | confirm_pin | success_pwd | success_pin
+
+  window.openResetModal = function(client){
+    _resetClient = client;
+    _resetStep = 'choose';
+    _renderResetModal();
+    document.getElementById('resetModalOverlay').classList.add('open');
+  };
+
+  window.closeResetModal = function(){
+    document.getElementById('resetModalOverlay').classList.remove('open');
+    _resetClient = null;
+  };
+
+  function _renderResetModal(){
+    const c = _resetClient;
+    if(!c) return;
+    const initials = ((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
+    const modalBody = document.getElementById('resetModalBody');
+
+    let html = `
+      <div class="reset-modal-handle"></div>
+      <div class="reset-modal-head">
+        <div class="reset-modal-title">Réinitialiser le compte</div>
+        <button class="reset-modal-close" onclick="closeResetModal()">✕</button>
+      </div>
+      <div class="reset-modal-client">
+        <div class="reset-modal-avatar">${initials}</div>
+        <div>
+          <div class="reset-modal-cname">${escHtml(c.prenom+' '+c.nom)}</div>
+          <div class="reset-modal-cmeta">Login : ${escHtml(c.login||'—')}  ·  ${escHtml(c.telephone||'—')}</div>
+        </div>
+      </div>
+    `;
+
+    if(_resetStep === 'choose'){
+      html += `
+        <div style="padding:0 16px 6px;font-size:12px;color:#6b7280;font-weight:600;">Que voulez-vous réinitialiser ?</div>
+        <div class="reset-opt-list">
+          <div class="reset-opt" onclick="_resetGoConfirm('pwd')">
+            <div class="reset-opt-icon pwd">🔑</div>
+            <div class="reset-opt-body">
+              <div class="reset-opt-title">Mot de passe</div>
+              <div class="reset-opt-sub">Réinitialise l'accès à l'application</div>
+            </div>
+            <div class="reset-opt-arrow">›</div>
+          </div>
+          <div class="reset-opt" onclick="_resetGoConfirm('pin')">
+            <div class="reset-opt-icon pin">🔐</div>
+            <div class="reset-opt-body">
+              <div class="reset-opt-title">Code PIN du journal</div>
+              <div class="reset-opt-sub">Efface le PIN — le client en crée un nouveau</div>
+            </div>
+            <div class="reset-opt-arrow">›</div>
+          </div>
+        </div>
+        <div style="padding:0 16px;">
+          <button class="reset-btn-cancel" style="width:100%;" onclick="closeResetModal()">Annuler</button>
+        </div>
+      `;
+    } else if(_resetStep === 'confirm_pwd'){
+      html += `
+        <div class="reset-confirm-box">
+          <div class="reset-confirm-warn">
+            <div class="reset-confirm-warn-icon">⚠️</div>
+            <div class="reset-confirm-warn-text">
+              Le mot de passe de <strong>${escHtml(c.prenom)}</strong> sera réinitialisé à <strong>Diafa2026</strong>.<br>
+              Il devra le changer à sa prochaine connexion.
+            </div>
+          </div>
+          <div class="reset-confirm-btns">
+            <button class="reset-btn-cancel" onclick="_resetGoConfirm('back')">← Retour</button>
+            <button class="reset-btn-confirm pwd" onclick="_doResetPwd()">✓ Confirmer</button>
+          </div>
+        </div>
+      `;
+    } else if(_resetStep === 'confirm_pin'){
+      html += `
+        <div class="reset-confirm-box">
+          <div class="reset-confirm-warn">
+            <div class="reset-confirm-warn-icon">⚠️</div>
+            <div class="reset-confirm-warn-text">
+              Le code PIN du journal de <strong>${escHtml(c.prenom)}</strong> sera supprimé.<br>
+              Il devra créer un nouveau PIN à la prochaine ouverture du journal.
+            </div>
+          </div>
+          <div class="reset-confirm-btns">
+            <button class="reset-btn-cancel" onclick="_resetGoConfirm('back')">← Retour</button>
+            <button class="reset-btn-confirm pin" onclick="_doResetPin()">✓ Confirmer</button>
+          </div>
+        </div>
+      `;
+    } else if(_resetStep === 'success_pwd'){
+      html += `
+        <div class="reset-success">
+          <div class="reset-success-icon">✅</div>
+          <div class="reset-success-title">Mot de passe réinitialisé !</div>
+          <div class="reset-success-msg">Communiquez ces identifiants à <strong>${escHtml(c.prenom)}</strong>.</div>
+          <div class="reset-success-info">
+            <div class="info-row">🆔 <span>Login : <strong>${escHtml(c.login||'—')}</strong></span></div>
+            <div class="info-row">🔑 <span>Mot de passe : <strong>Diafa2026</strong></span></div>
+          </div>
+          <button class="reset-btn-done" onclick="closeResetModal()">Fermer</button>
+        </div>
+      `;
+    } else if(_resetStep === 'success_pin'){
+      html += `
+        <div class="reset-success">
+          <div class="reset-success-icon">🔓</div>
+          <div class="reset-success-title">PIN réinitialisé !</div>
+          <div class="reset-success-msg"><strong>${escHtml(c.prenom)}</strong> sera invité à créer un nouveau code PIN à la prochaine ouverture de son journal intime.</div>
+          <button class="reset-btn-done" onclick="closeResetModal()">Fermer</button>
+        </div>
+      `;
+    }
+
+    modalBody.innerHTML = html;
+  }
+
+  window._resetGoConfirm = function(type){
+    if(type==='back'){ _resetStep='choose'; }
+    else if(type==='pwd'){ _resetStep='confirm_pwd'; }
+    else if(type==='pin'){ _resetStep='confirm_pin'; }
+    _renderResetModal();
+  };
+
+  window._doResetPwd = async function(){
+    const c = _resetClient;
+    if(!c) return;
+    const docId = c._docId || c.uid;
+    const btn = document.querySelector('.reset-btn-confirm.pwd');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ En cours...'; }
+    try{
+      await db.collection('clients').doc(docId).update({password:'Diafa2026', updatedAt:new Date().toISOString()});
+      _resetStep = 'success_pwd';
+      _renderResetModal();
+    }catch(e){
+      if(btn){ btn.disabled=false; btn.textContent='✓ Confirmer'; }
+      if(typeof toast==='function') toast('❌','Erreur: '+e.message);
+    }
+  };
+
+  window._doResetPin = async function(){
+    const c = _resetClient;
+    if(!c) return;
+    const docId = c._docId || c.uid;
+    const btn = document.querySelector('.reset-btn-confirm.pin');
+    if(btn){ btn.disabled=true; btn.textContent='⏳ En cours...'; }
+    try{
+      await db.collection('clients').doc(docId).update({jiPin:'', updatedAt:new Date().toISOString()});
+      _resetStep = 'success_pin';
+      _renderResetModal();
+    }catch(e){
+      if(btn){ btn.disabled=false; btn.textContent='✓ Confirmer'; }
+      if(typeof toast==='function') toast('❌','Erreur: '+e.message);
+    }
+  };
+})();
+
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('./sw.js')
