@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v83';
+const CACHE_NAME = 'diafagestion-v84';
 const ASSETS = [
   './',
   './index.html',
