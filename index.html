@@ -418,7 +418,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 /* ── JOURNAL INTIME ── */
 .ji-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .ji-overlay.open{display:flex;}
-.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:96vh;max-height:96vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
 .ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;}
 .ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
 .ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -2987,7 +2987,21 @@ function jiPinConfirm(){
   if(jiPinMode==='set'){jiPinTemp=jiPinInput;jiPinMode='confirm';jiShowPin('🔏','Confirmez votre PIN','Entrez à nouveau les 4 mêmes chiffres');return;}
   if(jiPinMode==='confirm'){
     if(jiPinInput!==jiPinTemp){jiPinTemp='';jiPinMode='set';jiShowPin('🔏','Codes différents !','Recommencez');jiPinErr('Les codes ne correspondent pas');return;}
-    localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSaveFails({count:0,until:0});jiSyncPinToFirebase(jiPinInput);
+    // Préserver les données existantes avant de changer le PIN
+    const oldPin=jiGetPin();
+    const savedRaw=localStorage.getItem(JI_DATA_KEY)||'[]';
+    let savedEntries=[];
+    try{
+      const decoded=oldPin?jiDec(savedRaw,oldPin):savedRaw;
+      savedEntries=JSON.parse(decoded);
+    }catch(e){
+      try{savedEntries=JSON.parse(savedRaw);}catch(e2){savedEntries=[];}
+    }
+    localStorage.setItem(JI_PIN_KEY,jiPinInput);
+    jiSaveFails({count:0,until:0});
+    jiSyncPinToFirebase(jiPinInput);
+    jiEntries=savedEntries;
+    jiSaveEntries();
     if(typeof toast==='function')toast('🔐','PIN créé !');
     jiClose('jiPinOverlay');jiOpenJournal();return;
   }
@@ -3137,13 +3151,8 @@ window.saveJiEntry=function(){
     if(e){e.date=date;e.body=body;e.mood=jiCurrentMood;e.cat=cat;e.hasPhotos=jiCurrentPhotos.length>0;e.photoCount=jiCurrentPhotos.length;e.updatedAt=now;}
   }else{
     entryId='ji_'+Date.now();
-    const ex=jiEntries.find(x=>x.date===date);
-    if(ex){
-      entryId=ex.id;
-      ex.body=body;ex.mood=jiCurrentMood;ex.cat=cat;ex.hasPhotos=jiCurrentPhotos.length>0;ex.photoCount=jiCurrentPhotos.length;ex.updatedAt=now;
-    }else{
-      jiEntries.push({id:entryId,date,body,mood:jiCurrentMood,cat,hasPhotos:jiCurrentPhotos.length>0,photoCount:jiCurrentPhotos.length,createdAt:now,updatedAt:now});
-    }
+    // Chaque nouvelle entrée est toujours indépendante (pas d'écrasement par date)
+    jiEntries.push({id:entryId,date,body,mood:jiCurrentMood,cat,hasPhotos:jiCurrentPhotos.length>0,photoCount:jiCurrentPhotos.length,createdAt:now,updatedAt:now});
   }
   // Sauvegarder les photos dans IndexedDB (pas de limite)
   jiSavePhotosIDB(entryId, jiCurrentPhotos);
