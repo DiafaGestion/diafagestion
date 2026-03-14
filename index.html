@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="DiafaGestion">
 <meta name="theme-color" content="#dc2626">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=Mulish:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -418,7 +421,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 /* ── JOURNAL INTIME ── */
 .ji-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:600;display:none;-webkit-box-align:end;align-items:flex-end;-webkit-justify-content:center;justify-content:center;}
 .ji-overlay.open{display:flex;}
-.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:96vh;height:-webkit-fill-available;min-height:96vh;max-height:96vh;flex-shrink:0;display:flex;flex-direction:column;-webkit-animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:100vh;height:-webkit-fill-available;min-height:100vh;max-height:100vh;flex-shrink:0;display:flex;flex-direction:column;-webkit-animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
 .ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;}
 .ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
 .ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -2976,7 +2979,7 @@ function jiRenderTrash(){
   const el=document.getElementById('jiTrashList');
   if(!el) return;
   const trash=jiGetTrash();
-  // Mettre à jour compteur dans settings et menu
+  // Mettre à jour compteurs
   const cnt=document.getElementById('jiTrashCount');
   if(cnt) cnt.textContent=trash.length>0?trash.length+' élément'+(trash.length>1?'s':''):'Vide';
   jiUpdateTrashBadge();
@@ -2985,8 +2988,10 @@ function jiRenderTrash(){
     return;
   }
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Utiliser data-id pour éviter les conflits de quotes dans onclick
   el.innerHTML=trash.map(e=>{
     const delDate=e.deletedAt?new Date(e.deletedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'—';
+    const safeId=esc(e.id);
     return '<div class="trash-item">'+
       '<div class="trash-icon" style="background:#fce7f3;font-size:20px;">'+(e.mood||'📔')+'</div>'+
       '<div class="trash-info">'+
@@ -2995,8 +3000,8 @@ function jiRenderTrash(){
         '<div class="trash-meta" style="margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">'+esc(e.body||'...')+'</div>'+
       '</div>'+
       '<div class="trash-actions">'+
-        '<button class="trash-restore" onclick="jiRestoreFromTrash(''+e.id+'')">↩ Restaurer</button>'+
-        '<button class="trash-delete" onclick="jiDeleteForever(''+e.id+'')">✕ Définitif</button>'+
+        '<button class="trash-restore" data-id="'+safeId+'" onclick="jiRestoreFromTrash(this.dataset.id)">↩ Restaurer</button>'+
+        '<button class="trash-delete" data-id="'+safeId+'" onclick="jiDeleteForever(this.dataset.id)">✕ Définitif</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -3730,7 +3735,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js')
+    navigator.serviceWorker.register('./sw.js?v=102')
       .then(reg=>{
         // Détecter mise à jour disponible
         reg.addEventListener('updatefound',()=>{
