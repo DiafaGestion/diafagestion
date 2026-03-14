@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v97';
+const CACHE_NAME = 'diafagestion-v83';
 const ASSETS = [
   './',
   './index.html',
@@ -55,9 +55,4 @@ self.addEventListener('fetch', e => {
       })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
   );
-});
-
-// Répondre au message SKIP_WAITING
-self.addEventListener('message', e => {
-  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
