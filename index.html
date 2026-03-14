@@ -36,7 +36,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 @media(min-width:500px){
   body{padding:24px 0 40px;}
   .app{min-height:auto;border-radius:28px;border:1px solid #d1d5e8;box-shadow:0 4px 6px rgba(0,0,0,0.04),0 20px 60px rgba(0,0,0,0.12);overflow:hidden;position:relative;}
-  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay,.reset-modal-overlay{position:absolute!important;width:100%!important;height:100%!important;}
+  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay{position:absolute !important;width:100%!important;height:100%!important;}
 }
 
 /* ── TOPBAR ── */
@@ -418,7 +418,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 /* ── JOURNAL INTIME ── */
 .ji-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .ji-overlay.open{display:flex;}
-.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:96vh;min-height:96vh;max-height:96vh;flex-shrink:0;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
 .ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;}
 .ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
 .ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -445,48 +445,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .ji-media-check{position:absolute;top:5px;left:5px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.4);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;}
 .ji-media-thumb.selected .ji-media-check{background:#db2777;border-color:#db2777;}
 .ji-media-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.6));color:#fff;font-size:9px;padding:12px 4px 4px;text-align:center;}
-
-/* ── RESET MODAL ── */
-.reset-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);z-index:9999;display:none;align-items:flex-end;justify-content:center;padding:0;}
-.reset-modal-overlay.open{display:flex;}
-.reset-modal-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:0 0 24px;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
-.reset-modal-handle{width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:10px auto 0;}
-.reset-modal-head{padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;}
-.reset-modal-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1a1d2e;}
-.reset-modal-close{width:32px;height:32px;border-radius:50%;background:#f3f4f6;border:none;cursor:pointer;font-size:14px;color:#6b7280;display:flex;align-items:center;justify-content:center;}
-.reset-modal-client{display:flex;align-items:center;gap:10px;margin:0 16px 16px;padding:12px;background:#f8f9fc;border-radius:14px;border:1px solid #e5e7eb;}
-.reset-modal-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#dc2626,#1a7a4a);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:800;flex-shrink:0;}
-.reset-modal-cname{font-size:14px;font-weight:700;color:#1a1d2e;}
-.reset-modal-cmeta{font-size:11px;color:#6b7280;margin-top:2px;}
-.reset-opt-list{display:flex;flex-direction:column;gap:10px;padding:0 16px 14px;}
-.reset-opt{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:2px solid #e5e7eb;cursor:pointer;transition:all 0.18s;background:#fff;}
-.reset-opt:hover,.reset-opt:active{border-color:#dc2626;background:#fff5f5;}
-.reset-opt-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.reset-opt-icon.pwd{background:#dbeafe;}
-.reset-opt-icon.pin{background:#ede9fe;}
-.reset-opt-body{flex:1;}
-.reset-opt-title{font-size:14px;font-weight:700;color:#1a1d2e;}
-.reset-opt-sub{font-size:12px;color:#6b7280;margin-top:2px;}
-.reset-opt-arrow{color:#d1d5db;font-size:16px;}
-/* Confirm step */
-.reset-confirm-box{padding:0 16px 0;}
-.reset-confirm-warn{background:#fff7ed;border:1.5px solid #fdba74;border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;}
-.reset-confirm-warn-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
-.reset-confirm-warn-text{font-size:13px;color:#92400e;font-weight:600;line-height:1.5;}
-.reset-confirm-btns{display:flex;gap:8px;}
-.reset-btn-cancel{flex:1;padding:13px;background:#f3f4f6;color:#374151;border:none;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;}
-.reset-btn-confirm{flex:1;padding:13px;border:none;border-radius:13px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;}
-.reset-btn-confirm.pwd{background:linear-gradient(135deg,#2563eb,#1d4ed8);}
-.reset-btn-confirm.pin{background:linear-gradient(135deg,#7c3aed,#6d28d9);}
-/* Success step */
-.reset-success{display:flex;flex-direction:column;align-items:center;padding:8px 20px 6px;text-align:center;}
-.reset-success-icon{width:64px;height:64px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:14px;}
-.reset-success-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1a1d2e;margin-bottom:6px;}
-.reset-success-msg{font-size:13px;color:#6b7280;line-height:1.6;margin-bottom:18px;}
-.reset-success-info{background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:12px 14px;width:100%;text-align:left;margin-bottom:16px;}
-.reset-success-info .info-row{font-size:12px;color:#374151;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
-.reset-success-info .info-row:last-child{margin-bottom:0;}
-.reset-btn-done{width:100%;padding:14px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer;}
 
 </style>
   <!-- Firebase -->
@@ -933,10 +891,6 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div class="menu-icon" style="background:#fce7f3">📔</div>
         <div><div class="menu-label">Journal Intime</div><div class="menu-sub">Mon journal secret</div></div>
       </button>
-      <button class="menu-item" onclick="closeDrawer();openJiTrashMenu()">
-        <div class="menu-icon" style="background:#fce7f3">🗑️</div>
-        <div><div class="menu-label">Corbeille Journal</div><div class="menu-sub" id="jiTrashBadge">Vide</div></div>
-      </button>
       <button class="menu-item" onclick="closeDrawer();openPwd()">
         <div class="menu-icon" style="background:#fef3c7">🔑</div>
         <div><div class="menu-label">Modifier mes accès</div><div class="menu-sub">Identifiant &amp; mot de passe</div></div>
@@ -1370,29 +1324,9 @@ function saveCD(){const name=document.getElementById('cdName').value.trim(),amou
 // ── DELETE ──
 function delTx(id){if(!confirm('Supprimer cette transaction ?'))return;const item=S.tx.find(t=>t.id===id);if(item)moveToTrash({...item},item.type);S.tx=S.tx.filter(t=>t.id!==id);save();toast('🗑️','Déplacé vers la corbeille');render();renderAllTx();}
 function delPlanned(id){if(!confirm('Supprimer cette dépense planifiée ?'))return;const item=S.planned.find(p=>p.id===id);if(item)moveToTrash({...item},'planned');S.planned=S.planned.filter(p=>p.id!==id);save();render();renderAllPlanned();}
-function delPlannedFromList(id){
-  if(!confirm('Supprimer cette dépense planifiée ?')) return;
-  const item = S.planned.find(p=>p.id===id);
-  if(item) moveToTrash({...item},'planned');
-  S.planned = S.planned.filter(p=>p.id!==id);
-  save();
-  render();
-  renderAllPlanned();
-  renderListPage(); // Rafraîchir la liste ouverte
-}
 function delMethod(id){S.methods=S.methods.filter(m=>m.id!==id);save();renderAllMethods();}
 function markCDPaid(id){const item=S.cd.find(c=>c.id===id);if(item){item.paid=!item.paid;save();renderCD();toast('✅','Statut mis à jour !');}}
 function deleteCD(id){if(!confirm('Supprimer cette créance / dette ?'))return;const item=S.cd.find(c=>c.id===id);if(item)moveToTrash({...item},item.type);S.cd=S.cd.filter(c=>c.id!==id);save();renderCD();toast('🗑️','Déplacé vers la corbeille');}
-function deleteCDFromList(id){
-  if(!confirm('Supprimer cette entrée ?')) return;
-  const item = S.cd.find(c=>c.id===id);
-  if(item) moveToTrash({...item}, item.type);
-  S.cd = S.cd.filter(c=>c.id!==id);
-  save();
-  renderCD();
-  renderListPage(); // Rafraîchir la liste ouverte
-  toast('🗑️','Déplacé vers la corbeille');
-}
 
 // ── HTML HELPERS ──
 function txHTML(t){return'<div class="tx-item"><div class="tx-icon" style="background:'+col(t.cat)+'18">'+ico(t.cat)+'</div><div class="tx-info"><div class="tx-name">'+t.lbl+'</div><div class="tx-meta">'+t.date+' · '+t.cat+' · '+t.meth+'</div></div><div class="tx-right"><div class="tx-amount '+(t.type==='income'?'pos':'neg')+'">'+(t.type==='income'?'+':'-')+fmt(t.amt)+'</div><button class="tx-del" onclick="delTx('+t.id+')">🗑 Supprimer</button></div></div>';}
@@ -1457,9 +1391,6 @@ function renderCD(){
 }
 
 // ── MAIN RENDER ──
-// ══════════════════════
-// RENDU PRINCIPAL
-// ══════════════════════
 function render(){
   const m=month();
   const txs=S.tx.filter(t=>t.month===m);
@@ -1551,9 +1482,7 @@ function exportPDF(){
 function toast(icon,text){document.getElementById('toastIcon').textContent=icon;document.getElementById('toastText').textContent=text;const el=document.getElementById('toast');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
 
 
-// ══════════════════════
-// DÉCONNEXION / RESET
-// ══════════════════════
+// ── RESET ──
 async function logoutClient(){
   if(!confirm('Voulez-vous vous déconnecter ?')) return;
   // Sync Firebase silencieuse — ne bloque jamais la déconnexion
@@ -1591,9 +1520,7 @@ function resetApp(){
 }
 
 
-// ══════════════════════
-// AUTHENTIFICATION
-// ══════════════════════
+// ── LOGIN / PASSWORD ──
 async function checkLogin(){
   const user=document.getElementById('loginUser').value.trim();
   const pass=document.getElementById('loginPass').value;
@@ -2077,7 +2004,7 @@ function renderAdminClients(clients){
       '</div>'+
       '<div class="admin-card-btns">'+
         '<button class="btn-ac btn-ac-susp'+(susp?' is-susp':'')+'">'+(susp?'Activer':'Desactiver')+'</button>'+
-        '<button class="btn-ac btn-ac-reset">Reset</button>'+
+        '<button class="btn-ac btn-ac-reset">Reinit. Pass</button>'+
         '<button class="btn-ac btn-ac-del">Supprimer</button>'+
       '</div>';
     card.querySelector('.btn-ac-susp').addEventListener('click',async ev=>{
@@ -2085,9 +2012,11 @@ function renderAdminClients(clients){
       if(!confirm((susp?'Reactiver':'Desactiver')+' '+c.prenom+' ?'))return;
       try{await db.collection('clients').doc(c._docId||c.uid).update({status:susp?'active':'suspended'});toast('ok',c.prenom+(susp?' reactivé':' suspendu'));await loadAdminClients();}catch(e){toast('err','Erreur: '+e.message);}
     });
-    card.querySelector('.btn-ac-reset').addEventListener('click',ev=>{
+    card.querySelector('.btn-ac-reset').addEventListener('click',async ev=>{
       ev.stopPropagation();
-      openResetModal(c);
+      const P='Diafa2026';
+      if(!confirm('Reinitialiser le mot de passe de '+c.prenom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).update({password:P,updatedAt:new Date().toISOString()});alert('Mot de passe reinitialise. Login: '+c.login+' Pass: '+P);}catch(e){toast('err','Erreur: '+e.message);}
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
@@ -2356,16 +2285,12 @@ function saveFirstProfile(){
   toast('👋', 'Bienvenue ' + prenom + ' !');
 }
 
-// ══════════════════════
-// INITIALISATION APP
-// ══════════════════════
+// ── INIT ──
 const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
 initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
-// Met à jour le badge corbeille journal au démarrage
-setTimeout(()=>{ if(typeof window.jiUpdateTrashBadge==="function") window.jiUpdateTrashBadge(); }, 300);
 
 // ══════════════════════════════════════════
 // PAGES LISTE + PDF
@@ -2383,20 +2308,17 @@ function openListPage(type){
 function renderListPage(){
   const type = listPageType;
   const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const clientName = (p.prenom||'') + ' ' + (p.nom||'');
+  const m = month();
   const allMonths = [...new Set(S.tx.map(t=>t.month))].sort().reverse();
-  const today = new Date().toISOString().split('T')[0];
 
-  // Titre
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs', planned:'📅 Planning Dépenses'};
+  // Titres et données selon type
+  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs'};
   document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
 
-  // Onglets
+  // Onglets période (revenus/dépenses = mois, CD = tout/actif/réglé)
   const tabsEl = document.getElementById('pageListTabs');
-  if(type === 'planned'){
-    tabsEl.innerHTML = [['all','Tous'],['upcoming','À venir'],['past','Passés']].map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
-    ).join('');
-  } else if(type === 'income' || type === 'expense'){
+  if(type === 'income' || type === 'expense'){
     const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
     tabsEl.innerHTML = opts.map(([v,l])=>
       '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
@@ -2406,19 +2328,15 @@ function renderListPage(){
       '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
     ).join('');
   }
+
+  // Event delegation pour les onglets
   tabsEl.querySelectorAll('[data-lf]').forEach(btn=>{
     btn.addEventListener('click',()=>{ listPageFilter=btn.dataset.lf; renderListPage(); });
   });
 
   // Données
   let items = [];
-  if(type === 'planned'){
-    if(!S.planned) S.planned=[];
-    items = [...S.planned];
-    if(listPageFilter === 'upcoming') items = items.filter(x=>x.date >= today);
-    if(listPageFilter === 'past')     items = items.filter(x=>x.date < today);
-    items = items.sort((a,b)=>a.date.localeCompare(b.date));
-  } else if(type === 'income' || type === 'expense'){
+  if(type === 'income' || type === 'expense'){
     items = S.tx.filter(t=>t.type===type);
     if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
     items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
@@ -2432,24 +2350,18 @@ function renderListPage(){
 
   // Résumé
   const sumEl = document.getElementById('pageListSummary');
-  if(type === 'planned'){
-    const tot = items.reduce((s,x)=>s+x.amt, 0);
-    const upNb = items.filter(x=>x.date>=today).length;
-    sumEl.innerHTML =
-      '<div style="background:#f3e8ff;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+fmt(tot)+' GNF</div></div>'+
-      '<div style="background:#ede9fe;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">À venir</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+upNb+'</div></div>';
-  } else if(type === 'income' || type === 'expense'){
+  if(type === 'income' || type === 'expense'){
     const total = items.reduce((s,t)=>s+t.amt, 0);
     const color = type==='income' ? 'var(--green)' : 'var(--red)';
     sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>'+
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>' +
       '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
   } else {
     const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
     const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
     const color = type==='debt' ? 'var(--red)' : 'var(--green)';
     sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>'+
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>' +
       '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
   }
 
@@ -2460,48 +2372,23 @@ function renderListPage(){
     return;
   }
 
-  if(type === 'planned'){
-    const recL = {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois'};
-    el.innerHTML = items.map(x=>{
-      const past = x.date < today;
-      const dj = Math.round((new Date(x.date) - new Date()) / 864e5);
-      const urgent = !past && dj <= 2;
-      const col = past ? '#9ca3af' : urgent ? '#dc2626' : '#7c3aed';
-      const badge = past
-        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3f4f6;color:#9ca3af;">Passé</span>'
-        : urgent
-        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#fee2e2;color:#dc2626;">Urgent</span>'
-        : '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3e8ff;color:#7c3aed;">'+dj+'j</span>';
-      return '<div class="tx-item" style="border-left:4px solid '+col+';display:flex;align-items:center;gap:8px;">'+
-        '<div style="flex:1;">'+
-          '<div class="tx-main"><div class="tx-lbl">'+escHtml(x.lbl)+'</div>'+
-          '<div class="tx-meta">'+x.date+' · '+(x.cat||'')+' · '+(recL[x.rec]||x.rec||'—')+'</div></div>'+
-          '<div class="tx-right"><div class="tx-amt" style="color:'+col+';">-'+fmt(x.amt)+'</div>'+badge+'</div>'+
-        '</div>'+
-        '<button onclick="delPlannedFromList('+x.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="Supprimer">🗑️</button>'+
-      '</div>';
-    }).join('');
-  } else if(type === 'income' || type === 'expense'){
+  if(type === 'income' || type === 'expense'){
     el.innerHTML = items.map(t=>txHTML(t)).join('');
   } else {
     el.innerHTML = items.map(c=>{
       const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      const badge = c.paid ? '<span class="badge b-paid">Réglé</span>'
-        : overdue ? '<span class="badge b-late">Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">Auj.</span>'
-        : soon ? '<span class="badge b-soon">'+days+' j</span>'
-        : '<span class="badge b-ok">'+days+' j</span>';
+      let badge = c.paid ? '<span class="badge b-paid">✅ Réglé</span>'
+        : overdue ? '<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>'
+        : days===0 ? '<span class="badge b-urgent">⚡ Aujourd\'hui</span>'
+        : soon ? '<span class="badge b-soon">⏰ '+days+' j</span>'
+        : '<span class="badge b-ok">📅 '+days+' j</span>';
       const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+';display:flex;align-items:center;gap:8px;">'+
-        '<div style="flex:1;display:flex;align-items:center;gap:10px;">'+
-          '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
-          '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
-          '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
-          '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
-          '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div>'+
-        '</div>'+
-        '<button onclick="deleteCDFromList('+c.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="Supprimer">🗑️</button>'+
-      '</div>';
+      return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+'">'+
+        '<div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div>'+
+        '<div class="cd-info"><div class="cd-name">'+c.name+'</div>'+
+        '<div class="cd-reason">'+c.reason+' · '+c.meth+'</div>'+
+        '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
+        '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div></div>';
     }).join('');
   }
 }
@@ -2510,7 +2397,7 @@ function printListPage(){
   const type = listPageType;
   const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
   const clientName = ((p.prenom||'') + ' ' + (p.nom||'')).trim() || 'Client';
-  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs', planned:'Planning Dépenses'};
+  const titles = {income:'Revenus', expense:'Dépenses', debt:'Créanciers', credit:'Débiteurs'};
   const title = titles[type] || 'Liste';
   const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
 
@@ -2518,19 +2405,7 @@ function printListPage(){
   let thead = '', rows = '';
   let items = [];
 
-  if(type === 'planned'){
-    if(!S.planned) S.planned=[];
-    const todayP = new Date().toISOString().split('T')[0];
-    const recLP = {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois'};
-    items = [...S.planned].sort((a,b)=>a.date.localeCompare(b.date));
-    const totP = items.reduce((s,x)=>s+x.amt, 0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Récurrence</th><th>Montant (GNF)</th></tr>';
-    rows = items.map((x,n)=>
-      '<tr><td>'+(n+1)+'</td><td>'+x.date+'</td><td>'+escHtml(x.lbl)+'</td><td>'+(x.cat||'—')+'</td><td>'+(recLP[x.rec]||x.rec||'—')+'</td>'+
-      '<td style="text-align:right;font-weight:700;color:#7c3aed;">'+x.amt.toLocaleString('fr-FR')+'</td></tr>'
-    ).join('');
-    rows += '<tr style="background:#f3e8ff;font-weight:800"><td colspan="5" style="color:#7c3aed;">TOTAL</td><td style="text-align:right;color:#7c3aed;">'+totP.toLocaleString('fr-FR')+' GNF</td></tr>';
-  } else if(type === 'income' || type === 'expense'){
+  if(type === 'income' || type === 'expense'){
     items = S.tx.filter(t=>t.type===type);
     if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
     items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
@@ -2780,13 +2655,9 @@ function printListPage(){
       <div class="ji-settings-row">
         <div><div style="font-weight:700;font-size:14px;">📊 Statistiques</div><div style="font-size:12px;color:#9ca3af;" id="jiStats">—</div></div>
       </div>
-      <div class="ji-settings-row">
-        <div><div style="font-weight:700;font-size:14px;color:#92400e;">🗑️ Corbeille</div><div style="font-size:12px;color:#9ca3af;" id="jiTrashCount">Vide</div></div>
-        <button onclick="closeOverlay('jiSettingsOverlay');openJiTrashMenu()" style="background:#fff7ed;color:#c2410c;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Ouvrir</button>
-      </div>
-      <div class="ji-settings-row" style="border:none;margin-top:4px;">
-        <div><div style="font-weight:700;font-size:14px;color:#dc2626;">🗑️ Tout déplacer</div><div style="font-size:12px;color:#9ca3af;">Vers la corbeille</div></div>
-        <button onclick="jiDeleteAll()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Déplacer</button>
+      <div class="ji-settings-row" style="border:none;margin-top:8px;">
+        <div><div style="font-weight:700;font-size:14px;color:#dc2626;">🗑️ Tout supprimer</div><div style="font-size:12px;color:#9ca3af;">Supprime toutes les entrées</div></div>
+        <button onclick="jiDeleteAll()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Supprimer</button>
       </div>
     </div>
   </div>
@@ -2795,10 +2666,8 @@ function printListPage(){
 <script>
 // ══════════════════════════════ JOURNAL INTIME ══════════════════════════════
 (function(){
-// ── Clés localStorage Journal ──
 const JI_PIN_KEY  = 'diafa_ji_pin';
 const JI_DATA_KEY = 'diafa_ji_entries';
-const JI_TRASH_KEY = 'diafa_ji_trash';
 const JI_FAIL_KEY = 'diafa_ji_fails';
 const JI_MAX_FAILS = 5;
 const JI_LOCK_MS   = 30 * 60 * 1000;
@@ -2807,13 +2676,11 @@ const JI_CATS = ['Toutes','Général','Amour','Famille','Travail','Intime'];
 const JI_CAT_COLORS = {Général:'#f3f4f6',Amour:'#fce7f3',Famille:'#dbeafe',Travail:'#fef3c7',Intime:'#f0fdf4'};
 const JI_CAT_EMOJI  = {Général:'📝',Amour:'❤️',Famille:'👨‍👩‍👧',Travail:'💼',Intime:'🔒'};
 
-// ── État Journal ──
 let jiEntries=[], jiCurrentId=null, jiCurrentMood='🙂', jiCurrentPhotos=[];
 let jiPinInput='', jiPinMode='check', jiPinTemp='';
 let jiAutoLockTimer=null, jiActiveCat='Toutes';
 
 // Obfuscation XOR+base64
-// ── Chiffrement XOR + Base64 ──
 function jiEnc(text,pin){
   if(!pin)return text;
   let o='';for(let i=0;i<text.length;i++)o+=String.fromCharCode(text.charCodeAt(i)^pin.charCodeAt(i%pin.length));
@@ -2828,52 +2695,13 @@ function jiDec(b64,pin){
   }catch(e){return b64;}
 }
 
-// ── Lecture PIN local ──
 function jiGetPin(){return localStorage.getItem(JI_PIN_KEY)||'';}
-
-// Sync PIN avec Firebase
-// ── Sync PIN → Firebase ──
-function jiSyncPinToFirebase(pin){
-  try{
-    const uid=localStorage.getItem('diafa_uid');
-    if(!uid||uid==='admin_uid'||!window.db) return;
-    window.db.collection('clients').doc(uid).update({jiPin:pin, updatedAt:new Date().toISOString()})
-      .catch(()=>{});
-  }catch(e){}
-}
-
-// Charger PIN depuis Firebase (au cas où admin a resetté)
-async function jiLoadPinFromFirebase(){
-  try{
-    const uid=localStorage.getItem('diafa_uid');
-    if(!uid||uid==='admin_uid'||!window.db) return;
-    const doc=await window.db.collection('clients').doc(uid).get();
-    if(doc.exists){
-      const data=doc.data();
-      if(data.jiPin !== undefined){
-        const localPin = localStorage.getItem(JI_PIN_KEY)||'';
-        const firebasePin = data.jiPin||'';
-        if(firebasePin === '' && localPin !== ''){
-          // Admin a resetté → sauvegarder l'ancien PIN dans clé temporaire
-          // Le déchiffrement se fera dans jiPinConfirm avec cet ancien PIN
-          localStorage.setItem('diafa_ji_pin_bak', localPin);
-        } else {
-          // Aucun reset → nettoyer la clé temporaire si elle traîne
-          localStorage.removeItem('diafa_ji_pin_bak');
-        }
-        // Mettre à jour le PIN
-        localStorage.setItem(JI_PIN_KEY, firebasePin);
-      }
-    }
-  }catch(e){}
-}
 
 // ── IndexedDB pour les photos (pas de limite de taille) ──
 const JI_IDB_NAME = 'diafa_journal_db';
 const JI_IDB_STORE = 'photos';
 let jiIDB = null;
 
-// ── IndexedDB : stockage photos ──
 function jiOpenDB(){
   return new Promise((resolve, reject)=>{
     if(jiIDB){resolve(jiIDB);return;}
@@ -2919,110 +2747,6 @@ async function jiDeletePhotosIDB(entryId){
   } catch(e){}
 }
 
-// ══════════════════════════════
-// CORBEILLE JOURNAL INTIME
-// ══════════════════════════════
-function jiGetTrash(){
-  const pin=jiGetPin();
-  try{
-    const raw=localStorage.getItem(JI_TRASH_KEY)||'[]';
-    const decoded=pin?jiDec(raw,pin):raw;
-    return JSON.parse(decoded);
-  }catch(e){return[];}
-}
-function jiSaveTrash(arr){
-  const pin=jiGetPin();
-  const d=JSON.stringify(arr);
-  localStorage.setItem(JI_TRASH_KEY,pin?jiEnc(d,pin):d);
-}
-function jiMoveToTrash(entry){
-  const trash=jiGetTrash();
-  trash.unshift({...entry, deletedAt:new Date().toISOString()});
-  // Garder max 50 entrées dans la corbeille
-  if(trash.length>50) trash.splice(50);
-  jiSaveTrash(trash);
-}
-function jiRestoreFromTrash(id){
-  const trash=jiGetTrash();
-  const idx=trash.findIndex(x=>x.id===id);
-  if(idx<0) return;
-  const entry=trash[idx];
-  delete entry.deletedAt;
-  jiLoadEntries();
-  jiEntries.push(entry);
-  jiSaveEntries();
-  trash.splice(idx,1);
-  jiSaveTrash(trash);
-  jiRenderList();
-  jiRenderTrash();
-  if(typeof toast==='function') toast('♻️','Entrée restaurée !');
-}
-function jiDeleteForever(id){
-  const trash=jiGetTrash();
-  const entry=trash.find(x=>x.id===id);
-  if(entry) jiDeletePhotosIDB(entry.id);
-  jiSaveTrash(trash.filter(x=>x.id!==id));
-  jiRenderTrash();
-  if(typeof toast==='function') toast('🗑️','Supprimé définitivement');
-}
-function jiEmptyTrash(){
-  const trash=jiGetTrash();
-  trash.forEach(e=>jiDeletePhotosIDB(e.id));
-  jiSaveTrash([]);
-  jiRenderTrash();
-  if(typeof toast==='function') toast('🗑️','Corbeille vidée');
-}
-function jiRenderTrash(){
-  const el=document.getElementById('jiTrashList');
-  if(!el) return;
-  const trash=jiGetTrash();
-  // Mettre à jour compteur dans settings et menu
-  const cnt=document.getElementById('jiTrashCount');
-  if(cnt) cnt.textContent=trash.length>0?trash.length+' élément'+(trash.length>1?'s':''):'Vide';
-  jiUpdateTrashBadge();
-  if(!trash.length){
-    el.innerHTML='<div class="empty"><div class="empty-emoji">🗑️</div><div class="empty-text">Corbeille vide</div></div>';
-    return;
-  }
-  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  el.innerHTML=trash.map(e=>{
-    const delDate=e.deletedAt?new Date(e.deletedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'—';
-    return '<div class="trash-item">'+
-      '<div class="trash-icon" style="background:#fce7f3;font-size:20px;">'+(e.mood||'📔')+'</div>'+
-      '<div class="trash-info">'+
-        '<div class="trash-name">'+jiDateFmt(e.date)+'</div>'+
-        '<div class="trash-meta">Supprimé le '+delDate+' · '+(e.cat||'Général')+'</div>'+
-        '<div class="trash-meta" style="margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">'+esc(e.body||'...')+'</div>'+
-      '</div>'+
-      '<div class="trash-actions">'+
-        '<button class="trash-restore" onclick="jiRestoreFromTrash(''+e.id+'')">↩ Restaurer</button>'+
-        '<button class="trash-delete" onclick="jiDeleteForever(''+e.id+'')">✕ Définitif</button>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-}
-window.openJiTrash=function(){
-  jiRenderTrash();
-  jiOpen('jiTrashOverlay');
-};
-window.openJiTrashMenu=function(){
-  // Accessible directement depuis le menu (pas besoin de PIN)
-  // Les données corbeille sont déchiffrées au moment de l'affichage
-  jiRenderTrash();
-  document.getElementById('jiTrashOverlay').classList.remove('hidden');
-};
-window.closeJiTrash=function(){
-  document.getElementById('jiTrashOverlay').classList.add('hidden');
-  jiUpdateTrashBadge();
-};
-window.jiUpdateTrashBadge = function jiUpdateTrashBadge(){
-  const el=document.getElementById('jiTrashBadge');
-  if(!el) return;
-  const t=jiGetTrash();
-  el.textContent=t.length>0?t.length+' entrée'+(t.length>1?'s':''):'Vide';
-};
-
-// ── Chargement entrées (déchiffrement) ──
 function jiLoadEntries(){
   const pin=jiGetPin();
   try{
@@ -3033,7 +2757,6 @@ function jiLoadEntries(){
     jiEntries.forEach(e=>{ if(e.photos&&e.photos.length&&e.photos[0].startsWith('data:')) { jiSavePhotosIDB(e.id, e.photos); e.photos=[]; } });
   }catch(e){jiEntries=[];}
 }
-// ── Sauvegarde entrées (chiffrement) ──
 function jiSaveEntries(){
   // On sauvegarde les entrées SANS les photos dans localStorage
   const pin=jiGetPin();
@@ -3057,17 +2780,14 @@ function jiResetAutoLock(){
 
 window.jiCloseAll=function(){
   clearTimeout(jiAutoLockTimer);
-  // Fermer tous les overlays journal + corbeille
   ['jiPinOverlay','jiOverlay','jiEditOverlay','jiSettingsOverlay'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
-  const jto=document.getElementById('jiTrashOverlay');if(jto)jto.classList.add('hidden');
 };
 
 function jiOpen(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
 function jiClose(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
 
-window.openJournal=async function(){
+window.openJournal=function(){
   jiPinInput='';jiPinTemp='';
-  await jiLoadPinFromFirebase(); // Sync PIN depuis Firebase (reset admin)
   if(jiIsLocked()){
     jiShowPin('🔒','Journal bloqué','Réessayez dans '+jiLockMin()+' min',true);
     jiOpen('jiPinOverlay');return;
@@ -3107,30 +2827,12 @@ function jiPinErr(msg){
   document.getElementById('jiAttemptsMsg').textContent=msg||'';
 }
 
-// ── Validation PIN (création / vérification) ──
 function jiPinConfirm(){
   if(jiPinInput.length<4)return;
   if(jiPinMode==='set'){jiPinTemp=jiPinInput;jiPinMode='confirm';jiShowPin('🔏','Confirmez votre PIN','Entrez à nouveau les 4 mêmes chiffres');return;}
   if(jiPinMode==='confirm'){
     if(jiPinInput!==jiPinTemp){jiPinTemp='';jiPinMode='set';jiShowPin('🔏','Codes différents !','Recommencez');jiPinErr('Les codes ne correspondent pas');return;}
-    // Récupérer l'ancien PIN : clé temp (reset admin) OU PIN courant
-    const oldPin = localStorage.getItem('diafa_ji_pin_bak') || jiGetPin();
-    const savedRaw = localStorage.getItem(JI_DATA_KEY)||'[]';
-    let savedEntries=[];
-    try{
-      const decoded = oldPin ? jiDec(savedRaw, oldPin) : savedRaw;
-      savedEntries = JSON.parse(decoded);
-    }catch(e){
-      try{savedEntries=JSON.parse(savedRaw);}catch(e2){savedEntries=[];}
-    }
-    // Nettoyer la clé temporaire
-    localStorage.removeItem('diafa_ji_pin_bak');
-    // Poser le nouveau PIN et re-chiffrer les données
-    localStorage.setItem(JI_PIN_KEY,jiPinInput);
-    jiSaveFails({count:0,until:0});
-    jiSyncPinToFirebase(jiPinInput);
-    jiEntries=savedEntries;
-    jiSaveEntries();
+    localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSaveFails({count:0,until:0});
     if(typeof toast==='function')toast('🔐','PIN créé !');
     jiClose('jiPinOverlay');jiOpenJournal();return;
   }
@@ -3146,7 +2848,7 @@ function jiPinConfirm(){
   if(jiPinMode==='change_new'){jiPinTemp=jiPinInput;jiPinMode='change_confirm';jiShowPin('🔏','Confirmez le nouveau PIN','Entrez à nouveau les 4 chiffres');return;}
   if(jiPinMode==='change_confirm'){
     if(jiPinInput!==jiPinTemp){jiPinMode='change_new';jiShowPin('🔏','Codes différents !','Entrez à nouveau votre nouveau PIN');jiPinErr('Ne correspond pas');return;}
-    jiLoadEntries();localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSyncPinToFirebase(jiPinInput);jiSaveEntries();
+    jiLoadEntries();localStorage.setItem(JI_PIN_KEY,jiPinInput);jiSaveEntries();
     jiClose('jiPinOverlay');jiClose('jiSettingsOverlay');
     if(typeof toast==='function')toast('🔐','PIN modifié !');return;
   }
@@ -3154,10 +2856,9 @@ function jiPinConfirm(){
 
 window.jiChangePinFlow=function(){jiPinMode='change_old';jiShowPin('🔐','Entrez l\'ancien PIN','Pour confirmer votre identité');jiClose('jiSettingsOverlay');jiOpen('jiPinOverlay');};
 
-// ── Ouverture journal après auth ──
 function jiOpenJournal(){
   jiLoadEntries();jiActiveCat='Toutes';
-  jiRenderCatFilter();jiRenderList();jiUpdateTrashBadge();jiResetAutoLock();jiOpen('jiOverlay');
+  jiRenderCatFilter();jiRenderList();jiResetAutoLock();jiOpen('jiOverlay');
 }
 
 function jiRenderCatFilter(){
@@ -3166,11 +2867,8 @@ function jiRenderCatFilter(){
 }
 window.jiSetCat=function(c){jiActiveCat=c;jiRenderCatFilter();jiRenderList();};
 
-// ── Rendu liste des entrées ──
 function jiRenderList(){
   jiLoadEntries();
-  // Mettre à jour compteur corbeille dans settings
-  const trashCnt=document.getElementById('jiTrashCount');if(trashCnt){const t=jiGetTrash();trashCnt.textContent=t.length>0?t.length+' élément'+(t.length>1?'s':''):'Vide';}
   const el=document.getElementById('jiList');if(!el)return;
   let arr=jiActiveCat==='Toutes'?[...jiEntries]:jiEntries.filter(e=>e.cat===jiActiveCat);
   arr.sort((a,b)=>b.date.localeCompare(a.date));
@@ -3181,7 +2879,6 @@ function jiRenderList(){
 
 function jiDateFmt(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
 
-// ── Ouvrir éditeur entrée ──
 window.openJiEdit=function(id){
   jiResetAutoLock();jiCurrentId=id;jiCurrentMood='🙂';jiCurrentPhotos=[];
   if(id){
@@ -3270,7 +2967,6 @@ window.jiDownloadPhoto=function(i){
   a.click();
 };
 
-// ── Sauvegarder entrée ──
 window.saveJiEntry=function(){
   jiResetAutoLock();jiLoadEntries();
   const date=document.getElementById('jiEntryDate').value;
@@ -3286,8 +2982,13 @@ window.saveJiEntry=function(){
     if(e){e.date=date;e.body=body;e.mood=jiCurrentMood;e.cat=cat;e.hasPhotos=jiCurrentPhotos.length>0;e.photoCount=jiCurrentPhotos.length;e.updatedAt=now;}
   }else{
     entryId='ji_'+Date.now();
-    // Chaque nouvelle entrée est toujours indépendante (pas d'écrasement par date)
-    jiEntries.push({id:entryId,date,body,mood:jiCurrentMood,cat,hasPhotos:jiCurrentPhotos.length>0,photoCount:jiCurrentPhotos.length,createdAt:now,updatedAt:now});
+    const ex=jiEntries.find(x=>x.date===date);
+    if(ex){
+      entryId=ex.id;
+      ex.body=body;ex.mood=jiCurrentMood;ex.cat=cat;ex.hasPhotos=jiCurrentPhotos.length>0;ex.photoCount=jiCurrentPhotos.length;ex.updatedAt=now;
+    }else{
+      jiEntries.push({id:entryId,date,body,mood:jiCurrentMood,cat,hasPhotos:jiCurrentPhotos.length>0,photoCount:jiCurrentPhotos.length,createdAt:now,updatedAt:now});
+    }
   }
   // Sauvegarder les photos dans IndexedDB (pas de limite)
   jiSavePhotosIDB(entryId, jiCurrentPhotos);
@@ -3301,33 +3002,32 @@ window.saveJiEntry=function(){
   }
 };
 
-// ── Supprimer entrée → corbeille ──
 window.deleteJiEntry=function(){
   if(!jiCurrentId)return;
+  if(!confirm('Supprimer cette entrée définitivement ?'))return;
   jiLoadEntries();
-  const entry=jiEntries.find(x=>x.id===jiCurrentId);
-  if(!entry) return;
-  jiMoveToTrash(entry);
-  jiEntries=jiEntries.filter(x=>x.id!==jiCurrentId);
-  jiSaveEntries();
+  jiDeletePhotosIDB(jiCurrentId); // supprimer les photos dans IDB
+  jiEntries=jiEntries.filter(x=>x.id!==jiCurrentId);jiSaveEntries();
   jiClose('jiEditOverlay');jiRenderList();
-  if(typeof toast==='function')toast('🗑️','Déplacé vers la corbeille');
+  if(typeof toast==='function')toast('🗑️','Entrée supprimée');
 };
 
 window.openJiSettings=function(){
   jiResetAutoLock();jiLoadEntries();
   const t=jiEntries.length,p=jiEntries.reduce((s,e)=>s+(e.photos?e.photos.length:0),0);
   const st=document.getElementById('jiStats');if(st)st.textContent=t+' entrée'+(t>1?'s':'')+' · '+p+' photo'+(p>1?'s':'');
-  const trashCnt=document.getElementById('jiTrashCount');if(trashCnt){const tr=jiGetTrash();trashCnt.textContent=tr.length>0?tr.length+' élément'+(tr.length>1?'s':''):'Vide';}
   jiOpen('jiSettingsOverlay');
 };
 
 window.jiDeleteAll=function(){
-  if(!confirm('Déplacer toutes les entrées vers la corbeille ?'))return;
-  jiLoadEntries();
-  jiEntries.forEach(e=>jiMoveToTrash(e));
+  if(!confirm('Supprimer TOUTES les entrées ? Action irréversible.'))return;
+  // Supprimer toutes les photos dans IDB
+  jiOpenDB().then(db=>{
+    const tx=db.transaction(JI_IDB_STORE,'readwrite');
+    tx.objectStore(JI_IDB_STORE).clear();
+  }).catch(()=>{});
   jiEntries=[];jiSaveEntries();jiClose('jiSettingsOverlay');jiRenderList();
-  if(typeof toast==='function')toast('🗑️','Entrées déplacées vers la corbeille');
+  if(typeof toast==='function')toast('🗑️','Journal supprimé');
 };
 
 
@@ -3542,213 +3242,6 @@ window.jiViewerDownloadAll = function(){
     );
   }
 };
-</script>
-
-
-<!-- ── RESET MODAL ── -->
-<div class="reset-modal-overlay" id="resetModalOverlay" onclick="if(event.target===this)closeResetModal()">
-  <div class="reset-modal-sheet" id="resetModalBody"></div>
-</div>
-
-<script>
-// ── RESET MODAL ──
-(function(){
-  // Étapes : choose | confirm_pwd | confirm_pin | success_pwd | success_pin
-  let _resetClient = null, _resetStep = 'choose'; // steps: choose | confirm_pwd | confirm_pin | success_pwd | success_pin
-
-  window.openResetModal = function(client){
-    _resetClient = client;
-    _resetStep = 'choose';
-    _renderResetModal();
-    document.getElementById('resetModalOverlay').classList.add('open');
-  };
-
-  window.closeResetModal = function(){
-    document.getElementById('resetModalOverlay').classList.remove('open');
-    _resetClient = null;
-  };
-
-  function _renderResetModal(){
-    const c = _resetClient;
-    if(!c) return;
-    const initials = ((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
-    const modalBody = document.getElementById('resetModalBody');
-
-    let html = `
-      <div class="reset-modal-handle"></div>
-      <div class="reset-modal-head">
-        <div class="reset-modal-title">Réinitialiser le compte</div>
-        <button class="reset-modal-close" onclick="closeResetModal()">✕</button>
-      </div>
-      <div class="reset-modal-client">
-        <div class="reset-modal-avatar">${initials}</div>
-        <div>
-          <div class="reset-modal-cname">${escHtml(c.prenom+' '+c.nom)}</div>
-          <div class="reset-modal-cmeta">Login : ${escHtml(c.login||'—')}  ·  ${escHtml(c.telephone||'—')}</div>
-        </div>
-      </div>
-    `;
-
-    if(_resetStep === 'choose'){
-      html += `
-        <div style="padding:0 16px 6px;font-size:12px;color:#6b7280;font-weight:600;">Que voulez-vous réinitialiser ?</div>
-        <div class="reset-opt-list">
-          <div class="reset-opt" onclick="_resetGoConfirm('pwd')">
-            <div class="reset-opt-icon pwd">🔑</div>
-            <div class="reset-opt-body">
-              <div class="reset-opt-title">Mot de passe</div>
-              <div class="reset-opt-sub">Réinitialise l'accès à l'application</div>
-            </div>
-            <div class="reset-opt-arrow">›</div>
-          </div>
-          <div class="reset-opt" onclick="_resetGoConfirm('pin')">
-            <div class="reset-opt-icon pin">🔐</div>
-            <div class="reset-opt-body">
-              <div class="reset-opt-title">Code PIN du journal</div>
-              <div class="reset-opt-sub">Efface le PIN — le client en crée un nouveau</div>
-            </div>
-            <div class="reset-opt-arrow">›</div>
-          </div>
-        </div>
-        <div style="padding:0 16px;">
-          <button class="reset-btn-cancel" style="width:100%;" onclick="closeResetModal()">Annuler</button>
-        </div>
-      `;
-    } else if(_resetStep === 'confirm_pwd'){
-      html += `
-        <div class="reset-confirm-box">
-          <div class="reset-confirm-warn">
-            <div class="reset-confirm-warn-icon">⚠️</div>
-            <div class="reset-confirm-warn-text">
-              Le mot de passe de <strong>${escHtml(c.prenom)}</strong> sera réinitialisé à <strong>Diafa2026</strong>.<br>
-              Il devra le changer à sa prochaine connexion.
-            </div>
-          </div>
-          <div class="reset-confirm-btns">
-            <button class="reset-btn-cancel" onclick="_resetGoConfirm('back')">← Retour</button>
-            <button class="reset-btn-confirm pwd" onclick="_doResetPwd()">✓ Confirmer</button>
-          </div>
-        </div>
-      `;
-    } else if(_resetStep === 'confirm_pin'){
-      html += `
-        <div class="reset-confirm-box">
-          <div class="reset-confirm-warn">
-            <div class="reset-confirm-warn-icon">⚠️</div>
-            <div class="reset-confirm-warn-text">
-              Le code PIN du journal de <strong>${escHtml(c.prenom)}</strong> sera supprimé.<br>
-              Il devra créer un nouveau PIN à la prochaine ouverture du journal.
-            </div>
-          </div>
-          <div class="reset-confirm-btns">
-            <button class="reset-btn-cancel" onclick="_resetGoConfirm('back')">← Retour</button>
-            <button class="reset-btn-confirm pin" onclick="_doResetPin()">✓ Confirmer</button>
-          </div>
-        </div>
-      `;
-    } else if(_resetStep === 'success_pwd'){
-      html += `
-        <div class="reset-success">
-          <div class="reset-success-icon">✅</div>
-          <div class="reset-success-title">Mot de passe réinitialisé !</div>
-          <div class="reset-success-msg">Communiquez ces identifiants à <strong>${escHtml(c.prenom)}</strong>.</div>
-          <div class="reset-success-info">
-            <div class="info-row">🆔 <span>Login : <strong>${escHtml(c.login||'—')}</strong></span></div>
-            <div class="info-row">🔑 <span>Mot de passe : <strong>Diafa2026</strong></span></div>
-          </div>
-          <button class="reset-btn-done" onclick="closeResetModal()">Fermer</button>
-        </div>
-      `;
-    } else if(_resetStep === 'success_pin'){
-      html += `
-        <div class="reset-success">
-          <div class="reset-success-icon">🔓</div>
-          <div class="reset-success-title">PIN réinitialisé !</div>
-          <div class="reset-success-msg"><strong>${escHtml(c.prenom)}</strong> sera invité à créer un nouveau code PIN à la prochaine ouverture de son journal intime.</div>
-          <button class="reset-btn-done" onclick="closeResetModal()">Fermer</button>
-        </div>
-      `;
-    }
-
-    modalBody.innerHTML = html;
-  }
-
-  window._resetGoConfirm = function(type){
-    if(type==='back'){ _resetStep='choose'; }
-    else if(type==='pwd'){ _resetStep='confirm_pwd'; }
-    else if(type==='pin'){ _resetStep='confirm_pin'; }
-    _renderResetModal();
-  };
-
-  // ── Exécuter reset mot de passe ──
-  window._doResetPwd = async function(){
-    const c = _resetClient;
-    if(!c) return;
-    const docId = c._docId || c.uid;
-    const btn = document.querySelector('.reset-btn-confirm.pwd');
-    if(btn){ btn.disabled=true; btn.textContent='⏳ En cours...'; }
-    try{
-      await db.collection('clients').doc(docId).update({password:'Diafa2026', updatedAt:new Date().toISOString()});
-      _resetStep = 'success_pwd';
-      _renderResetModal();
-    }catch(e){
-      if(btn){ btn.disabled=false; btn.textContent='✓ Confirmer'; }
-      if(typeof toast==='function') toast('❌','Erreur: '+e.message);
-    }
-  };
-
-  // ── Exécuter reset PIN journal ──
-  window._doResetPin = async function(){
-    const c = _resetClient;
-    if(!c) return;
-    const docId = c._docId || c.uid;
-    const btn = document.querySelector('.reset-btn-confirm.pin');
-    if(btn){ btn.disabled=true; btn.textContent='⏳ En cours...'; }
-    try{
-      await db.collection('clients').doc(docId).update({jiPin:'', updatedAt:new Date().toISOString()});
-      _resetStep = 'success_pin';
-      _renderResetModal();
-    }catch(e){
-      if(btn){ btn.disabled=false; btn.textContent='✓ Confirmer'; }
-      if(typeof toast==='function') toast('❌','Erreur: '+e.message);
-    }
-  };
-})();
-</script>
-
-<!-- ── CORBEILLE JOURNAL INTIME ── -->
-<div class="trash-overlay hidden" id="jiTrashOverlay" onclick="if(event.target===this)closeJiTrash()">
-  <div class="trash-sheet">
-    <div class="trash-title">🗑️ Corbeille Journal</div>
-    <div class="trash-sub">Les entrées supprimées peuvent être restaurées</div>
-    <div id="jiTrashList"></div>
-    <button class="trash-empty-all" onclick="if(confirm('Vider définitivement la corbeille ?'))jiEmptyTrash()">🗑️ Vider la corbeille</button>
-    <button class="trash-close-btn" onclick="closeJiTrash()">Fermer</button>
-  </div>
-</div>
-
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg=>{
-        // Détecter mise à jour disponible
-        reg.addEventListener('updatefound',()=>{
-          const newSW = reg.installing;
-          newSW.addEventListener('statechange',()=>{
-            if(newSW.state==='installed' && navigator.serviceWorker.controller){
-              // Nouvelle version dispo — recharger automatiquement
-              navigator.serviceWorker.addEventListener('controllerchange',()=>{
-                window.location.reload();
-              });
-              newSW.postMessage({type:'SKIP_WAITING'});
-            }
-          });
-        });
-      })
-      .catch(e=>console.warn('SW non enregistré:',e));
-  });
-}
 </script>
 
 </body>
