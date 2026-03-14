@@ -2942,7 +2942,7 @@ function jiMoveToTrash(entry){
   if(trash.length>50) trash.splice(50);
   jiSaveTrash(trash);
 }
-function jiRestoreFromTrash(id){
+window.jiRestoreFromTrash=function jiRestoreFromTrash(id){
   const trash=jiGetTrash();
   const idx=trash.findIndex(x=>x.id===id);
   if(idx<0) return;
@@ -2956,22 +2956,22 @@ function jiRestoreFromTrash(id){
   jiRenderList();
   jiRenderTrash();
   if(typeof toast==='function') toast('♻️','Entrée restaurée !');
-}
-function jiDeleteForever(id){
+};
+window.jiDeleteForever=function jiDeleteForever(id){
   const trash=jiGetTrash();
   const entry=trash.find(x=>x.id===id);
   if(entry) jiDeletePhotosIDB(entry.id);
   jiSaveTrash(trash.filter(x=>x.id!==id));
   jiRenderTrash();
   if(typeof toast==='function') toast('🗑️','Supprimé définitivement');
-}
-function jiEmptyTrash(){
+};
+window.jiEmptyTrash=function jiEmptyTrash(){
   const trash=jiGetTrash();
   trash.forEach(e=>jiDeletePhotosIDB(e.id));
   jiSaveTrash([]);
   jiRenderTrash();
   if(typeof toast==='function') toast('🗑️','Corbeille vidée');
-}
+};
 function jiRenderTrash(){
   const el=document.getElementById('jiTrashList');
   if(!el) return;
