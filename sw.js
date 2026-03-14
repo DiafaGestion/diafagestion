@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diafagestion-v100';
+const CACHE_NAME = 'diafagestion-v102';
 const ASSETS = [
   './',
   './index.html',
@@ -38,8 +38,12 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // Laisser passer Firebase, CDN et Google Fonts sans interception
-  if (BYPASS_DOMAINS.some(d => url.includes(d)) || e.request.method !== 'GET') {
+  // Laisser passer Firebase, CDN, Google Fonts et les URLs de cache-busting (?v=)
+  if (
+    BYPASS_DOMAINS.some(d => url.includes(d)) ||
+    e.request.method !== 'GET' ||
+    url.includes('sw.js')  // Ne jamais intercepter sw.js lui-même
+  ) {
     return; // Le navigateur gère directement
   }
 
