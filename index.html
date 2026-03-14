@@ -36,7 +36,7 @@ h1,h2,h3,h4{font-family:'Bricolage Grotesque',sans-serif;}
 @media(min-width:500px){
   body{padding:24px 0 40px;}
   .app{min-height:auto;border-radius:28px;border:1px solid #d1d5e8;box-shadow:0 4px 6px rgba(0,0,0,0.04),0 20px 60px rgba(0,0,0,0.12);overflow:hidden;position:relative;}
-  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay,.reset-modal-overlay{position:absolute !important;width:100%!important;height:100%!important;}
+  .login-overlay,.splash,.drawer-overlay,.overlay,.pwd-overlay,.profile-overlay,.trash-overlay,.admin-overlay,.client-modal-overlay,.firstprofile-overlay,.reset-modal-overlay{position:absolute!important;width:100%!important;height:100%!important;}
 }
 
 /* ── TOPBAR ── */
@@ -418,7 +418,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 /* ── JOURNAL INTIME ── */
 .ji-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:none;align-items:flex-end;justify-content:center;}
 .ji-overlay.open{display:flex;}
-.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:100vh;min-height:100vh;max-height:100vh;flex-shrink:0;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:96vh;min-height:96vh;max-height:96vh;flex-shrink:0;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
 .ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;}
 .ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
 .ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -932,6 +932,10 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <button class="menu-item" onclick="closeDrawer();openJournal()">
         <div class="menu-icon" style="background:#fce7f3">📔</div>
         <div><div class="menu-label">Journal Intime</div><div class="menu-sub">Mon journal secret</div></div>
+      </button>
+      <button class="menu-item" onclick="closeDrawer();openJiTrashMenu()">
+        <div class="menu-icon" style="background:#fce7f3">🗑️</div>
+        <div><div class="menu-label">Corbeille Journal</div><div class="menu-sub" id="jiTrashBadge">Vide</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();openPwd()">
         <div class="menu-icon" style="background:#fef3c7">🔑</div>
@@ -1453,6 +1457,9 @@ function renderCD(){
 }
 
 // ── MAIN RENDER ──
+// ══════════════════════
+// RENDU PRINCIPAL
+// ══════════════════════
 function render(){
   const m=month();
   const txs=S.tx.filter(t=>t.month===m);
@@ -1544,7 +1551,9 @@ function exportPDF(){
 function toast(icon,text){document.getElementById('toastIcon').textContent=icon;document.getElementById('toastText').textContent=text;const el=document.getElementById('toast');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
 
 
-// ── RESET ──
+// ══════════════════════
+// DÉCONNEXION / RESET
+// ══════════════════════
 async function logoutClient(){
   if(!confirm('Voulez-vous vous déconnecter ?')) return;
   // Sync Firebase silencieuse — ne bloque jamais la déconnexion
@@ -1582,7 +1591,9 @@ function resetApp(){
 }
 
 
-// ── LOGIN / PASSWORD ──
+// ══════════════════════
+// AUTHENTIFICATION
+// ══════════════════════
 async function checkLogin(){
   const user=document.getElementById('loginUser').value.trim();
   const pass=document.getElementById('loginPass').value;
@@ -2345,12 +2356,16 @@ function saveFirstProfile(){
   toast('👋', 'Bienvenue ' + prenom + ' !');
 }
 
-// ── INIT ──
+// ══════════════════════
+// INITIALISATION APP
+// ══════════════════════
 const fullDateLabel=()=>{const d=new Date();const jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];const mois=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];return jours[d.getDay()]+' '+d.getDate()+' '+mois[d.getMonth()]+' '+d.getFullYear();};document.getElementById('monthLabel').textContent=fullDateLabel();
 initFirebase();
 render();
 loadProfile();
 updateTrashBadge();
+// Met à jour le badge corbeille journal au démarrage
+setTimeout(()=>{ if(typeof window.jiUpdateTrashBadge==="function") window.jiUpdateTrashBadge(); }, 300);
 
 // ══════════════════════════════════════════
 // PAGES LISTE + PDF
@@ -2754,7 +2769,7 @@ function printListPage(){
   <div class="ji-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
-      <div class="sheet-title" style="color:#fff;">⚙️ Para⚙️ Paramètres Journal</div>
+      <div class="sheet-title" style="color:#fff;">⚙️ Paramètres Journal</div>
       <button class="sheet-close" onclick="closeOverlay('jiSettingsOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
     </div>
     <div style="padding:16px;">
@@ -2767,7 +2782,7 @@ function printListPage(){
       </div>
       <div class="ji-settings-row">
         <div><div style="font-weight:700;font-size:14px;color:#92400e;">🗑️ Corbeille</div><div style="font-size:12px;color:#9ca3af;" id="jiTrashCount">Vide</div></div>
-        <button onclick="closeOverlay('jiSettingsOverlay');openJiTrash()" style="background:#fff7ed;color:#c2410c;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Ouvrir</button>
+        <button onclick="closeOverlay('jiSettingsOverlay');openJiTrashMenu()" style="background:#fff7ed;color:#c2410c;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Ouvrir</button>
       </div>
       <div class="ji-settings-row" style="border:none;margin-top:4px;">
         <div><div style="font-weight:700;font-size:14px;color:#dc2626;">🗑️ Tout déplacer</div><div style="font-size:12px;color:#9ca3af;">Vers la corbeille</div></div>
@@ -2780,6 +2795,7 @@ function printListPage(){
 <script>
 // ══════════════════════════════ JOURNAL INTIME ══════════════════════════════
 (function(){
+// ── Clés localStorage Journal ──
 const JI_PIN_KEY  = 'diafa_ji_pin';
 const JI_DATA_KEY = 'diafa_ji_entries';
 const JI_TRASH_KEY = 'diafa_ji_trash';
@@ -2791,11 +2807,13 @@ const JI_CATS = ['Toutes','Général','Amour','Famille','Travail','Intime'];
 const JI_CAT_COLORS = {Général:'#f3f4f6',Amour:'#fce7f3',Famille:'#dbeafe',Travail:'#fef3c7',Intime:'#f0fdf4'};
 const JI_CAT_EMOJI  = {Général:'📝',Amour:'❤️',Famille:'👨‍👩‍👧',Travail:'💼',Intime:'🔒'};
 
+// ── État Journal ──
 let jiEntries=[], jiCurrentId=null, jiCurrentMood='🙂', jiCurrentPhotos=[];
 let jiPinInput='', jiPinMode='check', jiPinTemp='';
 let jiAutoLockTimer=null, jiActiveCat='Toutes';
 
 // Obfuscation XOR+base64
+// ── Chiffrement XOR + Base64 ──
 function jiEnc(text,pin){
   if(!pin)return text;
   let o='';for(let i=0;i<text.length;i++)o+=String.fromCharCode(text.charCodeAt(i)^pin.charCodeAt(i%pin.length));
@@ -2810,9 +2828,11 @@ function jiDec(b64,pin){
   }catch(e){return b64;}
 }
 
+// ── Lecture PIN local ──
 function jiGetPin(){return localStorage.getItem(JI_PIN_KEY)||'';}
 
 // Sync PIN avec Firebase
+// ── Sync PIN → Firebase ──
 function jiSyncPinToFirebase(pin){
   try{
     const uid=localStorage.getItem('diafa_uid');
@@ -2853,6 +2873,7 @@ const JI_IDB_NAME = 'diafa_journal_db';
 const JI_IDB_STORE = 'photos';
 let jiIDB = null;
 
+// ── IndexedDB : stockage photos ──
 function jiOpenDB(){
   return new Promise((resolve, reject)=>{
     if(jiIDB){resolve(jiIDB);return;}
@@ -2898,7 +2919,9 @@ async function jiDeletePhotosIDB(entryId){
   } catch(e){}
 }
 
-// ── CORBEILLE JOURNAL ──
+// ══════════════════════════════
+// CORBEILLE JOURNAL INTIME
+// ══════════════════════════════
 function jiGetTrash(){
   const pin=jiGetPin();
   try{
@@ -2953,25 +2976,27 @@ function jiRenderTrash(){
   const el=document.getElementById('jiTrashList');
   if(!el) return;
   const trash=jiGetTrash();
+  // Mettre à jour compteur dans settings et menu
   const cnt=document.getElementById('jiTrashCount');
   if(cnt) cnt.textContent=trash.length>0?trash.length+' élément'+(trash.length>1?'s':''):'Vide';
+  jiUpdateTrashBadge();
   if(!trash.length){
-    el.innerHTML='<div style="text-align:center;padding:40px 0;color:#9ca3af;font-size:14px;">Corbeille vide<br><span style="font-size:40px;">🗑️</span></div>';
+    el.innerHTML='<div class="empty"><div class="empty-emoji">🗑️</div><div class="empty-text">Corbeille vide</div></div>';
     return;
   }
   const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   el.innerHTML=trash.map(e=>{
     const delDate=e.deletedAt?new Date(e.deletedAt).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}):'—';
-    return '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid #e5e7eb;">'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">'+
-        '<span style="font-size:18px;">'+(e.mood||'📔')+'</span>'+
-        '<span style="font-size:13px;font-weight:700;color:#1a1d2e;">'+jiDateFmt(e.date)+'</span>'+
+    return '<div class="trash-item">'+
+      '<div class="trash-icon" style="background:#fce7f3;font-size:20px;">'+(e.mood||'📔')+'</div>'+
+      '<div class="trash-info">'+
+        '<div class="trash-name">'+jiDateFmt(e.date)+'</div>'+
+        '<div class="trash-meta">Supprimé le '+delDate+' · '+(e.cat||'Général')+'</div>'+
+        '<div class="trash-meta" style="margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">'+esc(e.body||'...')+'</div>'+
       '</div>'+
-      '<div style="font-size:12px;color:#6b7280;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(e.body||'...')+'</div>'+
-      '<div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Supprimé le '+delDate+'</div>'+
-      '<div style="display:flex;gap:6px;">'+
-        '<button onclick="jiRestoreFromTrash(''+e.id+'')" style="flex:1;background:#dcfce7;color:#15803d;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;">♻️ Restaurer</button>'+
-        '<button onclick="jiDeleteForever(''+e.id+'')" style="flex:1;background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Supprimer</button>'+
+      '<div class="trash-actions">'+
+        '<button class="trash-restore" onclick="jiRestoreFromTrash(''+e.id+'')">↩ Restaurer</button>'+
+        '<button class="trash-delete" onclick="jiDeleteForever(''+e.id+'')">✕ Définitif</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -2980,7 +3005,24 @@ window.openJiTrash=function(){
   jiRenderTrash();
   jiOpen('jiTrashOverlay');
 };
+window.openJiTrashMenu=function(){
+  // Accessible directement depuis le menu (pas besoin de PIN)
+  // Les données corbeille sont déchiffrées au moment de l'affichage
+  jiRenderTrash();
+  document.getElementById('jiTrashOverlay').classList.remove('hidden');
+};
+window.closeJiTrash=function(){
+  document.getElementById('jiTrashOverlay').classList.add('hidden');
+  jiUpdateTrashBadge();
+};
+window.jiUpdateTrashBadge = function jiUpdateTrashBadge(){
+  const el=document.getElementById('jiTrashBadge');
+  if(!el) return;
+  const t=jiGetTrash();
+  el.textContent=t.length>0?t.length+' entrée'+(t.length>1?'s':''):'Vide';
+}
 
+// ── Chargement entrées (déchiffrement) ──
 function jiLoadEntries(){
   const pin=jiGetPin();
   try{
@@ -2991,6 +3033,7 @@ function jiLoadEntries(){
     jiEntries.forEach(e=>{ if(e.photos&&e.photos.length&&e.photos[0].startsWith('data:')) { jiSavePhotosIDB(e.id, e.photos); e.photos=[]; } });
   }catch(e){jiEntries=[];}
 }
+// ── Sauvegarde entrées (chiffrement) ──
 function jiSaveEntries(){
   // On sauvegarde les entrées SANS les photos dans localStorage
   const pin=jiGetPin();
@@ -3014,7 +3057,9 @@ function jiResetAutoLock(){
 
 window.jiCloseAll=function(){
   clearTimeout(jiAutoLockTimer);
-  ['jiPinOverlay','jiOverlay','jiEditOverlay','jiSettingsOverlay','jiTrashOverlay'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
+  // Fermer tous les overlays journal + corbeille
+  ['jiPinOverlay','jiOverlay','jiEditOverlay','jiSettingsOverlay'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('open');});
+  const jto=document.getElementById('jiTrashOverlay');if(jto)jto.classList.add('hidden');
 };
 
 function jiOpen(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
@@ -3062,6 +3107,7 @@ function jiPinErr(msg){
   document.getElementById('jiAttemptsMsg').textContent=msg||'';
 }
 
+// ── Validation PIN (création / vérification) ──
 function jiPinConfirm(){
   if(jiPinInput.length<4)return;
   if(jiPinMode==='set'){jiPinTemp=jiPinInput;jiPinMode='confirm';jiShowPin('🔏','Confirmez votre PIN','Entrez à nouveau les 4 mêmes chiffres');return;}
@@ -3108,9 +3154,10 @@ function jiPinConfirm(){
 
 window.jiChangePinFlow=function(){jiPinMode='change_old';jiShowPin('🔐','Entrez l\'ancien PIN','Pour confirmer votre identité');jiClose('jiSettingsOverlay');jiOpen('jiPinOverlay');};
 
+// ── Ouverture journal après auth ──
 function jiOpenJournal(){
   jiLoadEntries();jiActiveCat='Toutes';
-  jiRenderCatFilter();jiRenderList();jiResetAutoLock();jiOpen('jiOverlay');
+  jiRenderCatFilter();jiRenderList();jiUpdateTrashBadge();jiResetAutoLock();jiOpen('jiOverlay');
 }
 
 function jiRenderCatFilter(){
@@ -3119,6 +3166,7 @@ function jiRenderCatFilter(){
 }
 window.jiSetCat=function(c){jiActiveCat=c;jiRenderCatFilter();jiRenderList();};
 
+// ── Rendu liste des entrées ──
 function jiRenderList(){
   jiLoadEntries();
   // Mettre à jour compteur corbeille dans settings
@@ -3133,6 +3181,7 @@ function jiRenderList(){
 
 function jiDateFmt(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
 
+// ── Ouvrir éditeur entrée ──
 window.openJiEdit=function(id){
   jiResetAutoLock();jiCurrentId=id;jiCurrentMood='🙂';jiCurrentPhotos=[];
   if(id){
@@ -3221,6 +3270,7 @@ window.jiDownloadPhoto=function(i){
   a.click();
 };
 
+// ── Sauvegarder entrée ──
 window.saveJiEntry=function(){
   jiResetAutoLock();jiLoadEntries();
   const date=document.getElementById('jiEntryDate').value;
@@ -3251,6 +3301,7 @@ window.saveJiEntry=function(){
   }
 };
 
+// ── Supprimer entrée → corbeille ──
 window.deleteJiEntry=function(){
   if(!jiCurrentId)return;
   jiLoadEntries();
@@ -3502,6 +3553,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 // ── RESET MODAL ──
 (function(){
+  // Étapes : choose | confirm_pwd | confirm_pin | success_pwd | success_pin
   let _resetClient = null, _resetStep = 'choose'; // steps: choose | confirm_pwd | confirm_pin | success_pwd | success_pin
 
   window.openResetModal = function(client){
@@ -3628,6 +3680,7 @@ window.jiViewerDownloadAll = function(){
     _renderResetModal();
   };
 
+  // ── Exécuter reset mot de passe ──
   window._doResetPwd = async function(){
     const c = _resetClient;
     if(!c) return;
@@ -3644,6 +3697,7 @@ window.jiViewerDownloadAll = function(){
     }
   };
 
+  // ── Exécuter reset PIN journal ──
   window._doResetPin = async function(){
     const c = _resetClient;
     if(!c) return;
@@ -3663,18 +3717,13 @@ window.jiViewerDownloadAll = function(){
 </script>
 
 <!-- ── CORBEILLE JOURNAL INTIME ── -->
-<div class="ji-overlay" id="jiTrashOverlay">
-  <div class="ji-sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header" style="background:linear-gradient(135deg,#7f1d1d,#dc2626);border-radius:24px 24px 0 0;">
-      <div class="sheet-title" style="color:#fff;">🗑️ Corbeille Journal</div>
-      <button class="sheet-close" onclick="closeOverlay('jiTrashOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
-    </div>
-    <div style="padding:10px 14px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <div style="font-size:12px;color:#6b7280;font-weight:600;">Entrées supprimées — restaurables</div>
-      <button onclick="if(confirm('Vider définitivement la corbeille ?'))jiEmptyTrash()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">Vider tout</button>
-    </div>
-    <div id="jiTrashList" style="flex:1;overflow-y:auto;padding:6px 14px 20px;"></div>
+<div class="trash-overlay hidden" id="jiTrashOverlay" onclick="if(event.target===this)closeJiTrash()">
+  <div class="trash-sheet">
+    <div class="trash-title">🗑️ Corbeille Journal</div>
+    <div class="trash-sub">Les entrées supprimées peuvent être restaurées</div>
+    <div id="jiTrashList"></div>
+    <button class="trash-empty-all" onclick="if(confirm('Vider définitivement la corbeille ?'))jiEmptyTrash()">🗑️ Vider la corbeille</button>
+    <button class="trash-close-btn" onclick="closeJiTrash()">Fermer</button>
   </div>
 </div>
 
