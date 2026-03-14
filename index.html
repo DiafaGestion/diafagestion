@@ -419,9 +419,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .firstprofile-btn{width:100%;padding:14px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;margin-top:20px;}
 .firstprofile-required{color:#dc2626;font-size:11px;margin-top:4px;}
 /* ── JOURNAL INTIME ── */
-.ji-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:600;display:none;-webkit-box-align:end;align-items:flex-end;-webkit-justify-content:center;justify-content:center;}
-.ji-overlay.open{display:flex;}
-.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:100vh;height:-webkit-fill-available;min-height:100vh;max-height:100vh;flex-shrink:0;display:flex;flex-direction:column;-webkit-animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.ji-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:600;display:none;-webkit-box-align:end;align-items:flex-end;-webkit-justify-content:center;justify-content:center;padding-top:env(safe-area-inset-top,0px);box-sizing:border-box;}
+.ji-overlay.open{display:-webkit-flex;display:flex;}
+.ji-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;height:calc(100vh - env(safe-area-inset-top,0px) - 4px);min-height:calc(100vh - env(safe-area-inset-top,0px) - 4px);max-height:calc(100vh - env(safe-area-inset-top,0px) - 4px);flex-shrink:0;display:flex;flex-direction:column;-webkit-animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
 .ji-entry{background:#fdf2f8;border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;border-left:4px solid #db2777;}
 .ji-entry-date{font-weight:700;font-size:13px;color:#1a1d2e;}
 .ji-entry-preview{font-size:12px;color:#6b7280;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
