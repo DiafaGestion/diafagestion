@@ -7,7 +7,6 @@ const ASSETS = [
   './icon-512.png'
 ];
 
-// Ces domaines ne doivent JAMAIS être interceptés par le SW
 const BYPASS_DOMAINS = [
   'gstatic.com',
   'googleapis.com',
@@ -37,17 +36,13 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-
-  // Laisser passer Firebase, CDN, Google Fonts et les URLs de cache-busting (?v=)
   if (
     BYPASS_DOMAINS.some(d => url.includes(d)) ||
     e.request.method !== 'GET' ||
-    url.includes('sw.js')  // Ne jamais intercepter sw.js lui-même
+    url.includes('sw.js')
   ) {
-    return; // Le navigateur gère directement
+    return;
   }
-
-  // Network-first pour les fichiers locaux de l'app
   e.respondWith(
     fetch(e.request)
       .then(response => {
@@ -61,7 +56,6 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// Répondre au message SKIP_WAITING
 self.addEventListener('message', e => {
   if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
