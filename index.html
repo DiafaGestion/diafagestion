@@ -493,6 +493,14 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .reset-success-info .info-row:last-child{margin-bottom:0;}
 .reset-btn-done{width:100%;padding:14px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer;}
 
+/* ── CUSTOM DATE PICKER ── */
+.dpk{display:flex;gap:6px;width:100%;}
+.dpk select{flex:1;padding:9px 4px;border:1.5px solid var(--border,#e2e5f0);border-radius:10px;font-size:13px;font-family:'Mulish',sans-serif;background:#fff;color:var(--text,#1a1d2e);-webkit-appearance:none;appearance:none;text-align:center;cursor:pointer;min-width:0;}
+.dpk select:focus{outline:none;border-color:var(--blue,#2563eb);}
+.dpk select option{font-size:13px;}
+/* Style inline override pour dpk dans les formulaires inline-style */
+.dpk.inline select{border-color:#e5e7eb;}
+
 </style>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -540,7 +548,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <div style="margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">🎂 Date de naissance</div>
-      <input id="caDOB" type="date" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
+      <input id="caDOB" type="hidden" data-yearmin="1930" data-yearmax="2015">
+      <div class="dpk inline" data-for="caDOB"></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -626,7 +635,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div class="firstprofile-label">📞 Numéro de téléphone *</div>
     <input class="firstprofile-input" type="tel" id="fpTel" placeholder="Ex: 625 00 00 00">
     <div class="firstprofile-label">🎂 Date de naissance</div>
-    <input class="firstprofile-input" type="date" id="fpDOB">
+    <input class="firstprofile-input" type="hidden" id="fpDOB" data-yearmin="1930" data-yearmax="2015">
+    <div class="dpk" data-for="fpDOB"></div>
     <div class="firstprofile-label">📍 Quartier</div>
     <input class="firstprofile-input" type="text" id="fpQuartier" placeholder="Ex: Kaloum, Ratoma...">
     <div class="firstprofile-label">💼 Profession</div>
@@ -690,7 +700,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     </div>
     <div class="profile-fg"><label>📞 Téléphone</label><input type="tel" id="pTel" placeholder="Ex: 625 00 00 00"></div>
     <div class="profile-grid">
-      <div class="profile-fg"><label>Date de naissance</label><input type="date" id="pDOB" onchange="calcAge(this.value)"></div>
+      <div class="profile-fg"><label>Date de naissance</label><input type="hidden" id="pDOB" data-yearmin="1930" data-yearmax="2015" data-onchange="calcAge"><div class="dpk" data-for="pDOB"></div></div>
       <div class="profile-fg"><label>Âge</label><input type="number" id="pAge" placeholder="Âge calculé automatiquement" readonly style="background:#f5f6fa;color:#9ca3af;"></div>
     </div>
     <div class="profile-fg"><label>Quartier</label><input type="text" id="pQuartier" placeholder="Ex: Kaloum, Ratoma..."></div>
@@ -938,10 +948,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <div class="menu-icon" style="background:#fce7f3">📔</div>
         <div><div class="menu-label">Journal Intime</div><div class="menu-sub">Mon journal secret</div></div>
       </button>
-      <button class="menu-item" onclick="closeDrawer();openJiTrashMenu()">
-        <div class="menu-icon" style="background:#fce7f3">🗑️</div>
-        <div><div class="menu-label">Corbeille Journal</div><div class="menu-sub" id="jiTrashBadge">Vide</div></div>
-      </button>
+
       <button class="menu-item" onclick="closeDrawer();openPwd()">
         <div class="menu-icon" style="background:#fef3c7">🔑</div>
         <div><div class="menu-label">Modifier mes accès</div><div class="menu-sub">Identifiant &amp; mot de passe</div></div>
@@ -1079,7 +1086,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
       <div class="fr">
         <div class="fg"><label>Montant (GNF)</label><input type="number" id="txAmt" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Date</label><input type="date" id="txDate"></div>
+        <div class="fg"><label>Date</label><input type="hidden" id="txDate" data-yearmin="2018" data-yearmax="2030"><div class="dpk" data-for="txDate"></div></div>
       </div>
       <div class="fg"><label>Libellé</label><input type="text" id="txLbl" placeholder="Ex : Salaire, Loyer…"></div>
       <div class="fr">
@@ -1107,7 +1114,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <div class="fg"><label>Libellé</label><input type="text" id="pLbl" placeholder="Ex : Loyer, Abonnement…"></div>
       <div class="fr">
         <div class="fg"><label>Montant (GNF)</label><input type="number" id="pAmt" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Date d'échéance</label><input type="date" id="pDate"></div>
+        <div class="fg"><label>Date d'échéance</label><input type="hidden" id="pDate" data-yearmin="2024" data-yearmax="2035"><div class="dpk" data-for="pDate"></div></div>
       </div>
       <div class="fr">
         <div class="fg"><label>Catégorie</label><select id="pCat"><option>Loyer</option><option>Abonnement</option><option>Frais scolaires</option><option>Cotisation</option><option>Facture</option><option>Mobile Money</option><option>Autre</option></select></div>
@@ -1142,9 +1149,23 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
     <div class="sheet-header"><div class="sheet-title">🎯 Objectif d'épargne</div><button class="sheet-close" onclick="closeSheet('goalOverlay')">✕</button></div>
     <div class="sheet-body">
       <div class="fg"><label>Nom de l'objectif</label><input type="text" id="gName" placeholder="Ex : Voiture, Voyage…"></div>
-      <div class="fr">
-        <div class="fg"><label>Montant cible (GNF)</label><input type="number" id="gTarget" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Déjà épargné (GNF)</label><input type="number" id="gCurrent" placeholder="0" inputmode="numeric"></div>
+      <div class="fg"><label>Montant cible (GNF)</label><input type="number" id="gTarget" placeholder="0" inputmode="numeric"></div>
+      <div class="fg">
+        <label>Déjà épargné (GNF) <span style="font-size:10px;color:var(--text3);font-weight:400;">— solde total depuis la création</span></label>
+        <input type="number" id="gCurrent" placeholder="0" inputmode="numeric" readonly style="background:var(--bg2);color:var(--green);font-weight:700;cursor:not-allowed;">
+      </div>
+      <div class="fg">
+        <label>⏳ Délai pour atteindre l'objectif</label>
+        <select id="gDeadlineType" onchange="updateGoalDeadlineFields()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:#fff;margin-bottom:8px;">
+          <option value="none">Pas de délai précis</option>
+          <option value="date">Date limite</option>
+          <option value="months">Nombre de mois</option>
+        </select>
+        <input type="hidden" id="gDeadlineDate" data-yearmin="2025" data-yearmax="2040">
+        <div class="dpk" data-for="gDeadlineDate" style="display:none;" id="gDeadlineDatePicker"></div>
+        <div id="gDeadlineMonthsWrap" style="display:none;">
+          <input type="number" id="gDeadlineMonths" placeholder="Ex: 6" min="1" max="120" inputmode="numeric" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;">
+        </div>
       </div>
     </div>
     <div class="sheet-footer">
@@ -1193,7 +1214,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <div class="fg"><label id="cdPersonLbl">Nom du créancier</label><input type="text" id="cdName" placeholder="Ex : Mamadou, Banque…"></div>
       <div class="fr">
         <div class="fg"><label>Montant (GNF)</label><input type="number" id="cdAmount" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Date d'échéance</label><input type="date" id="cdDate"></div>
+        <div class="fg"><label>Date d'échéance</label><input type="hidden" id="cdDate" data-yearmin="2023" data-yearmax="2035"><div class="dpk" data-for="cdDate"></div></div>
       </div>
       <div class="fg"><label>Motif</label><input type="text" id="cdReason" placeholder="Ex : Prêt, Achat…"></div>
       <div class="fg"><label>Méthode prévue</label>
@@ -1331,7 +1352,38 @@ function openTx(t){
 }
 function openPlanned(){const d=new Date();d.setDate(d.getDate()+7);document.getElementById('pDate').value=d.toISOString().split('T')[0];document.getElementById('pLbl').value='';document.getElementById('pAmt').value='';document.getElementById('plannedOverlay').classList.add('open');}
 function openMethod(){document.getElementById('mName').value='';document.getElementById('methodOverlay').classList.add('open');updateMFields();}
-function openGoal(){if(S.goal){document.getElementById('gName').value=S.goal.name;document.getElementById('gTarget').value=S.goal.target;document.getElementById('gCurrent').value=S.goal.current;}else{document.getElementById('gName').value='';document.getElementById('gTarget').value='';document.getElementById('gCurrent').value='';}document.getElementById('goalOverlay').classList.add('open');}
+function openGoal(){
+  // Calcul automatique : solde total de TOUTES les transactions depuis la création
+  const totalInc = S.tx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  const totalExp = S.tx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  const totalBalance = Math.max(0, totalInc - totalExp);
+  // Mettre à jour S.goal.current avec le vrai solde
+  if(S.goal){ S.goal.current = totalBalance; }
+  // Remplir les champs
+  if(S.goal){
+    document.getElementById('gName').value=S.goal.name;
+    document.getElementById('gTarget').value=S.goal.target;
+    document.getElementById('gCurrent').value=totalBalance;
+    // Délai
+    const dtype = S.goal.deadlineType||'none';
+    document.getElementById('gDeadlineType').value=dtype;
+    if(dtype==='date') document.getElementById('gDeadlineDate').value=S.goal.deadlineDate||'';
+    if(dtype==='months') document.getElementById('gDeadlineMonths').value=S.goal.deadlineMonths||'';
+  } else {
+    document.getElementById('gName').value='';
+    document.getElementById('gTarget').value='';
+    document.getElementById('gCurrent').value=totalBalance;
+    document.getElementById('gDeadlineType').value='none';
+  }
+  updateGoalDeadlineFields();
+  document.getElementById('goalOverlay').classList.add('open');
+}
+function updateGoalDeadlineFields(){
+  const t=document.getElementById('gDeadlineType').value;
+  const dpkDiv=document.getElementById('gDeadlineDatePicker');
+  if(dpkDiv) dpkDiv.style.display=t==='date'?'flex':'none';
+  document.getElementById('gDeadlineMonthsWrap').style.display=t==='months'?'block':'none';
+}
 function openBudgets(){document.getElementById('budgetFields').innerHTML=EXPENSE_CATS.map(c=>'<div class="fg"><label>'+ico(c)+' '+c+'</label><input type="number" data-cat="'+c+'" value="'+(S.budgets[c]||'')+'" placeholder="Pas de limite" inputmode="numeric"></div>').join('');document.getElementById('budgetsOverlay').classList.add('open');}
 function openSeuil(){document.getElementById('seuilMin').value=S.seuil.min||'';document.getElementById('seuilPct').value=S.seuil.pct||80;document.getElementById('seuilOverlay').classList.add('open');}
 function openCD(t){setCDType(t||'debt');document.getElementById('cdAmount').value='';document.getElementById('cdName').value='';document.getElementById('cdReason').value='';const d=new Date();d.setMonth(d.getMonth()+1);document.getElementById('cdDate').value=d.toISOString().split('T')[0];document.getElementById('cdOverlay').classList.add('open');}
@@ -1366,7 +1418,17 @@ function setCDType(t){cdType2=t;document.getElementById('cdBtnD').className='cd-
 function saveTx(){const amt=parseFloat(document.getElementById('txAmt').value),lbl=document.getElementById('txLbl').value.trim(),date=document.getElementById('txDate').value,cat=document.getElementById('txCat').value,meth=document.getElementById('txMeth').value;if(!amt||!lbl||!date||!cat){toast('⚠️','Remplissez tous les champs');return;}S.tx.unshift({id:Date.now(),type:S.type,amt,lbl,date,cat,meth,month:date.substring(0,7)});save();closeSheet('txOverlay');toast('✅',S.type==='income'?'Revenu ajouté !':'Dépense ajoutée !');render();}
 function savePlanned(){const lbl=document.getElementById('pLbl').value.trim(),amt=parseFloat(document.getElementById('pAmt').value),date=document.getElementById('pDate').value;if(!lbl||!amt||!date){toast('⚠️','Remplissez tous les champs');return;}S.planned.push({id:Date.now(),lbl,amt,date,cat:document.getElementById('pCat').value,rec:document.getElementById('pRec').value});save();closeSheet('plannedOverlay');toast('📅','Planifié !');render();}
 function saveMethod(){const type=document.getElementById('mType').value,name=document.getElementById('mName').value.trim();if(!name){toast('⚠️','Donnez un nom');return;}const icons={cash:'💵',momo:'📱',card:'💳',bank:'🏦',online:'🌐'},labels={cash:'Espèces',momo:'Mobile Money',card:'Carte bancaire',bank:'Virement',online:'En ligne'};let det='';if(type==='momo')det=document.getElementById('mOp').value+' · '+document.getElementById('mNum').value;if(type==='card')det=document.getElementById('mBank').value+' · ****'+document.getElementById('mCard').value;S.methods.push({id:Date.now(),type,name,det,icon:icons[type],label:labels[type]});save();closeSheet('methodOverlay');toast('💳','Méthode ajoutée !');renderAllMethods();}
-function saveGoal(){const name=document.getElementById('gName').value.trim(),target=parseFloat(document.getElementById('gTarget').value),current=parseFloat(document.getElementById('gCurrent').value)||0;if(!name||!target){toast('⚠️','Remplissez tous les champs');return;}S.goal={name,target,current};save();closeSheet('goalOverlay');toast('🎯','Objectif enregistré !');render();}
+function saveGoal(){
+  const name=document.getElementById('gName').value.trim();
+  const target=parseFloat(document.getElementById('gTarget').value);
+  const current=parseFloat(document.getElementById('gCurrent').value)||0;
+  if(!name||!target){toast('⚠️','Remplissez tous les champs');return;}
+  const deadlineType=document.getElementById('gDeadlineType').value;
+  const deadlineDate=document.getElementById('gDeadlineDate').value||'';
+  const deadlineMonths=parseInt(document.getElementById('gDeadlineMonths').value)||0;
+  S.goal={name,target,current,deadlineType,deadlineDate,deadlineMonths};
+  save();closeSheet('goalOverlay');toast('🎯','Objectif enregistré !');render();
+}
 function deleteGoal(){S.goal=null;save();closeSheet('goalOverlay');toast('🗑️','Objectif supprimé');render();}
 function saveBudgets(){document.querySelectorAll('#budgetFields input[data-cat]').forEach(inp=>{const c=inp.getAttribute('data-cat'),v=parseFloat(inp.value);if(v>0)S.budgets[c]=v;else delete S.budgets[c];});save();closeSheet('budgetsOverlay');toast('💰','Budgets enregistrés !');render();}
 function saveSeuil(){S.seuil.min=parseFloat(document.getElementById('seuilMin').value)||0;S.seuil.pct=parseFloat(document.getElementById('seuilPct').value)||80;save();closeSheet('seuilOverlay');toast('🚨','Alertes activées !');render();}
@@ -1520,7 +1582,21 @@ function render(){
   else{banner.className='alert-banner';}
 
   // Goal in drawer
-  if(S.goal){const pct=Math.min(100,S.goal.current/S.goal.target*100);document.getElementById('menuGoal').textContent=S.goal.name+' — '+pct.toFixed(0)+'%';}
+  if(S.goal){
+    const totalInc2 = S.tx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+    const totalExp2 = S.tx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+    const cur2 = Math.max(0, totalInc2 - totalExp2);
+    S.goal.current = cur2;
+    const pct=Math.min(100,cur2/S.goal.target*100);
+    let deadlineTxt='';
+    if(S.goal.deadlineType==='date'&&S.goal.deadlineDate){
+      const daysLeft=Math.ceil((new Date(S.goal.deadlineDate)-new Date())/864e5);
+      deadlineTxt=' · '+(daysLeft>=0?daysLeft+'j restants':'⚠️ Délai dépassé');
+    } else if(S.goal.deadlineType==='months'&&S.goal.deadlineMonths){
+      deadlineTxt=' · '+S.goal.deadlineMonths+' mois';
+    }
+    document.getElementById('menuGoal').textContent=S.goal.name+' — '+pct.toFixed(0)+'%'+deadlineTxt;
+  }
 
   renderChart();
   renderCDChart();
@@ -2743,7 +2819,8 @@ function printListPage(){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
           <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">DATE</div>
-          <input id="jiEntryDate" type="date" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;">
+          <input id="jiEntryDate" type="hidden" data-yearmin="2018" data-yearmax="2030">
+          <div class="dpk" data-for="jiEntryDate"></div>
         </div>
         <div>
           <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">CATÉGORIE</div>
@@ -3776,6 +3853,135 @@ if('serviceWorker' in navigator){
       .catch(e=>console.warn('SW non enregistré:',e));
   });
 }
+</script>
+
+<!-- ── SÉLECTEUR DE DATE PERSONNALISÉ ── -->
+<script>
+(function(){
+  const MOIS = ['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
+
+  function daysInMonth(y, m){ return new Date(y, m, 0).getDate(); }
+
+  function parseVal(v){
+    if(!v) return {d:'',m:'',y:''};
+    const p = v.split('-');
+    return {y:p[0]||'', m:p[1]||'', d:p[2]||''};
+  }
+
+  function buildVal(y,m,d){
+    if(!y||!m||!d) return '';
+    return y+'-'+(m<10?'0'+m:m)+'-'+(d<10?'0'+d:d);
+  }
+
+  function rebuildDays(selD, selM, selY){
+    const y = parseInt(selY.value)||new Date().getFullYear();
+    const m = parseInt(selM.value)||1;
+    const cur = selD.value;
+    const max = daysInMonth(y, m);
+    selD.innerHTML = '<option value="">Jour</option>';
+    for(let i=1;i<=max;i++){
+      const o=document.createElement('option');
+      o.value=i<10?'0'+i:String(i);
+      o.textContent=i;
+      if(String(o.value)===String(cur)) o.selected=true;
+      selD.appendChild(o);
+    }
+  }
+
+  function initPicker(wrapper){
+    const forId = wrapper.getAttribute('data-for');
+    if(!forId) return;
+    const hidden = document.getElementById(forId);
+    if(!hidden || wrapper.dataset.dpkInit) return;
+    wrapper.dataset.dpkInit = '1';
+
+    const yearMin = parseInt(hidden.getAttribute('data-yearmin')) || 2018;
+    const yearMax = parseInt(hidden.getAttribute('data-yearmax')) || new Date().getFullYear()+5;
+    const onchangeFn = hidden.getAttribute('data-onchange') || '';
+
+    // Build selects
+    const selD = document.createElement('select');
+    const selM = document.createElement('select');
+    const selY = document.createElement('select');
+
+    selD.title='Jour'; selM.title='Mois'; selY.title='Année';
+
+    // Months
+    selM.innerHTML = '<option value="">Mois</option>';
+    MOIS.forEach((mn,i)=>{
+      const o=document.createElement('option');
+      o.value=(i+1)<10?'0'+(i+1):String(i+1);
+      o.textContent=mn;
+      selM.appendChild(o);
+    });
+
+    // Years
+    selY.innerHTML = '<option value="">Année</option>';
+    for(let y=yearMax;y>=yearMin;y--){
+      const o=document.createElement('option');
+      o.value=String(y); o.textContent=y;
+      selY.appendChild(o);
+    }
+
+    // Days (initial)
+    rebuildDays(selD, selM, selY);
+
+    wrapper.appendChild(selD);
+    wrapper.appendChild(selM);
+    wrapper.appendChild(selY);
+
+    // Load current value if any
+    function loadValue(v){
+      if(!v) return;
+      const {d,m,y} = parseVal(v);
+      if(y) selY.value=y;
+      if(m) selM.value=m;
+      rebuildDays(selD, selM, selY);
+      if(d) selD.value=d;
+    }
+    if(hidden.value) loadValue(hidden.value);
+
+    // On select change → update hidden
+    function onSelect(){
+      rebuildDays(selD, selM, selY);
+      const v = buildVal(selY.value, selM.value, selD.value);
+      // Use native setter to avoid recursive trigger
+      const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
+      nativeSetter.call(hidden, v);
+      hidden.dispatchEvent(new Event('change', {bubbles:true}));
+      // Handle specific callbacks
+      if(onchangeFn && window[onchangeFn]) window[onchangeFn](v);
+    }
+    selD.addEventListener('change', onSelect);
+    selM.addEventListener('change', onSelect);
+    selY.addEventListener('change', onSelect);
+
+    // Intercept programmatic .value = '...' sets
+    const nativeDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+    Object.defineProperty(hidden, 'value', {
+      get(){ return nativeDescriptor.get.call(this); },
+      set(v){
+        nativeDescriptor.set.call(this, v);
+        loadValue(v);
+      },
+      configurable: true
+    });
+  }
+
+  function initAllPickers(){
+    document.querySelectorAll('.dpk[data-for]').forEach(initPicker);
+  }
+
+  // Run on DOM ready + after dynamic overlays open
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', initAllPickers);
+  } else {
+    initAllPickers();
+  }
+  // Re-run when overlays open (sheets add 'open' class)
+  const obs = new MutationObserver(()=>initAllPickers());
+  obs.observe(document.body, {attributes:true, subtree:true, attributeFilter:['class']});
+})();
 </script>
 
 </body>
