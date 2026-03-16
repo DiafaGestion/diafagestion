@@ -3912,7 +3912,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=118')
+    navigator.serviceWorker.register('./sw.js?v=119')
       .then(reg=>{
         // Détecter mise à jour disponible
         reg.addEventListener('updatefound',()=>{
@@ -4617,6 +4617,22 @@ if('serviceWorker' in navigator){
     const pTel=document.getElementById('pTel'); if(pTel) pTel.placeholder='Ex: 625 00 00 00';
     const pQuartier=document.getElementById('pQuartier'); if(pQuartier) pQuartier.placeholder=L==='en'?'Ex: Downtown, Uptown...':'Ex: Kaloum, Ratoma...';
     const pProfession=document.getElementById('pProfession'); if(pProfession) pProfession.placeholder=L==='en'?'Ex: Engineer, Trader...':'Ex: Ingénieur, Commerçant...';
+
+    // ── Hero status (recalcul selon langue courante) ──
+    const _heroEl = document.getElementById('heroStatus');
+    if(_heroEl && _heroEl.textContent && _heroEl.textContent !== '—') {
+      const _m = (typeof month === 'function') ? month() : '';
+      if(_m && typeof S !== 'undefined' && S.tx) {
+        const _txs = S.tx.filter(tx => tx.month === _m);
+        const _inc = _txs.filter(tx => tx.type==='income').reduce((s,tx)=>s+tx.amt,0);
+        const _exp = _txs.filter(tx => tx.type==='expense').reduce((s,tx)=>s+tx.amt,0);
+        const _bal = _inc - _exp;
+        const _pct = _inc>0?(_exp/_inc*100).toFixed(0):0;
+        _heroEl.textContent = _bal>=0
+          ?(L==='en'?'✅ '+_pct+'% of your income spent':'✅ '+_pct+'% de vos revenus dépensés')
+          :(L==='en'?'⚠️ Expenses exceed income':'⚠️ Dépenses supérieures aux revenus');
+      }
+    }
 
     // ── Admin Panel ──
     setText('adminTitle', t('admin_title'));
