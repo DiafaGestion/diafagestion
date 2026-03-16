@@ -493,6 +493,31 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 .reset-success-info .info-row:last-child{margin-bottom:0;}
 .reset-btn-done{width:100%;padding:14px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:800;cursor:pointer;}
 
+/* ── LANGUAGE TOGGLE (login page) ── */
+.lang-toggle{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 0 0;}
+.lang-btn{display:flex;align-items:center;gap:6px;padding:8px 18px;border-radius:24px;font-size:13px;font-weight:800;cursor:pointer;border:2px solid transparent;transition:all 0.2s;letter-spacing:0.3px;}
+.lang-btn .lang-flag{font-size:16px;}
+.lang-btn.active{background:#fff;color:#1a1d2e;border-color:#1a1d2e;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+.lang-btn:not(.active){background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.25);}
+.lang-btn:hover:not(.active){background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.5);}
+
+/* ── LANGUAGE PICKER MODAL ── */
+.lang-picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:9999;display:none;align-items:flex-end;justify-content:center;}
+.lang-picker-overlay.open{display:flex;}
+.lang-picker-sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:0 0 32px;animation:slideUp 0.25s cubic-bezier(0.25,0.46,0.45,0.94);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.lang-picker-handle{width:40px;height:4px;background:#e2e5f0;border-radius:4px;margin:12px auto 16px;}
+.lang-picker-title{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:800;color:#1a1d2e;text-align:center;margin-bottom:20px;padding:0 20px;}
+.lang-option{display:flex;align-items:center;gap:14px;padding:14px 24px;cursor:pointer;transition:background 0.15s;border:none;background:none;width:100%;text-align:left;}
+.lang-option:hover{background:#f5f6fa;}
+.lang-option.selected{background:#f0fdf4;}
+.lang-option-flag{font-size:28px;flex-shrink:0;}
+.lang-option-info{flex:1;}
+.lang-option-name{font-size:15px;font-weight:700;color:#1a1d2e;}
+.lang-option-native{font-size:12px;color:#6b7280;margin-top:2px;}
+.lang-option-check{font-size:18px;color:#15803d;opacity:0;transition:opacity 0.15s;}
+.lang-option.selected .lang-option-check{opacity:1;}
+
 /* ── CUSTOM DATE PICKER ── */
 .dpk{display:flex;gap:6px;width:100%;}
 .dpk select{flex:1;padding:9px 4px;border:1.5px solid var(--border,#e2e5f0);border-radius:10px;font-size:13px;font-family:'Mulish',sans-serif;background:#fff;color:var(--text,#1a1d2e);-webkit-appearance:none;appearance:none;text-align:center;cursor:pointer;min-width:0;}
@@ -515,8 +540,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <!-- CREATE ACCOUNT OVERLAY -->
 <div class="login-overlay hidden" id="createAccountOverlay">
   <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA" style="height:70px;width:70px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.5);">
-  <div class="login-title" style="font-size:20px;">Créer mon compte</div>
-  <div class="login-sub">Renseignez vos informations</div>
+  <div class="login-title" style="font-size:20px;" id="caTitleMain">Créer mon compte</div>
+  <div class="login-sub" id="caSubMain">Renseignez vos informations</div>
   <div style="width:100%;max-width:400px;background:#fff;border-radius:20px;padding:20px;box-sizing:border-box;overflow-y:auto;max-height:75vh;">
 
     <!-- Photo -->
@@ -526,89 +551,89 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <button type="button" onclick="document.getElementById('caAvatarInput').click()" style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-radius:50%;background:#dc2626;border:none;color:#fff;font-size:13px;cursor:pointer;">📷</button>
         <input type="file" id="caAvatarInput" accept="image/*" style="display:none" onchange="handleCaAvatar(event)">
       </div>
-      <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Photo (optionnel)</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:4px;" id="caPhotoOptional">Photo (optionnel)</div>
     </div>
 
     <!-- Infos perso -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div>
-        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">Prénom *</div>
+        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblPrenom">Prénom *</div>
         <input id="caPrenom" type="text" placeholder="Prénom" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">Nom *</div>
+        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblNom">Nom *</div>
         <input id="caNom" type="text" placeholder="Nom" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
       </div>
     </div>
 
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">📞 Téléphone *</div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblTel">📞 Téléphone *</div>
       <input id="caTel" type="tel" placeholder="Ex: 625 00 00 00" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
     </div>
 
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">🎂 Date de naissance</div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblDOB">🎂 Date de naissance</div>
       <input id="caDOB" type="hidden" data-yearmin="1930" data-yearmax="2015">
       <div class="dpk inline" data-for="caDOB"></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
       <div>
-        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">📍 Quartier</div>
+        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblQuartier">📍 Quartier</div>
         <input id="caQuartier" type="text" placeholder="Ex: Ratoma" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">💼 Profession</div>
+        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblProfession">💼 Profession</div>
         <input id="caProfession" type="text" placeholder="Ex: Commerçant" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
       </div>
     </div>
 
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">💍 Situation matrimoniale</div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblSituation">💍 Situation matrimoniale</div>
       <select id="caSituation" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
-        <option value="">Catégorie...</option>
-        <option value="Célibataire">Célibataire</option>
-        <option value="Marié(e)">Marié(e)</option>
-        <option value="Divorcé(e)">Divorcé(e)</option>
-        <option value="Veuf/Veuve">Veuf/Veuve</option>
+        <option value="" id="caOptSitCat">Catégorie...</option>
+        <option value="Célibataire" id="caOptCelibataire">Célibataire</option>
+        <option value="Marié(e)" id="caOptMarie">Marié(e)</option>
+        <option value="Divorcé(e)" id="caOptDivorce">Divorcé(e)</option>
+        <option value="Veuf/Veuve" id="caOptVeuf">Veuf/Veuve</option>
       </select>
     </div>
 
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">⚧ Sexe</div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblSexe">⚧ Sexe</div>
       <select id="caSexe" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff;">
-        <option value="">Catégorie...</option>
-        <option value="Masculin">👨 Masculin</option>
-        <option value="Féminin">👩 Féminin</option>
+        <option value="" id="caOptSexeCat">Catégorie...</option>
+        <option value="Masculin" id="caOptMasculin">👨 Masculin</option>
+        <option value="Féminin" id="caOptFeminin">👩 Féminin</option>
       </select>
     </div>
 
     <!-- Séparateur -->
     <div style="border-top:2px dashed #e5e7eb;margin:14px 0 12px;"></div>
-    <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-align:center;">🔐 Choisissez vos identifiants de connexion</div>
+    <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:10px;text-align:center;" id="caCredentialsTitle">🔐 Choisissez vos identifiants de connexion</div>
 
     <div style="margin-bottom:10px;">
-      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">👤 Identifiant *</div>
+      <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblLogin">👤 Identifiant *</div>
       <input id="caLogin" type="text" placeholder="Ex: mamadou2024" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">
       <div>
-        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">🔒 Mot de passe *</div>
+        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblPass">🔒 Mot de passe *</div>
         <input id="caPass" type="password" placeholder="Min. 4 caractères" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
       </div>
       <div>
-        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;">Confirmer *</div>
+        <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:4px;text-transform:uppercase;" id="caLblPassConfirm">Confirmer *</div>
         <input id="caPassConfirm" type="password" placeholder="Répéter" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;">
       </div>
     </div>
 
     <div id="caError" style="color:#dc2626;font-size:12px;margin-bottom:8px;display:none;"></div>
 
-    <button onclick="saveCreateAccount()" style="width:100%;padding:14px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;margin-top:6px;">
+    <button id="caSubmitBtn" onclick="saveCreateAccount()" style="width:100%;padding:14px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;margin-top:6px;">
       ✅ Créer mon compte
     </button>
-    <button onclick="backToWelcomeFromCreate()" style="width:100%;padding:12px;background:#f5f6fa;color:#374151;border:none;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;">
+    <button id="caBackBtn" onclick="backToWelcomeFromCreate()" style="width:100%;padding:12px;background:#f5f6fa;color:#374151;border:none;border-radius:14px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;">
       ← Retour
     </button>
   </div>
@@ -617,8 +642,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <!-- FIRST TIME PROFILE -->
 <div class="firstprofile-overlay hidden" id="firstProfileOverlay">
   <img src="apple-touch-icon.png" class="firstprofile-logo" alt="DiafaGestion">
-  <div class="firstprofile-title">Créer votre profil</div>
-  <div class="firstprofile-sub">Renseignez vos informations pour continuer</div>
+  <div class="firstprofile-title" id="fpTitle">Créer votre profil</div>
+  <div class="firstprofile-sub" id="fpSub">Renseignez vos informations pour continuer</div>
   <div class="firstprofile-box">
     <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px;">
       <div style="position:relative;width:90px;height:90px;">
@@ -626,45 +651,45 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <button type="button" onclick="document.getElementById('fpAvatarInput').click()" style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:#dc2626;border:none;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">📷</button>
         <input type="file" id="fpAvatarInput" accept="image/*" style="display:none" onchange="handleFpAvatar(event)">
       </div>
-      <div style="font-size:12px;color:#6b7280;margin-top:6px;">Photo de profil (optionnel)</div>
+      <div style="font-size:12px;color:#6b7280;margin-top:6px;" id="fpPhotoOptional">Photo de profil (optionnel)</div>
     </div>
-    <div class="firstprofile-label">👤 Prénom *</div>
+    <div class="firstprofile-label" id="fpLblPrenom">👤 Prénom *</div>
     <input class="firstprofile-input" type="text" id="fpPrenom" placeholder="Votre prénom">
-    <div class="firstprofile-label">👤 Nom *</div>
+    <div class="firstprofile-label" id="fpLblNom">👤 Nom *</div>
     <input class="firstprofile-input" type="text" id="fpNom" placeholder="Votre nom de famille">
-    <div class="firstprofile-label">📞 Numéro de téléphone *</div>
+    <div class="firstprofile-label" id="fpLblTel">📞 Numéro de téléphone *</div>
     <input class="firstprofile-input" type="tel" id="fpTel" placeholder="Ex: 625 00 00 00">
-    <div class="firstprofile-label">🎂 Date de naissance</div>
+    <div class="firstprofile-label" id="fpLblDOB">🎂 Date de naissance</div>
     <input class="firstprofile-input" type="hidden" id="fpDOB" data-yearmin="1930" data-yearmax="2015">
     <div class="dpk" data-for="fpDOB"></div>
-    <div class="firstprofile-label">📍 Quartier</div>
+    <div class="firstprofile-label" id="fpLblQuartier">📍 Quartier</div>
     <input class="firstprofile-input" type="text" id="fpQuartier" placeholder="Ex: Kaloum, Ratoma...">
-    <div class="firstprofile-label">💼 Profession</div>
+    <div class="firstprofile-label" id="fpLblProfession">💼 Profession</div>
     <input class="firstprofile-input" type="text" id="fpProfession" placeholder="Ex: Commerçant, Enseignant...">
-    <div class="firstprofile-required">* Champs obligatoires</div>
-    <button class="firstprofile-btn" onclick="saveFirstProfile()">✅ Créer mon profil</button>
+    <div class="firstprofile-required" id="fpRequired">* Champs obligatoires</div>
+    <button class="firstprofile-btn" id="fpSubmitBtn" onclick="saveFirstProfile()">✅ Créer mon profil</button>
   </div>
 </div>
 
 <!-- ADMIN PANEL -->
 <div class="admin-overlay hidden" id="adminPanel">
   <div class="admin-header">
-    <h1>🛡️ Panel Admin</h1>
-    <p>DiafaGestion — Gestion des clients</p>
-    <button class="admin-logout" onclick="closeAdminPanel()">✕ Fermer</button>
+    <h1 id="adminTitle">🛡️ Panel Admin</h1>
+    <p id="adminSubtitle">DiafaGestion — Gestion des clients</p>
+    <button class="admin-logout" id="adminCloseBtn" onclick="closeAdminPanel()">✕ Fermer</button>
   </div>
   <div class="admin-stats">
     <div class="admin-stat">
       <div class="admin-stat-val" id="adminTotalClients">0</div>
-      <div class="admin-stat-lbl">Clients inscrits</div>
+      <div class="admin-stat-lbl" id="adminLblTotal">Clients inscrits</div>
     </div>
     <div class="admin-stat">
       <div class="admin-stat-val" id="adminTodayClients">0</div>
-      <div class="admin-stat-lbl">Aujourd'hui</div>
+      <div class="admin-stat-lbl" id="adminLblToday">Aujourd'hui</div>
     </div>
   </div>
   <input class="admin-search" type="text" placeholder="🔍 Rechercher un client..." oninput="filterAdminClients(this.value)" id="adminSearch">
-  <div class="admin-section-title">Liste des clients</div>
+  <div class="admin-section-title" id="adminLblList">Liste des clients</div>
   <div class="admin-clients" id="adminClientList">
     <div class="admin-empty">Chargement...</div>
   </div>
@@ -673,18 +698,18 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <!-- TRASH BIN -->
 <div class="trash-overlay hidden" id="trashOverlay" onclick="if(event.target===this)closeTrash()">
   <div class="trash-sheet">
-    <div class="trash-title">🗑️ Corbeille</div>
-    <div class="trash-sub">Les éléments supprimés peuvent être restaurés</div>
+    <div class="trash-title" id="trashTitle">🗑️ Corbeille</div>
+    <div class="trash-sub" id="trashSub">Les éléments supprimés peuvent être restaurés</div>
     <div id="trashList"></div>
-    <button class="trash-empty-all" onclick="emptyTrash()">🗑️ Vider la corbeille</button>
-    <button class="trash-close-btn" onclick="closeTrash()">Fermer</button>
+    <button class="trash-empty-all" id="trashEmptyBtn" onclick="emptyTrash()">🗑️ Vider la corbeille</button>
+    <button class="trash-close-btn" id="trashCloseBtn" onclick="closeTrash()">Fermer</button>
   </div>
 </div>
 
 <!-- PROFILE SHEET -->
 <div class="profile-overlay hidden" id="profileOverlay" onclick="if(event.target===this)closeProfile()">
   <div class="profile-sheet">
-    <div class="profile-title">👤 Mon Profil</div>
+    <div class="profile-title" id="profileTitle">👤 Mon Profil</div>
     <div class="profile-header">
       <div class="profile-avatar-wrap">
         <img src="" class="profile-avatar" id="profileAvatarImg" onerror="this.src=''" alt="">
@@ -695,34 +720,34 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       <div class="profile-job-display" id="profileJobDisplay">Profession</div>
     </div>
     <div class="profile-grid">
-      <div class="profile-fg"><label>Prénom</label><input type="text" id="pPrenom" placeholder="Prénom"></div>
-      <div class="profile-fg"><label>Nom</label><input type="text" id="pNom" placeholder="Nom"></div>
+      <div class="profile-fg"><label id="pLblPrenom">Prénom</label><input type="text" id="pPrenom" placeholder="Prénom"></div>
+      <div class="profile-fg"><label id="pLblNom">Nom</label><input type="text" id="pNom" placeholder="Nom"></div>
     </div>
-    <div class="profile-fg"><label>📞 Téléphone</label><input type="tel" id="pTel" placeholder="Ex: 625 00 00 00"></div>
+    <div class="profile-fg"><label id="pLblTel">📞 Téléphone</label><input type="tel" id="pTel" placeholder="Ex: 625 00 00 00"></div>
     <div class="profile-grid">
-      <div class="profile-fg"><label>Date de naissance</label><input type="hidden" id="pDOB" data-yearmin="1930" data-yearmax="2015" data-onchange="calcAge"><div class="dpk" data-for="pDOB"></div></div>
-      <div class="profile-fg"><label>Âge</label><input type="number" id="pAge" placeholder="Âge calculé automatiquement" readonly style="background:#f5f6fa;color:#9ca3af;"></div>
+      <div class="profile-fg"><label id="pLblDOB">Date de naissance</label><input type="hidden" id="pDOB" data-yearmin="1930" data-yearmax="2015" data-onchange="calcAge"><div class="dpk" data-for="pDOB"></div></div>
+      <div class="profile-fg"><label id="pLblAge">Âge</label><input type="number" id="pAge" placeholder="Âge calculé automatiquement" readonly style="background:#f5f6fa;color:#9ca3af;"></div>
     </div>
-    <div class="profile-fg"><label>Quartier</label><input type="text" id="pQuartier" placeholder="Ex: Kaloum, Ratoma..."></div>
-    <div class="profile-fg"><label>Profession</label><input type="text" id="pProfession" placeholder="Ex: Ingénieur, Commerçant..."></div>
-    <div class="profile-fg"><label>⚧ Sexe</label>
+    <div class="profile-fg"><label id="pLblQuartier">Quartier</label><input type="text" id="pQuartier" placeholder="Ex: Kaloum, Ratoma..."></div>
+    <div class="profile-fg"><label id="pLblProfession">Profession</label><input type="text" id="pProfession" placeholder="Ex: Ingénieur, Commerçant..."></div>
+    <div class="profile-fg"><label id="pLblSexe">⚧ Sexe</label>
       <select id="pSexe">
-        <option value="">Catégorie...</option>
-        <option value="Masculin">👨 Masculin</option>
-        <option value="Féminin">👩 Féminin</option>
+        <option value="" id="pOptSexeCat">Catégorie...</option>
+        <option value="Masculin" id="pOptMasculin">👨 Masculin</option>
+        <option value="Féminin" id="pOptFeminin">👩 Féminin</option>
       </select>
     </div>
-    <div class="profile-fg"><label>Situation matrimoniale</label>
+    <div class="profile-fg"><label id="pLblSituation">Situation matrimoniale</label>
       <select id="pSituation">
-        <option value="">Catégorie...</option>
-        <option value="Célibataire">Célibataire</option>
-        <option value="Marié(e)">Marié(e)</option>
-        <option value="Divorcé(e)">Divorcé(e)</option>
-        <option value="Veuf/Veuve">Veuf/Veuve</option>
+        <option value="" id="pOptSitCat">Catégorie...</option>
+        <option value="Célibataire" id="pOptCelibataire">Célibataire</option>
+        <option value="Marié(e)" id="pOptMarie">Marié(e)</option>
+        <option value="Divorcé(e)" id="pOptDivorce">Divorcé(e)</option>
+        <option value="Veuf/Veuve" id="pOptVeuf">Veuf/Veuve</option>
       </select>
     </div>
-    <button class="profile-save-btn" onclick="saveProfile()">💾 Enregistrer le profil</button>
-    <button class="profile-close-btn" onclick="closeProfile()">Fermer</button>
+    <button class="profile-save-btn" id="profileSaveBtn" onclick="saveProfile()">💾 Enregistrer le profil</button>
+    <button class="profile-close-btn" id="profileCloseBtn" onclick="closeProfile()">Fermer</button>
   </div>
 </div>
 
@@ -730,31 +755,35 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="splash" id="splashScreen">
   <img src="apple-touch-icon.png" class="splash-logo" alt="DiafaGestion">
   <div class="splash-title">DiafaGestion</div>
-  <div class="splash-welcome">Bienvenue sur DiafaGestion 👋</div>
-  <div class="splash-sub">Gestion Financière Personnelle</div>
+  <div class="splash-welcome" id="splashWelcome">Bienvenue sur DiafaGestion 👋</div>
+  <div class="splash-sub" id="splashSub">Gestion Financière Personnelle</div>
 </div>
 
 <!-- WELCOME SCREEN -->
 <div class="login-overlay" id="loginOverlay">
   <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA">
   <div class="login-title">DiafaGestion</div>
-  <div class="login-sub">Gestion Financière Personnelle</div>
+  <div class="login-sub" id="loginSub">Gestion Financière Personnelle</div>
+  <div class="lang-toggle">
+    <button class="lang-btn active" id="loginLangFR" onclick="setLang('fr')"><span class="lang-flag">🇫🇷</span> Français</button>
+    <button class="lang-btn" id="loginLangEN" onclick="setLang('en')"><span class="lang-flag">🇬🇧</span> English</button>
+  </div>
   <div class="login-box" style="display:flex;flex-direction:column;gap:14px;padding:24px;">
 
     <!-- Bouton Créer un compte -->
-    <button class="login-btn" style="background:linear-gradient(135deg,#dc2626,#b91c1c);margin:0;" onclick="showCreateAccount()">
+    <button id="btnCreateAccount" class="login-btn" style="background:linear-gradient(135deg,#dc2626,#b91c1c);margin:0;" onclick="showCreateAccount()">
       ✨ Créer mon compte
     </button>
 
     <!-- Bouton Accéder -->
-    <button class="login-btn" style="background:linear-gradient(135deg,#1a7a4a,#15803d);margin:0;" onclick="showAccessLogin()">
+    <button id="btnAccessAccount" class="login-btn" style="background:linear-gradient(135deg,#1a7a4a,#15803d);margin:0;" onclick="showAccessLogin()">
       🔓 Accéder à mon compte
     </button>
 
     <!-- WhatsApp -->
     <a href="https://wa.me/625518669" target="_blank" class="whatsapp-btn" style="margin:0;">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      Contacter l'administrateur
+      <span id="btnContactAdmin">Contacter l'administrateur</span>
     </a>
 
     <div class="login-error" id="loginError"></div>
@@ -765,14 +794,14 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="login-overlay hidden" id="loginFormOverlay">
   <img src="apple-touch-icon.png" class="login-logo" alt="DIAFA">
   <div class="login-title">DiafaGestion</div>
-  <div class="login-sub">Connexion à votre compte</div>
+  <div class="login-sub" id="loginFormSub">Connexion à votre compte</div>
   <div class="login-box">
-    <div class="login-label">👤 Identifiant</div>
+    <div class="login-label" id="labelIdentifiant">👤 Identifiant</div>
     <input class="login-input" type="text" id="loginUser" placeholder="Votre identifiant" onkeydown="if(event.key==='Enter')document.getElementById('loginPass').focus()" style="margin-bottom:12px;">
-    <div class="login-label">🔒 Mot de passe</div>
+    <div class="login-label" id="labelPassword">🔒 Mot de passe</div>
     <input class="login-input" type="password" id="loginPass" placeholder="Votre mot de passe" onkeydown="if(event.key==='Enter')checkLogin()">
-    <button class="login-btn" onclick="checkLogin()">🔓 Se connecter</button>
-    <button class="login-btn" style="background:#f5f6fa;color:#374151;margin-top:4px;" onclick="backToWelcome()">← Retour</button>
+    <button id="btnConnect" class="login-btn" onclick="checkLogin()">🔓 Se connecter</button>
+    <button id="btnBackLogin" class="login-btn" style="background:#f5f6fa;color:#374151;margin-top:4px;" onclick="backToWelcome()">← Retour</button>
     <div class="login-error" id="loginError2"></div>
   </div>
 </div>
@@ -780,20 +809,20 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <!-- CHANGE CREDENTIALS SHEET -->
 <div class="pwd-overlay hidden" id="pwdOverlay" onclick="if(event.target===this)closePwd()">
   <div class="pwd-sheet">
-    <div class="pwd-title">🔑 Modifier mes accès</div>
-    <div class="pwd-fg"><label>Mot de passe actuel</label><input type="password" id="pwdOld" placeholder="Mot de passe actuel"></div>
+    <div class="pwd-title" id="pwdTitle">🔑 Modifier mes accès</div>
+    <div class="pwd-fg"><label id="pwdLblOld">Mot de passe actuel</label><input type="password" id="pwdOld" placeholder="Mot de passe actuel"></div>
     <div style="background:#f5f6fa;border-radius:12px;padding:14px;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;">Nouvel identifiant</div>
-      <div class="pwd-fg" style="margin-bottom:0"><label>Identifiant</label><input type="text" id="pwdNewUser" placeholder="Nouvel identifiant"></div>
+      <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;" id="pwdSectionUser">Nouvel identifiant</div>
+      <div class="pwd-fg" style="margin-bottom:0"><label id="pwdLblUser">Identifiant</label><input type="text" id="pwdNewUser" placeholder="Nouvel identifiant"></div>
     </div>
     <div style="background:#f5f6fa;border-radius:12px;padding:14px;margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;">Nouveau mot de passe</div>
-      <div class="pwd-fg"><label>Nouveau mot de passe</label><input type="password" id="pwdNew" placeholder="Nouveau mot de passe"></div>
-      <div class="pwd-fg" style="margin-bottom:0"><label>Confirmer</label><input type="password" id="pwdConfirm" placeholder="Confirmer le mot de passe"></div>
+      <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase;" id="pwdSectionPass">Nouveau mot de passe</div>
+      <div class="pwd-fg"><label id="pwdLblNew">Nouveau mot de passe</label><input type="password" id="pwdNew" placeholder="Nouveau mot de passe"></div>
+      <div class="pwd-fg" style="margin-bottom:0"><label id="pwdLblConfirm">Confirmer</label><input type="password" id="pwdConfirm" placeholder="Confirmer le mot de passe"></div>
     </div>
-    <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;text-align:center;">Laissez vide pour ne pas modifier</div>
-    <button class="login-btn" onclick="savePassword()">💾 Enregistrer</button>
-    <button class="profile-close-btn" onclick="closePwd()">Annuler</button>
+    <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;text-align:center;" id="pwdHint">Laissez vide pour ne pas modifier</div>
+    <button id="pwdSaveBtn" class="login-btn" onclick="savePassword()">💾 Enregistrer</button>
+    <button id="pwdCancelBtn" class="profile-close-btn" onclick="closePwd()">Annuler</button>
     <div class="login-error" id="pwdError"></div>
   </div>
 </div>
@@ -819,47 +848,47 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <!-- HERO -->
     <div class="hero">
-      <div class="hero-label">Solde du mois</div>
+      <div class="hero-label" id="heroLabel">Solde du mois</div>
       <div class="hero-amount" id="heroBalance">0 GNF</div>
       <div class="hero-status" id="heroStatus">—</div>
       <div class="hero-grid">
-        <div class="hero-stat"><div class="hstat-lbl">↑ Revenus</div><div class="hstat-val inc" id="heroIncome">0 GNF</div></div>
-        <div class="hero-stat"><div class="hstat-lbl">↓ Dépenses</div><div class="hstat-val exp" id="heroExpense">0 GNF</div></div>
+        <div class="hero-stat"><div class="hstat-lbl" id="heroIncLbl">↑ Revenus</div><div class="hstat-val inc" id="heroIncome">0 GNF</div></div>
+        <div class="hero-stat"><div class="hstat-lbl" id="heroExpLbl">↓ Dépenses</div><div class="hstat-val exp" id="heroExpense">0 GNF</div></div>
       </div>
     </div>
 
     <!-- QUICK ACTIONS -->
     <div class="qa-grid">
       <div class="qa-wrap">
-        <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl">Revenu</div><div class="qa-sub">Ajouter</div></div></button>
-        <button class="qa-list inc" onclick="openListPage('income')">📋 Liste</button>
+        <button class="qa-btn inc" onclick="openTx('income')"><div class="qa-icon">💰</div><div><div class="qa-lbl" id="qaIncLbl">Revenu</div><div class="qa-sub" id="qaIncSub">Ajouter</div></div></button>
+        <button class="qa-list inc" onclick="openListPage('income')">📋 <span id="qaListInc">Liste</span></button>
       </div>
       <div class="qa-wrap">
-        <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl">Dépense</div><div class="qa-sub">Ajouter</div></div></button>
-        <button class="qa-list exp" onclick="openListPage('expense')">📋 Liste</button>
+        <button class="qa-btn exp" onclick="openTx('expense')"><div class="qa-icon">💸</div><div><div class="qa-lbl" id="qaExpLbl">Dépense</div><div class="qa-sub" id="qaExpSub">Ajouter</div></div></button>
+        <button class="qa-list exp" onclick="openListPage('expense')">📋 <span id="qaListExp">Liste</span></button>
       </div>
       <div class="qa-wrap">
-        <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl">Créanciers</div><div class="qa-sub">À qui je dois</div></div></button>
-        <button class="qa-list debt" onclick="openListPage('debt')">📋 Liste</button>
+        <button class="qa-btn debt" onclick="openPageCD('debt')"><div class="qa-icon">🤲</div><div><div class="qa-lbl" id="qaDebtLbl">Créanciers</div><div class="qa-sub" id="qaDebtSub">À qui je dois</div></div></button>
+        <button class="qa-list debt" onclick="openListPage('debt')">📋 <span id="qaListDebt">Liste</span></button>
       </div>
       <div class="qa-wrap">
-        <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl">Débiteurs</div><div class="qa-sub">Qui me doit</div></div></button>
-        <button class="qa-list credit" onclick="openListPage('credit')">📋 Liste</button>
+        <button class="qa-btn credit" onclick="openPageCD('credit')"><div class="qa-icon">🙏</div><div><div class="qa-lbl" id="qaCreditLbl">Débiteurs</div><div class="qa-sub" id="qaCreditSub">Qui me doit</div></div></button>
+        <button class="qa-list credit" onclick="openListPage('credit')">📋 <span id="qaListCredit">Liste</span></button>
       </div>
     </div>
 
     <!-- PREVISION -->
     <div class="section">
       <div class="section-header">
-        <div class="section-title">🔮 Prévision fin de mois</div>
+        <div class="section-title" id="sectionPrevision">🔮 Prévision fin de mois</div>
         <button class="pdf-btn" onclick="exportPDF()">📄 PDF</button>
       </div>
       <div class="card">
         <div class="prev-grid">
-          <div class="prev-stat"><div class="prev-lbl">Solde prévu</div><div class="prev-val" id="prevSolde" style="color:var(--blue)">—</div></div>
-          <div class="prev-stat"><div class="prev-lbl">Jours restants</div><div class="prev-val" id="prevJours" style="color:var(--orange)">—</div></div>
-          <div class="prev-stat"><div class="prev-lbl">Dép. moy/jour</div><div class="prev-val" id="prevMoy" style="color:var(--red)">—</div></div>
-          <div class="prev-stat"><div class="prev-lbl">Budget/jour dispo</div><div class="prev-val" id="prevDispo" style="color:var(--green)">—</div></div>
+          <div class="prev-stat"><div class="prev-lbl" id="prevSoldeLbl">Solde prévu</div><div class="prev-val" id="prevSolde" style="color:var(--blue)">—</div></div>
+          <div class="prev-stat"><div class="prev-lbl" id="prevJoursLbl">Jours restants</div><div class="prev-val" id="prevJours" style="color:var(--orange)">—</div></div>
+          <div class="prev-stat"><div class="prev-lbl" id="prevMoyLbl">Dép. moy/jour</div><div class="prev-val" id="prevMoy" style="color:var(--red)">—</div></div>
+          <div class="prev-stat"><div class="prev-lbl" id="prevDispoLbl">Budget/jour dispo</div><div class="prev-val" id="prevDispo" style="color:var(--green)">—</div></div>
         </div>
         <div class="prev-note" id="prevNote">Ajoutez des transactions pour voir la prévision</div>
       </div>
@@ -867,24 +896,24 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 
     <!-- GRAPHIQUE -->
     <div class="section">
-      <div class="section-header"><div class="section-title">📈 Revenus vs Dépenses</div></div>
+      <div class="section-header"><div class="section-title" id="sectionChart">📈 Revenus vs Dépenses</div></div>
       <div class="card chart-wrap"><canvas id="mainChart"></canvas></div>
     </div>
 
     <div class="section">
-      <div class="section-header"><div class="section-title">💸 Créances vs Dettes</div></div>
+      <div class="section-header"><div class="section-title" id="sectionCDChart">💸 Créances vs Dettes</div></div>
       <div class="card chart-wrap"><canvas id="cdChart"></canvas></div>
     </div>
 
     <!-- CATEGORIES -->
     <div class="section">
-      <div class="section-header"><div class="section-title">📊 Budget par catégorie</div></div>
+      <div class="section-header"><div class="section-title" id="sectionCat">📊 Budget par catégorie</div></div>
       <div class="card" id="catList"><div class="empty"><div class="empty-emoji">📊</div><div class="empty-text">Aucune dépense</div></div></div>
     </div>
 
     <!-- TRANSACTIONS récentes -->
     <div class="section">
-      <div class="section-header"><div class="section-title">📋 Dernières transactions</div></div>
+      <div class="section-header"><div class="section-title" id="sectionTx">📋 Dernières transactions</div></div>
       <div class="card" id="txList"><div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune transaction</div></div></div>
     </div>
 
@@ -910,77 +939,86 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <span style="color:#9ca3af;font-size:18px;">›</span>
       </div>
 
-      <div class="drawer-section-label">Gestion</div>
+      <div class="drawer-section-label" style="margin-top:8px;" id="menuSectionGestion">Gestion</div>
       <button class="menu-item" onclick="closeDrawer();openPlanned()">
         <div class="menu-icon" style="background:#f3e8ff">📅</div>
-        <div><div class="menu-label">Ajouter Planning dépenses</div><div class="menu-sub">Planifier une échéance future</div></div>
+        <div><div class="menu-label" id="menuAddPlanning">Ajouter Planning dépenses</div><div class="menu-sub" id="menuAddPlanningSub">Planifier une échéance future</div></div>
         <span class="menu-badge" id="menuPlannedBadge" style="display:none">!</span>
       </button>
       <button class="menu-item" onclick="closeDrawer();openListPage('planned')">
         <div class="menu-icon" style="background:#f3e8ff">📋</div>
-        <div><div class="menu-label">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
+        <div><div class="menu-label" id="menuListPlanning">Liste Planning dépenses</div><div class="menu-sub" id="menuPlanned">Voir &amp; télécharger PDF</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();openPage('transactions')">
         <div class="menu-icon" style="background:var(--bg2)">📋</div>
-        <div><div class="menu-label">Transactions</div><div class="menu-sub">Toutes les opérations</div></div>
+        <div><div class="menu-label" id="menuTx">Transactions</div><div class="menu-sub" id="menuTxSub">Toutes les opérations</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();openPage('history')">
         <div class="menu-icon" style="background:var(--bg2)">🗂️</div>
-        <div><div class="menu-label">Historique mensuel</div><div class="menu-sub">Mois précédents</div></div>
+        <div><div class="menu-label" id="menuHistory">Historique mensuel</div><div class="menu-sub" id="menuHistorySub">Mois précédents</div></div>
       </button>
 
-      <div class="drawer-section-label" style="margin-top:8px;">Paramètres</div>
+      <div class="drawer-section-label" style="margin-top:8px;" id="menuSectionParams">Paramètres</div>
       <button class="menu-item" onclick="closeDrawer();openGoal()">
         <div class="menu-icon" style="background:var(--green-l)">🎯</div>
-        <div><div class="menu-label">Objectif d'épargne</div><div class="menu-sub" id="menuGoal">Non défini</div></div>
+        <div><div class="menu-label" id="menuGoalLbl">Objectif d'épargne</div><div class="menu-sub" id="menuGoal">Non défini</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();openBudgets()">
         <div class="menu-icon" style="background:var(--purple-l)">💰</div>
-        <div><div class="menu-label">Budget par catégorie</div><div class="menu-sub">Plafonds mensuels</div></div>
+        <div><div class="menu-label" id="menuBudgetLbl">Budget par catégorie</div><div class="menu-sub" id="menuBudgetSub">Plafonds mensuels</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();openSeuil()">
         <div class="menu-icon" style="background:var(--red-l)">🚨</div>
-        <div><div class="menu-label">Alertes financières</div><div class="menu-sub">Seuils &amp; notifications</div></div>
+        <div><div class="menu-label" id="menuAlertsLbl">Alertes financières</div><div class="menu-sub" id="menuAlertsSub">Seuils &amp; notifications</div></div>
       </button>
 
-      <div class="drawer-section-label" style="margin-top:8px;">Personnel</div>
+      <div class="drawer-section-label" style="margin-top:8px;" id="menuSectionPersonnel">Personnel</div>
       <button class="menu-item" onclick="closeDrawer();openJournal()">
         <div class="menu-icon" style="background:#fce7f3">📔</div>
-        <div><div class="menu-label">Journal Intime</div><div class="menu-sub">Mon journal secret</div></div>
+        <div><div class="menu-label" id="menuJournalLbl">Journal Intime</div><div class="menu-sub" id="menuJournalSub">Mon journal secret</div></div>
       </button>
 
       <button class="menu-item" onclick="closeDrawer();openPwd()">
         <div class="menu-icon" style="background:#fef3c7">🔑</div>
-        <div><div class="menu-label">Modifier mes accès</div><div class="menu-sub">Identifiant &amp; mot de passe</div></div>
+        <div><div class="menu-label" id="menuCredLbl">Modifier mes accès</div><div class="menu-sub" id="menuCredSub">Identifiant &amp; mot de passe</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();exportData()">
         <div class="menu-icon" style="background:#dbeafe">💾</div>
-        <div><div class="menu-label">Exporter mes données</div><div class="menu-sub">Télécharger une sauvegarde JSON</div></div>
+        <div><div class="menu-label" id="menuExportLbl">Exporter mes données</div><div class="menu-sub" id="menuExportSub">Télécharger une sauvegarde JSON</div></div>
       </button>
       <button class="menu-item" onclick="closeDrawer();importData()">
         <div class="menu-icon" style="background:#dcfce7">📂</div>
-        <div><div class="menu-label">Restaurer une sauvegarde</div><div class="menu-sub">Importer un fichier JSON</div></div>
+        <div><div class="menu-label" id="menuImportLbl">Restaurer une sauvegarde</div><div class="menu-sub" id="menuImportSub">Importer un fichier JSON</div></div>
       </button>
 
-      <div class="drawer-section-label" style="margin-top:8px;">Administration</div>
+      <div class="drawer-section-label" style="margin-top:8px;" id="menuSectionAdmin">Administration</div>
       <div id="adminTabBtn" style="display:none;">
         <button class="menu-item" onclick="closeDrawer();openAdminPanel();">
           <div class="menu-icon" style="background:#fee2e2;">🛡️</div>
-          <div><div class="menu-label">Panneau Admin</div><div class="menu-sub">Gérer les clients</div></div>
+          <div><div class="menu-label" id="menuAdminLbl">Panneau Admin</div><div class="menu-sub" id="menuAdminSub">Gérer les clients</div></div>
         </button>
       </div>
       <button class="menu-item" onclick="closeDrawer();openTrash()">
         <div class="menu-icon" style="background:#fee2e2">🗑️</div>
-        <div><div class="menu-label">Corbeille</div><div class="menu-sub" id="trashBadge">Vide</div></div>
+        <div><div class="menu-label" id="menuTrashLbl">Corbeille</div><div class="menu-sub" id="trashBadge">Vide</div></div>
       </button>
+
+      <!-- LANGUE -->
+      <button class="menu-item" onclick="closeDrawer();openLangPicker()">
+        <div class="menu-icon" style="background:#e0e7ff">🌐</div>
+        <div><div class="menu-label" id="menuLangLbl">Langue / Language</div><div class="menu-sub" id="menuLangSub">Français</div></div>
+        <span style="color:#9ca3af;font-size:18px;margin-left:auto;">›</span>
+      </button>
+
       <button class="menu-item" onclick="logoutClient()">
         <div class="menu-icon" style="background:#dcfce7;">🚪</div>
-        <div><div class="menu-label">Déconnexion</div><div class="menu-sub">Changer de compte</div></div>
+        <div><div class="menu-label" id="menuLogoutLbl">Déconnexion</div><div class="menu-sub" id="menuLogoutSub">Changer de compte</div></div>
       </button>
       <button class="menu-item" onclick="resetApp()">
         <div class="menu-icon" style="background:#fee2e2">🔄</div>
-        <div><div class="menu-label">Réinitialiser tout</div><div class="menu-sub">Effacer toutes les données</div></div>
+        <div><div class="menu-label" id="menuResetLbl">Réinitialiser tout</div><div class="menu-sub" id="menuResetSub">Effacer toutes les données</div></div>
       </button>
+
 
     </div>
     <div class="drawer-footer">
@@ -1022,7 +1060,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="pageTx">
   <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">📋 Transactions</div><button class="sheet-close" onclick="closeSheet('pageTx')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="pageTxTitle">📋 Transactions</div><button class="sheet-close" onclick="closeSheet('pageTx')">✕</button></div>
     <div style="padding:10px 14px 6px">
       <div class="cd-tabs">
         <button class="cd-tab ad" id="txTabAll" onclick="filterTx('all',this)">Tout</button>
@@ -1039,9 +1077,9 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
   <div class="sheet" style="max-height:95vh;overflow:hidden;display:flex;flex-direction:column;">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div class="sheet-title">📅 Dépenses planifiées</div>
+      <div class="sheet-title" id="pagePlannedTitle">📅 Dépenses planifiées</div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="cta-blue" style="padding:6px 12px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:var(--blue)" onclick="openPlanned()">+ Ajouter</button>
+        <button class="cta-blue" style="padding:6px 12px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:var(--blue)" onclick="openPlanned()">+ <span id="pagePlannedAddBtn">Ajouter</span></button>
         <button class="sheet-close" onclick="closeSheet('pagePlanned')">✕</button>
       </div>
     </div>
@@ -1053,7 +1091,7 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="pageHistory">
   <div class="sheet" style="max-height:95vh">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">🗂️ Historique mensuel</div><button class="sheet-close" onclick="closeSheet('pageHistory')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="pageHistoryTitle">🗂️ Historique mensuel</div><button class="sheet-close" onclick="closeSheet('pageHistory')">✕</button></div>
     <div id="allHistoryList" style="overflow-y:auto;max-height:75vh"><div class="empty"><div class="empty-emoji">🗂️</div><div class="empty-text">Aucun historique</div></div></div>
   </div>
 </div>
@@ -1085,23 +1123,22 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
         <button class="type-btn" id="btnExp" onclick="setType('expense')">🔴 Dépense</button>
       </div>
       <div class="fr">
-        <div class="fg"><label>Montant (GNF)</label><input type="number" id="txAmt" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Date</label><input type="hidden" id="txDate" data-yearmin="2018" data-yearmax="2030"><div class="dpk" data-for="txDate"></div></div>
+        <div class="fg"><label id="txLblAmount">Montant (GNF)</label><input type="number" id="txAmt" placeholder="0" inputmode="numeric"></div>
+        <div class="fg"><label id="txLblDate">Date</label><input type="hidden" id="txDate" data-yearmin="2018" data-yearmax="2030"><div class="dpk" data-for="txDate"></div></div>
       </div>
-      <div class="fg"><label>Libellé</label><input type="text" id="txLbl" placeholder="Ex : Salaire, Loyer…"></div>
+      <div class="fg"><label id="txLblLabel">Libellé</label><input type="text" id="txLbl" placeholder="Ex : Salaire, Loyer…"></div>
       <div class="fr">
-        <div class="fg"><label>Catégorie</label>
+        <div class="fg"><label id="txLblCat">Catégorie</label>
           <select id="txCat">
             <option value="">Catégorie...</option>
-            <!-- Options injectées dynamiquement par setType() -->
           </select>
         </div>
-        <div class="fg"><label>Paiement</label>
+        <div class="fg"><label id="txLblMeth">Paiement</label>
           <select id="txMeth"><option>Espèces</option><option>Orange Money</option><option>MTN Money</option><option>Kulu</option><option>PayCard</option><option>Carte bancaire</option><option>Virement</option><option>En ligne</option></select>
         </div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-green" onclick="saveTx()">Enregistrer</button></div>
+    <div class="sheet-footer"><button class="cta cta-green" id="txSaveBtn" onclick="saveTx()">Enregistrer</button></div>
   </div>
 </div>
 
@@ -1109,19 +1146,28 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="plannedOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">📅 Planifier une dépense</div><button class="sheet-close" onclick="closeSheet('plannedOverlay')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="plannedOverlayTitle">📅 Planifier une dépense</div><button class="sheet-close" onclick="closeSheet('plannedOverlay')">✕</button></div>
     <div class="sheet-body">
-      <div class="fg"><label>Libellé</label><input type="text" id="pLbl" placeholder="Ex : Loyer, Abonnement…"></div>
+      <div class="fg"><label id="plannedLblLabel">Libellé</label><input type="text" id="pLbl" placeholder="Ex : Loyer, Abonnement…"></div>
       <div class="fr">
-        <div class="fg"><label>Montant (GNF)</label><input type="number" id="pAmt" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Date d'échéance</label><input type="hidden" id="pDate" data-yearmin="2024" data-yearmax="2035"><div class="dpk" data-for="pDate"></div></div>
+        <div class="fg"><label id="plannedLblAmount">Montant (GNF)</label><input type="number" id="pAmt" placeholder="0" inputmode="numeric"></div>
+        <div class="fg"><label id="plannedLblDate">Date d'échéance</label><input type="hidden" id="pDate" data-yearmin="2024" data-yearmax="2035"><div class="dpk" data-for="pDate"></div></div>
       </div>
       <div class="fr">
-        <div class="fg"><label>Catégorie</label><select id="pCat"><option>Loyer</option><option>Abonnement</option><option>Frais scolaires</option><option>Cotisation</option><option>Facture</option><option>Mobile Money</option><option>Autre</option></select></div>
-        <div class="fg"><label>Récurrence</label><select id="pRec"><option value="once">Une fois</option><option value="monthly">Mensuelle</option><option value="weekly">Hebdomadaire</option></select></div>
+        <div class="fg"><label id="plannedLblCat">Catégorie</label><select id="pCat">
+          <option id="pCatLoyer">Loyer</option><option id="pCatAbonnement">Abonnement</option>
+          <option id="pCatFrais">Frais scolaires</option><option id="pCatCotisation">Cotisation</option>
+          <option id="pCatFacture">Facture</option><option id="pCatMomo">Mobile Money</option>
+          <option id="pCatAutre">Autre</option>
+        </select></div>
+        <div class="fg"><label id="plannedLblRec">Récurrence</label><select id="pRec">
+          <option value="once" id="pRecOnce">Une fois</option>
+          <option value="monthly" id="pRecMonthly">Mensuelle</option>
+          <option value="weekly" id="pRecWeekly">Hebdomadaire</option>
+        </select></div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-blue" onclick="savePlanned()">Planifier</button></div>
+    <div class="sheet-footer"><button class="cta cta-blue" id="plannedSaveBtn" onclick="savePlanned()">Planifier</button></div>
   </div>
 </div>
 
@@ -1129,16 +1175,22 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="methodOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">💳 Méthode de paiement</div><button class="sheet-close" onclick="closeSheet('methodOverlay')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="methodOverlayTitle">💳 Méthode de paiement</div><button class="sheet-close" onclick="closeSheet('methodOverlay')">✕</button></div>
     <div class="sheet-body">
-      <div class="fg"><label>Type</label>
-        <select id="mType" onchange="updateMFields()"><option value="cash">💵 Espèces</option><option value="momo">📱 Mobile Money</option><option value="card">💳 Carte bancaire</option><option value="bank">🏦 Virement</option><option value="online">🌐 En ligne</option></select>
+      <div class="fg"><label id="methodLblType">Type</label>
+        <select id="mType" onchange="updateMFields()">
+          <option value="cash" id="mTypeCash">💵 Espèces</option>
+          <option value="momo" id="mTypeMomo">📱 Mobile Money</option>
+          <option value="card" id="mTypeCard">💳 Carte bancaire</option>
+          <option value="bank" id="mTypeBank">🏦 Virement</option>
+          <option value="online" id="mTypeOnline">🌐 En ligne</option>
+        </select>
       </div>
-      <div id="momoF" style="display:none"><div class="fr"><div class="fg"><label>Opérateur</label><select id="mOp"><option>Orange Money</option><option>MTN Money</option><option>Kulu</option><option>PayCard</option></select></div><div class="fg"><label>Numéro</label><input type="tel" id="mNum" placeholder="620 00 00 00"></div></div></div>
-      <div id="cardF" style="display:none"><div class="fr"><div class="fg"><label>Banque</label><input type="text" id="mBank" placeholder="Ecobank"></div><div class="fg"><label>4 derniers chiffres</label><input type="text" id="mCard" placeholder="4521" maxlength="4" inputmode="numeric"></div></div></div>
-      <div class="fg"><label>Nom affiché</label><input type="text" id="mName" placeholder="Ex : Mon Orange Money"></div>
+      <div id="momoF" style="display:none"><div class="fr"><div class="fg"><label id="methodLblOp">Opérateur</label><select id="mOp"><option>Orange Money</option><option>MTN Money</option><option>Kulu</option><option>PayCard</option></select></div><div class="fg"><label id="methodLblNum">Numéro</label><input type="tel" id="mNum" placeholder="620 00 00 00"></div></div></div>
+      <div id="cardF" style="display:none"><div class="fr"><div class="fg"><label id="methodLblBank">Banque</label><input type="text" id="mBank" placeholder="Ecobank"></div><div class="fg"><label id="methodLblCard">4 derniers chiffres</label><input type="text" id="mCard" placeholder="4521" maxlength="4" inputmode="numeric"></div></div></div>
+      <div class="fg"><label id="methodLblName">Nom affiché</label><input type="text" id="mName" placeholder="Ex : Mon Orange Money"></div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-blue" onclick="saveMethod()">Ajouter</button></div>
+    <div class="sheet-footer"><button class="cta cta-blue" id="methodSaveBtn" onclick="saveMethod()">Ajouter</button></div>
   </div>
 </div>
 
@@ -1146,20 +1198,20 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="goalOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">🎯 Objectif d'épargne</div><button class="sheet-close" onclick="closeSheet('goalOverlay')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="goalOverlayTitle">🎯 Objectif d'épargne</div><button class="sheet-close" onclick="closeSheet('goalOverlay')">✕</button></div>
     <div class="sheet-body">
-      <div class="fg"><label>Nom de l'objectif</label><input type="text" id="gName" placeholder="Ex : Voiture, Voyage…"></div>
-      <div class="fg"><label>Montant cible (GNF)</label><input type="number" id="gTarget" placeholder="0" inputmode="numeric"></div>
+      <div class="fg"><label id="goalLblName">Nom de l'objectif</label><input type="text" id="gName" placeholder="Ex : Voiture, Voyage…"></div>
+      <div class="fg"><label id="goalLblTarget">Montant cible (GNF)</label><input type="number" id="gTarget" placeholder="0" inputmode="numeric"></div>
       <div class="fg">
-        <label>Déjà épargné (GNF) <span style="font-size:10px;color:var(--text3);font-weight:400;">— solde total depuis la création</span></label>
+        <label id="goalLblCurrent">Déjà épargné (GNF) <span style="font-size:10px;color:var(--text3);font-weight:400;" id="goalLblCurrentSub">— solde total depuis la création</span></label>
         <input type="number" id="gCurrent" placeholder="0" inputmode="numeric" readonly style="background:var(--bg2);color:var(--green);font-weight:700;cursor:not-allowed;">
       </div>
       <div class="fg">
-        <label>⏳ Délai pour atteindre l'objectif</label>
+        <label id="goalLblDeadline">⏳ Délai pour atteindre l'objectif</label>
         <select id="gDeadlineType" onchange="updateGoalDeadlineFields()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:#fff;margin-bottom:8px;">
-          <option value="none">Pas de délai précis</option>
-          <option value="date">Date limite</option>
-          <option value="months">Nombre de mois</option>
+          <option value="none" id="gDeadlineNone">Pas de délai précis</option>
+          <option value="date" id="gDeadlineDateOpt">Date limite</option>
+          <option value="months" id="gDeadlineMonthsOpt">Nombre de mois</option>
         </select>
         <input type="hidden" id="gDeadlineDate" data-yearmin="2025" data-yearmax="2040">
         <div class="dpk" data-for="gDeadlineDate" style="display:none;" id="gDeadlineDatePicker"></div>
@@ -1169,8 +1221,8 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
     </div>
     <div class="sheet-footer">
-      <button class="cta cta-green" onclick="saveGoal()">Enregistrer</button>
-      <button class="cta cta-ghost" onclick="deleteGoal()">Supprimer</button>
+      <button class="cta cta-green" id="goalSaveBtn" onclick="saveGoal()">Enregistrer</button>
+      <button class="cta cta-ghost" id="goalDeleteBtn" onclick="deleteGoal()">Supprimer</button>
     </div>
   </div>
 </div>
@@ -1179,12 +1231,12 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="budgetsOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">💰 Budgets par catégorie</div><button class="sheet-close" onclick="closeSheet('budgetsOverlay')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="budgetsOverlayTitle">💰 Budgets par catégorie</div><button class="sheet-close" onclick="closeSheet('budgetsOverlay')">✕</button></div>
     <div class="sheet-body">
-      <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Plafond mensuel par catégorie. Alerte si dépassé.</p>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:14px" id="budgetsDesc">Plafond mensuel par catégorie. Alerte si dépassé.</p>
       <div id="budgetFields"></div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-blue" onclick="saveBudgets()">Enregistrer</button></div>
+    <div class="sheet-footer"><button class="cta cta-blue" id="budgetsSaveBtn" onclick="saveBudgets()">Enregistrer</button></div>
   </div>
 </div>
 
@@ -1192,12 +1244,12 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 <div class="overlay" id="seuilOverlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header"><div class="sheet-title">🚨 Alertes financières</div><button class="sheet-close" onclick="closeSheet('seuilOverlay')">✕</button></div>
+    <div class="sheet-header"><div class="sheet-title" id="seuilOverlayTitle">🚨 Alertes financières</div><button class="sheet-close" onclick="closeSheet('seuilOverlay')">✕</button></div>
     <div class="sheet-body">
-      <div class="fg"><label>Solde minimum à maintenir (GNF)</label><input type="number" id="seuilMin" placeholder="Ex : 500000" inputmode="numeric"></div>
-      <div class="fg"><label>Alerte si dépenses > X% des revenus</label><input type="number" id="seuilPct" placeholder="Ex : 80" min="1" max="100"></div>
+      <div class="fg"><label id="seuilLblMin">Solde minimum à maintenir (GNF)</label><input type="number" id="seuilMin" placeholder="Ex : 500000" inputmode="numeric"></div>
+      <div class="fg"><label id="seuilLblPct">Alerte si dépenses > X% des revenus</label><input type="number" id="seuilPct" placeholder="Ex : 80" min="1" max="100"></div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-red" onclick="saveSeuil()">Activer</button></div>
+    <div class="sheet-footer"><button class="cta cta-red" id="seuilSaveBtn" onclick="saveSeuil()">Activer</button></div>
   </div>
 </div>
 
@@ -1213,15 +1265,15 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
       <div class="fg"><label id="cdPersonLbl">Nom du créancier</label><input type="text" id="cdName" placeholder="Ex : Mamadou, Banque…"></div>
       <div class="fr">
-        <div class="fg"><label>Montant (GNF)</label><input type="number" id="cdAmount" placeholder="0" inputmode="numeric"></div>
-        <div class="fg"><label>Date d'échéance</label><input type="hidden" id="cdDate" data-yearmin="2023" data-yearmax="2035"><div class="dpk" data-for="cdDate"></div></div>
+        <div class="fg"><label id="cdLblAmount">Montant (GNF)</label><input type="number" id="cdAmount" placeholder="0" inputmode="numeric"></div>
+        <div class="fg"><label id="cdLblDate">Date d'échéance</label><input type="hidden" id="cdDate" data-yearmin="2023" data-yearmax="2035"><div class="dpk" data-for="cdDate"></div></div>
       </div>
-      <div class="fg"><label>Motif</label><input type="text" id="cdReason" placeholder="Ex : Prêt, Achat…"></div>
-      <div class="fg"><label>Méthode prévue</label>
+      <div class="fg"><label id="cdLblReason">Motif</label><input type="text" id="cdReason" placeholder="Ex : Prêt, Achat…"></div>
+      <div class="fg"><label id="cdLblMeth">Méthode prévue</label>
         <select id="cdMeth"><option>Espèces</option><option>Orange Money</option><option>MTN Money</option><option>Kulu</option><option>PayCard</option><option>Virement</option><option>Autre</option></select>
       </div>
     </div>
-    <div class="sheet-footer"><button class="cta cta-green" onclick="saveCD()">Enregistrer</button></div>
+    <div class="sheet-footer"><button class="cta cta-green" id="cdSaveBtn" onclick="saveCD()">Enregistrer</button></div>
   </div>
 </div>
 
@@ -1394,25 +1446,43 @@ function setType(t){
   S.type=t;
   document.getElementById('btnInc').className='type-btn'+(t==='income'?' si':'');
   document.getElementById('btnExp').className='type-btn'+(t==='expense'?' se':'');
-  document.getElementById('txSheetTitle').textContent=t==='income'?'Ajouter un revenu':'Ajouter une dépense';
-  const INCOME_CATS=['Salaire','Commerce','Investissement','Prime / Bonus','Autre revenu'];
-  const DEPENSE_CATS=['Alimentation','Transport','Logement / Loyer','Santé','Éducation','Loisirs','Épargne / Tontine','Mobile Money','Famille','Business','Autre'];
-  const cats = t==='income' ? INCOME_CATS : DEPENSE_CATS;
+  const _L=getLang();
+  document.getElementById('txSheetTitle').textContent=t==='income'
+    ?(_L==='en'?'Add income':'Ajouter un revenu')
+    :(_L==='en'?'Add expense':'Ajouter une dépense');
+  const INCOME_CATS_FR=['Salaire','Commerce','Investissement','Prime / Bonus','Autre revenu'];
+  const INCOME_CATS_EN=['Salary','Business','Investment','Bonus','Other income'];
+  const DEPENSE_CATS_FR=['Alimentation','Transport','Logement / Loyer','Santé','Éducation','Loisirs','Épargne / Tontine','Mobile Money','Famille','Business','Autre'];
+  const DEPENSE_CATS_EN=['Food','Transport','Housing / Rent','Health','Education','Leisure','Savings / Tontine','Mobile Money','Family','Business','Other'];
+  const catsBase = t==='income' ? INCOME_CATS_FR : DEPENSE_CATS_FR;
+  const catsEN   = t==='income' ? INCOME_CATS_EN : DEPENSE_CATS_EN;
+  const cats = _L==='en' ? catsEN : catsBase;
   const sel = document.getElementById('txCat');
-  // Vider complètement et reconstruire
   while(sel.firstChild) sel.removeChild(sel.firstChild);
   const def = document.createElement('option');
-  def.value=''; def.textContent='Catégorie...';
+  def.value=''; def.textContent=_L==='en'?'Category...':'Catégorie...';
   sel.appendChild(def);
-  cats.forEach(c=>{
+  cats.forEach((c,i)=>{
     const o=document.createElement('option');
-    o.value=c; o.textContent=c;
+    // Always store FR value so data stays consistent
+    o.value=catsBase[i]; o.textContent=c;
     sel.appendChild(o);
   });
 }
 function updateMFields(){const t=document.getElementById('mType').value;document.getElementById('momoF').style.display=t==='momo'?'block':'none';document.getElementById('cardF').style.display=t==='card'?'block':'none';}
 let cdType2='debt';
-function setCDType(t){cdType2=t;document.getElementById('cdBtnD').className='cd-tab'+(t==='debt'?' ad':'');document.getElementById('cdBtnC').className='cd-tab'+(t==='credit'?' ac':'');document.getElementById('cdTitle').textContent=t==='debt'?'💸 Ajouter un créancier':'💰 Ajouter un débiteur';document.getElementById('cdPersonLbl').textContent=t==='debt'?'Nom du créancier (à qui je dois)':'Nom du débiteur (qui me doit)';}
+function setCDType(t){
+  const _L=getLang();
+  cdType2=t;
+  document.getElementById('cdBtnD').className='cd-tab'+(t==='debt'?' ad':'');
+  document.getElementById('cdBtnC').className='cd-tab'+(t==='credit'?' ac':'');
+  document.getElementById('cdTitle').textContent=t==='debt'
+    ?(_L==='en'?'💸 Add a creditor':'💸 Ajouter un créancier')
+    :(_L==='en'?'💰 Add a debtor':'💰 Ajouter un débiteur');
+  document.getElementById('cdPersonLbl').textContent=t==='debt'
+    ?(_L==='en'?'Creditor name (who I owe)':'Nom du créancier (à qui je dois)')
+    :(_L==='en'?'Debtor name (who owes me)':'Nom du débiteur (qui me doit)');
+}
 
 // ── SAVE ──
 function saveTx(){const amt=parseFloat(document.getElementById('txAmt').value),lbl=document.getElementById('txLbl').value.trim(),date=document.getElementById('txDate').value,cat=document.getElementById('txCat').value,meth=document.getElementById('txMeth').value;if(!amt||!lbl||!date||!cat){toast('⚠️','Remplissez tous les champs');return;}S.tx.unshift({id:Date.now(),type:S.type,amt,lbl,date,cat,meth,month:date.substring(0,7)});save();closeSheet('txOverlay');toast('✅',S.type==='income'?'Revenu ajouté !':'Dépense ajoutée !');render();}
@@ -1473,7 +1543,8 @@ function renderChart(){
   const keys=Object.keys(months).sort().slice(-6);
   const ctx=document.getElementById('mainChart').getContext('2d');
   if(chart)chart.destroy();
-  chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(k=>monthLabel(k)),datasets:[{label:'Revenus',data:keys.map(k=>months[k].inc),backgroundColor:'rgba(21,128,61,0.8)',borderRadius:6,borderSkipped:false},{label:'Dépenses',data:keys.map(k=>months[k].exp),backgroundColor:'rgba(220,38,38,0.75)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'#f0f2f8'},ticks:{font:{size:9},callback:v=>fmtS(v)}}}}});
+  const _Lm=getLang();
+  chart=new Chart(ctx,{type:'bar',data:{labels:keys.map(k=>monthLabel(k)),datasets:[{label:(_Lm==='en'?'Income':'Revenus'),data:keys.map(k=>months[k].inc),backgroundColor:'rgba(21,128,61,0.8)',borderRadius:6,borderSkipped:false},{label:(_Lm==='en'?'Expenses':'Dépenses'),data:keys.map(k=>months[k].exp),backgroundColor:'rgba(220,38,38,0.75)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'#f0f2f8'},ticks:{font:{size:9},callback:v=>fmtS(v)}}}}});
 }
 
 // ── CD CHART ──
@@ -1491,7 +1562,8 @@ function renderCDChart(){
   const ctx=document.getElementById('cdChart').getContext('2d');
   if(cdChartObj)cdChartObj.destroy();
   if(!keys.length){cdChartObj=null;return;}
-  cdChartObj=new Chart(ctx,{type:'bar',data:{labels:keys.map(k=>monthLabel(k)),datasets:[{label:'Créances (on me doit)',data:keys.map(k=>months[k].credit),backgroundColor:'rgba(21,128,61,0.8)',borderRadius:6,borderSkipped:false},{label:'Dettes (je dois)',data:keys.map(k=>months[k].debt),backgroundColor:'rgba(220,38,38,0.75)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'#f0f2f8'},ticks:{font:{size:9},callback:v=>fmtS(v)}}}}});
+  const _Lc=getLang();
+  cdChartObj=new Chart(ctx,{type:'bar',data:{labels:keys.map(k=>monthLabel(k)),datasets:[{label:(_Lc==='en'?'Credits (owed to me)':'Créances (on me doit)'),data:keys.map(k=>months[k].credit),backgroundColor:'rgba(21,128,61,0.8)',borderRadius:6,borderSkipped:false},{label:(_Lc==='en'?'Debts (I owe)':'Dettes (je dois)'),data:keys.map(k=>months[k].debt),backgroundColor:'rgba(220,38,38,0.75)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'#f0f2f8'},ticks:{font:{size:9},callback:v=>fmtS(v)}}}}});
 }
 
 // ── CD ──
@@ -1499,27 +1571,32 @@ let cdFilter='debt';
 function filterCD(f,btn){cdFilter=f;document.getElementById('tabDebt').className='cd-tab'+(f==='debt'?' ad':'');document.getElementById('tabCredit').className='cd-tab'+(f==='credit'?' ac':'');renderCD();}
 function renderCD(){
   if(!S.cd)S.cd=[];
+  const _L=getLang();
   const debts=S.cd.filter(c=>c.type==='debt'),credits=S.cd.filter(c=>c.type==='credit');
   const totalOwe=debts.filter(c=>!c.paid).reduce((s,c)=>s+c.amount,0);
   const totalOwned=credits.filter(c=>!c.paid).reduce((s,c)=>s+c.amount,0);
   document.getElementById('cdTotalOwe').textContent=fmt(totalOwe);
   document.getElementById('cdTotalOwned').textContent=fmt(totalOwned);
-  document.getElementById('cdCountOwe').textContent=debts.filter(c=>!c.paid).length+' créancier(s)';
-  document.getElementById('cdCountOwned').textContent=credits.filter(c=>!c.paid).length+' débiteur(s)';
+  document.getElementById('cdCountOwe').textContent=debts.filter(c=>!c.paid).length+(_L==='en'?' creditor(s)':' créancier(s)');
+  document.getElementById('cdCountOwned').textContent=credits.filter(c=>!c.paid).length+(_L==='en'?' debtor(s)':' débiteur(s)');
   const list=cdFilter==='debt'?debts:credits;
   const el=document.getElementById('cdList');
-  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-emoji">'+(cdFilter==='debt'?'💸':'💰')+'</div><div class="empty-text">'+(cdFilter==='debt'?'Aucun créancier':'Aucun débiteur')+'</div></div>';return;}
+  if(!list.length){
+    el.innerHTML='<div class="empty"><div class="empty-emoji">'+(cdFilter==='debt'?'💸':'💰')+'</div><div class="empty-text">'+(cdFilter==='debt'?(_L==='en'?'No creditors':'Aucun créancier'):(_L==='en'?'No debtors':'Aucun débiteur'))+'</div></div>';
+    return;
+  }
   const sorted=[...list].sort((a,b)=>{if(a.paid!==b.paid)return a.paid?1:-1;return new Date(a.date)-new Date(b.date);});
   el.innerHTML=sorted.map(c=>{
     const days=daysTo(c.date),overdue=!c.paid&&days<0,soon=!c.paid&&days>=0&&days<=7;
     let badge='';
-    if(c.paid)badge='<span class="badge b-paid">✅ Réglé</span>';
-    else if(overdue)badge='<span class="badge b-late">🔴 Retard '+Math.abs(days)+' j</span>';
-    else if(days===0)badge='<span class="badge b-urgent">⚡ Aujourd\'hui</span>';
-    else if(soon)badge='<span class="badge b-soon">⏰ '+days+' j</span>';
-    else badge='<span class="badge b-ok">📅 '+days+' j</span>';
+    if(c.paid)badge='<span class="badge b-paid">✅ '+(_L==='en'?'Paid':'Réglé')+'</span>';
+    else if(overdue)badge='<span class="badge b-late">🔴 '+(_L==='en'?'Late '+Math.abs(days)+' d':'Retard '+Math.abs(days)+' j')+'</span>';
+    else if(days===0)badge='<span class="badge b-urgent">⚡ '+(_L==='en'?'Today':'Aujourd\'hui')+'</span>';
+    else if(soon)badge='<span class="badge b-soon">⏰ '+days+(_L==='en'?' d':' j')+'</span>';
+    else badge='<span class="badge b-ok">📅 '+days+(_L==='en'?' d':' j')+'</span>';
     const initials=c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    return'<div class="cd-item" style="opacity:'+(c.paid?'0.55':'1')+'"><div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div><div class="cd-info"><div class="cd-name">'+c.name+'</div><div class="cd-reason">'+c.reason+' · '+c.meth+'</div><div class="cd-due">'+badge+' · '+c.date+'</div></div><div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div><div class="cd-actions"><button class="cd-btn pay" onclick="markCDPaid('+c.id+')">'+(c.paid?'↩ Annuler':'✓ Réglé')+'</button><button class="cd-btn del" onclick="deleteCD('+c.id+')">🗑</button></div></div></div>';
+    const btnPay=c.paid?(_L==='en'?'↩ Undo':'↩ Annuler'):(_L==='en'?'✓ Paid':'✓ Réglé');
+    return'<div class="cd-item" style="opacity:'+(c.paid?'0.55':'1')+'"><div class="cd-avatar '+(c.type==='debt'?'debt':'credit')+'">'+initials+'</div><div class="cd-info"><div class="cd-name">'+c.name+'</div><div class="cd-reason">'+c.reason+' · '+c.meth+'</div><div class="cd-due">'+badge+' · '+c.date+'</div></div><div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div><div class="cd-actions"><button class="cd-btn pay" onclick="markCDPaid('+c.id+')">'+btnPay+'</button><button class="cd-btn del" onclick="deleteCD('+c.id+')">🗑</button></div></div></div>';
   }).join('');
 }
 
@@ -1539,7 +1616,10 @@ function render(){
   document.getElementById('heroIncome').textContent=fmt(inc);
   document.getElementById('heroExpense').textContent=fmt(exp);
   const pctExp=inc>0?(exp/inc*100).toFixed(0):0;
-  document.getElementById('heroStatus').textContent=bal>=0?'✅ '+pctExp+'% de vos revenus dépensés':'⚠️ Dépenses supérieures aux revenus';
+  const _L=getLang();
+  document.getElementById('heroStatus').textContent=bal>=0
+    ?'✅ '+pctExp+(_L==='en'?'% of your income spent':'% de vos revenus dépensés')
+    :(_L==='en'?'⚠️ Expenses exceed income':'⚠️ Dépenses supérieures aux revenus');
   document.getElementById('heroStatus').style.color=bal>=0?'#86efac':'#fca5a5';
 
   // Categories
@@ -2115,8 +2195,9 @@ function logoutAdmin(){
 
 async function loadAdminClients(){
   const el = document.getElementById('adminClientList');
-  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ Firebase non configuré.</div>'; return; }
-  el.innerHTML = '<div class="admin-empty">Chargement...</div>';
+  const _L=getLang();
+  if(!db){ el.innerHTML = '<div class="admin-empty">⚠️ '+(_L==='en'?'Firebase not configured.':'Firebase non configuré.')+'</div>'; return; }
+  el.innerHTML = '<div class="admin-empty">'+(_L==='en'?'Loading...':'Chargement...')+'</div>';
   try {
     const snap = await db.collection('clients').get();
     ALL_CLIENTS = snap.docs.map(d => ({...d.data(), _docId: d.id}))
@@ -2127,44 +2208,45 @@ async function loadAdminClients(){
     document.getElementById('adminTodayClients').textContent = ALL_CLIENTS.filter(c=>new Date(c.createdAt).toDateString()===today).length;
     renderAdminClients(ALL_CLIENTS);
   } catch(e){
-    el.innerHTML = '<div class="admin-empty">Erreur: ' + e.message + '</div>';
+    el.innerHTML = '<div class="admin-empty">'+(_L==='en'?'Error: ':'Erreur: ') + e.message + '</div>';
   }
 }
 
 function renderAdminClients(clients){
   const el=document.getElementById('adminClientList');
-  if(!clients.length){el.innerHTML='<div class="admin-empty">Aucun client</div>';return;}
+  const _L=getLang();
+  if(!clients.length){el.innerHTML='<div class="admin-empty">'+(_L==='en'?'No clients':'Aucun client')+'</div>';return;}
   el.innerHTML='';
   clients.forEach(c=>{
     const susp=c.status==='suspended';
     const ini=((c.prenom||'?')[0]+(c.nom||'?')[0]).toUpperCase();
-    const dt=c.createdAt?new Date(c.createdAt).toLocaleDateString('fr-FR'):'—';
+    const dt=c.createdAt?new Date(c.createdAt).toLocaleDateString(_L==='en'?'en-GB':'fr-FR'):'—';
     const ageCalc = (c.dob ? getAge(c.dob) : (c.age !== undefined && c.age !== '' ? c.age : null));
-    const ageStr = ageCalc !== null ? ageCalc + ' ans' : '—';
+    const ageStr = ageCalc !== null ? ageCalc + (_L==='en'?' yrs':' ans') : '—';
     const card=document.createElement('div');
     card.className='admin-card';
     card.style.borderLeft=susp?'4px solid #f59e0b':'4px solid #1a7a4a';
-    const badge='<span style="padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800;background:'+(susp?'#fef3c7':'#dcfce7')+';color:'+(susp?'#92400e':'#15803d')+'">'+(susp?'Suspendu':'Actif')+'</span>';
+    const badge='<span style="padding:2px 7px;border-radius:20px;font-size:10px;font-weight:800;background:'+(susp?'#fef3c7':'#dcfce7')+';color:'+(susp?'#92400e':'#15803d')+'">'+(susp?(_L==='en'?'Suspended':'Suspendu'):(_L==='en'?'Active':'Actif'))+'</span>';
     card.innerHTML=
       '<div class="admin-card-row">'+
         (c.avatar?'<img src="'+c.avatar+'" class="admin-avatar" alt="">':'<div class="admin-avatar-placeholder">'+ini+'</div>')+
         '<div class="admin-info">'+
           '<div class="admin-name">'+escHtml((c.prenom||'')+' '+(c.nom||''))+' '+badge+'</div>'+
           '<div class="admin-meta">'+
-            '<span>Identifiant: '+escHtml(c.login||'—')+'  Tel: '+(c.telephone||'—')+'</span>'+
-            '<span>Âge: '+ageStr+'  |  Inscrit le '+dt+'</span>'+
+            '<span>'+(_L==='en'?'Username: ':'Identifiant: ')+escHtml(c.login||'—')+'  '+(_L==='en'?'Tel: ':'Tel: ')+(c.telephone||'—')+'</span>'+
+            '<span>'+(_L==='en'?'Age: ':'Âge: ')+ageStr+'  |  '+(_L==='en'?'Registered: ':'Inscrit le ')+dt+'</span>'+
           '</div>'+
         '</div>'+
       '</div>'+
       '<div class="admin-card-btns">'+
-        '<button class="btn-ac btn-ac-susp'+(susp?' is-susp':'')+'">'+(susp?'Activer':'Desactiver')+'</button>'+
+        '<button class="btn-ac btn-ac-susp'+(susp?' is-susp':'')+'">'+(susp?(_L==='en'?'Activate':'Activer'):(_L==='en'?'Suspend':'Desactiver'))+'</button>'+
         '<button class="btn-ac btn-ac-reset">Reset</button>'+
-        '<button class="btn-ac btn-ac-del">Supprimer</button>'+
+        '<button class="btn-ac btn-ac-del">'+(_L==='en'?'Delete':'Supprimer')+'</button>'+
       '</div>';
     card.querySelector('.btn-ac-susp').addEventListener('click',async ev=>{
       ev.stopPropagation();
-      if(!confirm((susp?'Reactiver':'Desactiver')+' '+c.prenom+' ?'))return;
-      try{await db.collection('clients').doc(c._docId||c.uid).update({status:susp?'active':'suspended'});toast('ok',c.prenom+(susp?' reactivé':' suspendu'));await loadAdminClients();}catch(e){toast('err','Erreur: '+e.message);}
+      if(!confirm((_L==='en'?(susp?'Reactivate ':'Suspend '):(susp?'Reactiver ':'Desactiver '))+c.prenom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).update({status:susp?'active':'suspended'});toast('ok',c.prenom+(susp?(_L==='en'?' reactivated':' reactivé'):(_L==='en'?' suspended':' suspendu')));await loadAdminClients();}catch(e){toast('err',(_L==='en'?'Error: ':'Erreur: ')+e.message);}
     });
     card.querySelector('.btn-ac-reset').addEventListener('click',ev=>{
       ev.stopPropagation();
@@ -2172,8 +2254,8 @@ function renderAdminClients(clients){
     });
     card.querySelector('.btn-ac-del').addEventListener('click',async ev=>{
       ev.stopPropagation();
-      if(!confirm('Supprimer definitivement '+c.prenom+' '+c.nom+' ?'))return;
-      try{await db.collection('clients').doc(c._docId||c.uid).delete();toast('ok','Compte supprime');await loadAdminClients();}catch(e){toast('err','Erreur: '+e.message);}
+      if(!confirm((_L==='en'?'Permanently delete ':'Supprimer definitivement ')+c.prenom+' '+c.nom+' ?'))return;
+      try{await db.collection('clients').doc(c._docId||c.uid).delete();toast('ok',_L==='en'?'Account deleted':'Compte supprime');await loadAdminClients();}catch(e){toast('err',(_L==='en'?'Error: ':'Erreur: ')+e.message);}
     });
     card.addEventListener('click',()=>openClientModal(c));
     el.appendChild(card);
@@ -2468,7 +2550,10 @@ function renderListPage(){
   const today = new Date().toISOString().split('T')[0];
 
   // Titre
-  const titles = {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs', planned:'📅 Planning Dépenses'};
+  const _Ll=getLang();
+  const titles = _Ll==='en'
+    ? {income:'💰 Income', expense:'💸 Expenses', debt:'🤲 Creditors', credit:'🙏 Debtors', planned:'📅 Expense Planning'}
+    : {income:'💰 Revenus', expense:'💸 Dépenses', debt:'🤲 Créanciers', credit:'🙏 Débiteurs', planned:'📅 Planning Dépenses'};
   document.getElementById('pageListTitle').textContent = titles[type] || '📋 Liste';
 
   // Onglets
@@ -2755,30 +2840,25 @@ function printListPage(){
   <div class="ji-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
-      <div class="sheet-title" style="color:#fff;">📔 Journal Intime</div>
+      <div class="sheet-title" style="color:#fff;" id="jiMainTitle">📔 Journal Intime</div>
       <div style="display:flex;gap:8px;">
         <button onclick="openJiSettings()" style="background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;">⚙️</button>
-        <button onclick="openJiEdit(null)" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Nouvelle</button>
+        <button id="jiNewBtn" onclick="openJiEdit(null)" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Nouvelle</button>
         <button class="sheet-close" onclick="jiCloseAll()" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
       </div>
     </div>
-    <!-- Compteur entrées -->
     <div style="padding:6px 16px;background:linear-gradient(135deg,#831843,#db2777);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
       <span id="jiEntryCount" style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.15);border-radius:100px;padding:3px 12px;">0 entrée</span>
     </div>
-    <!-- Onglets Journal / Média -->
     <div style="display:flex;border-bottom:2px solid #f3e8ff;flex-shrink:0;">
-      <button id="jiTabJournal" onclick="jiSetMainTab('journal')" style="flex:1;padding:10px;border:none;background:#fff;font-size:13px;font-weight:700;color:#db2777;border-bottom:3px solid #db2777;cursor:pointer;">📔 Journal</button>
-      <button id="jiTabMedia" onclick="jiSetMainTab('media')" style="flex:1;padding:10px;border:none;background:#fff;font-size:13px;font-weight:700;color:#9ca3af;border-bottom:3px solid transparent;cursor:pointer;">🖼️ Média</button>
+      <button id="jiTabJournal" onclick="jiSetMainTab('journal')" style="flex:1;padding:10px;border:none;background:#fff;font-size:13px;font-weight:700;color:#db2777;border-bottom:3px solid #db2777;cursor:pointer;">📔 <span id="jiTabJournalLbl">Journal</span></button>
+      <button id="jiTabMedia" onclick="jiSetMainTab('media')" style="flex:1;padding:10px;border:none;background:#fff;font-size:13px;font-weight:700;color:#9ca3af;border-bottom:3px solid transparent;cursor:pointer;">🖼️ <span id="jiTabMediaLbl">Média</span></button>
     </div>
-    <!-- Panneau Journal -->
     <div id="jiPanelJournal" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
       <div style="padding:10px 14px 4px;flex-shrink:0;display:flex;gap:6px;overflow-x:auto;" id="jiCatFilter"></div>
       <div style="padding:6px 14px 16px;flex:1;overflow-y:auto;" id="jiList"></div>
     </div>
-    <!-- Panneau Média -->
     <div id="jiPanelMedia" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <!-- Barre actions -->
       <div style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid #f3f4f6;">
         <div style="font-size:12px;color:#6b7280;" id="jiMediaInfo">Chargement...</div>
         <div style="display:flex;gap:6px;">
@@ -2786,7 +2866,6 @@ function printListPage(){
           <button onclick="jiMediaDownloadSelected()" id="jiMediaDlBtn" style="display:none;background:#db2777;color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">⬇ Télécharger</button>
         </div>
       </div>
-      <!-- Grille photos -->
       <div id="jiMediaGrid" style="flex:1;overflow-y:auto;padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-content:start;"></div>
     </div>
   </div>
@@ -2799,13 +2878,13 @@ function printListPage(){
     <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
       <div class="sheet-title" style="color:#fff;" id="jiEditTitle">Nouvelle entrée</div>
       <div style="display:flex;gap:8px;">
-        <button onclick="saveJiEntry()" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+        <button id="jiSaveBtn" onclick="saveJiEntry()" style="background:rgba(255,255,255,0.25);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
         <button class="sheet-close" onclick="closeOverlay('jiEditOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
       </div>
     </div>
     <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;">
       <div>
-        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:6px;">HUMEUR DU JOUR</div>
+        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:6px;" id="jiMoodLbl">HUMEUR DU JOUR</div>
         <div class="mood-picker">
           <button class="mood-btn" data-mood="😍" onclick="jiSelectMood('😍')">😍</button>
           <button class="mood-btn" data-mood="😄" onclick="jiSelectMood('😄')">😄</button>
@@ -2818,34 +2897,34 @@ function printListPage(){
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
-          <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">DATE</div>
+          <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;" id="jiDateLbl">DATE</div>
           <input id="jiEntryDate" type="hidden" data-yearmin="2018" data-yearmax="2030">
           <div class="dpk" data-for="jiEntryDate"></div>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">CATÉGORIE</div>
+          <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;" id="jiCatLbl">CATÉGORIE</div>
           <select id="jiEntryCat" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;">
-            <option value="Général">📝 Général</option>
-            <option value="Amour">❤️ Amour</option>
-            <option value="Famille">👨‍👩‍👧 Famille</option>
-            <option value="Travail">💼 Travail</option>
-            <option value="Intime">🔒 Intime</option>
+            <option value="Général" id="jiCatGeneral">📝 Général</option>
+            <option value="Amour" id="jiCatAmour">❤️ Amour</option>
+            <option value="Famille" id="jiCatFamille">👨‍👩‍👧 Famille</option>
+            <option value="Travail" id="jiCatTravail">💼 Travail</option>
+            <option value="Intime" id="jiCatIntime">🔒 Intime</option>
           </select>
         </div>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;">MON ENTRÉE</div>
+        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:4px;" id="jiEntryLbl">MON ENTRÉE</div>
         <textarea id="jiEntryBody" placeholder="Écris librement tes pensées, émotions, souvenirs..." style="width:100%;min-height:180px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;box-sizing:border-box;font-family:inherit;line-height:1.7;"></textarea>
       </div>
       <div>
-        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:6px;">PHOTOS <span id="jiPhotoCount" style="color:#db2777;">(0/3)</span></div>
+        <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;margin-bottom:6px;" id="jiPhotosLbl">PHOTOS <span id="jiPhotoCount" style="color:#db2777;">(0/3)</span></div>
         <div class="ji-photos-grid" id="jiPhotosGrid"></div>
         <label for="jiPhotoInput" id="jiAddPhotoBtn" style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:#fdf2f8;border:1.5px dashed #f9a8d4;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#db2777;">
-          📷 Ajouter une photo
+          📷 <span id="jiAddPhotoLbl">Ajouter une photo</span>
           <input type="file" id="jiPhotoInput" accept="image/*" multiple style="display:none;" onchange="handleJiPhotos(event)">
         </label>
       </div>
-      <button id="jiDeleteBtn" onclick="deleteJiEntry()" style="display:none;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🗑️ Supprimer cette entrée</button>
+      <button id="jiDeleteBtn" onclick="deleteJiEntry()" style="display:none;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;" id="jiDeleteBtnLbl">🗑️ Supprimer cette entrée</button>
     </div>
   </div>
 </div>
@@ -2855,7 +2934,7 @@ function printListPage(){
   <div class="ji-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header" style="background:linear-gradient(135deg,#831843,#db2777);border-radius:24px 24px 0 0;">
-      <div class="sheet-title" style="color:#fff;">⚙️ Paramètres Journal</div>
+      <div class="sheet-title" style="color:#fff;" id="jiSettingsTitle">⚙️ Paramètres Journal</div>
       <button class="sheet-close" onclick="closeOverlay('jiSettingsOverlay')" style="background:rgba(255,255,255,0.2);color:#fff;">✕</button>
     </div>
     <div style="padding:16px;">
@@ -2863,18 +2942,17 @@ function printListPage(){
         <button onclick="jiChangePinFlow()" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fdf2f8;border:1.5px solid #fbcfe8;border-radius:12px;cursor:pointer;text-align:left;">
           <div style="width:36px;height:36px;border-radius:10px;background:#fce7f3;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🔐</div>
           <div style="flex:1;">
-            <div style="font-weight:700;font-size:14px;color:#831843;">Changer le PIN</div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:1px;">Modifier votre code secret</div>
+            <div style="font-weight:700;font-size:14px;color:#831843;" id="jiChangePinLbl">Changer le PIN</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:1px;" id="jiChangePinSub">Modifier votre code secret</div>
           </div>
           <div style="color:#db2777;font-size:18px;">›</div>
         </button>
       </div>
-
       <div class="ji-settings-row" style="border:none;padding:0;">
         <button onclick="closeOverlay('jiSettingsOverlay');openJiTrashMenu()" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;cursor:pointer;text-align:left;">
           <div style="width:36px;height:36px;border-radius:10px;background:#ffedd5;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">🗑️</div>
           <div style="flex:1;">
-            <div style="font-weight:700;font-size:14px;color:#92400e;">Corbeille Journal</div>
+            <div style="font-weight:700;font-size:14px;color:#92400e;" id="jiTrashLbl">Corbeille Journal</div>
             <div style="font-size:11px;color:#c2410c;margin-top:1px;" id="jiTrashCount">Vide</div>
           </div>
           <div style="color:#c2410c;font-size:18px;">›</div>
@@ -3834,7 +3912,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=112')
+    navigator.serviceWorker.register('./sw.js?v=117')
       .then(reg=>{
         // Détecter mise à jour disponible
         reg.addEventListener('updatefound',()=>{
@@ -3855,7 +3933,31 @@ if('serviceWorker' in navigator){
 }
 </script>
 
-<!-- ── SÉLECTEUR DE DATE PERSONNALISÉ ── -->
+<!-- ── LANGUAGE PICKER MODAL ── -->
+<div class="lang-picker-overlay" id="langPickerOverlay" onclick="if(event.target===this)closeLangPicker()">
+  <div class="lang-picker-sheet">
+    <div class="lang-picker-handle"></div>
+    <div class="lang-picker-title" id="langPickerTitle">Choisir la langue</div>
+    <button class="lang-option" id="langOptFR" onclick="setLang('fr');closeLangPicker()">
+      <span class="lang-option-flag">🇫🇷</span>
+      <div class="lang-option-info">
+        <div class="lang-option-name">Français</div>
+        <div class="lang-option-native">French — Langue par défaut</div>
+      </div>
+      <span class="lang-option-check">✓</span>
+    </button>
+    <button class="lang-option" id="langOptEN" onclick="setLang('en');closeLangPicker()">
+      <span class="lang-option-flag">🇬🇧</span>
+      <div class="lang-option-info">
+        <div class="lang-option-name">English</div>
+        <div class="lang-option-native">Anglais — English</div>
+      </div>
+      <span class="lang-option-check">✓</span>
+    </button>
+  </div>
+</div>
+
+
 <script>
 (function(){
   const MOIS = ['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
@@ -3981,6 +4083,712 @@ if('serviceWorker' in navigator){
   // Re-run when overlays open (sheets add 'open' class)
   const obs = new MutationObserver(()=>initAllPickers());
   obs.observe(document.body, {attributes:true, subtree:true, attributeFilter:['class']});
+})();
+</script>
+
+<!-- ── SYSTÈME DE TRADUCTION FR / EN ── -->
+<script>
+(function(){
+  const TRANSLATIONS = {
+    fr: {
+      splash_welcome: 'Bienvenue sur DiafaGestion 👋',
+      splash_sub: 'Gestion Financière Personnelle',
+      login_sub: 'Gestion Financière Personnelle',
+      btn_create: '✨ Créer mon compte',
+      btn_access: '🔓 Accéder à mon compte',
+      btn_contact: "Contacter l'administrateur",
+      login_form_sub: 'Connexion à votre compte',
+      label_identifiant: '👤 Identifiant',
+      label_password: '🔒 Mot de passe',
+      btn_connect: '🔓 Se connecter',
+      btn_back_login: '← Retour',
+      hero_label: 'Solde du mois',
+      hero_inc: '↑ Revenus',
+      hero_exp: '↓ Dépenses',
+      qa_inc_lbl: 'Revenu', qa_inc_sub: 'Ajouter', qa_list: 'Liste',
+      qa_exp_lbl: 'Dépense', qa_exp_sub: 'Ajouter',
+      qa_debt_lbl: 'Créanciers', qa_debt_sub: 'À qui je dois',
+      qa_credit_lbl: 'Débiteurs', qa_credit_sub: 'Qui me doit',
+      section_prevision: '🔮 Prévision fin de mois',
+      prev_solde_lbl: 'Solde prévu', prev_jours_lbl: 'Jours restants',
+      prev_moy_lbl: 'Dép. moy/jour', prev_dispo_lbl: 'Budget/jour dispo',
+      section_chart: '📈 Revenus vs Dépenses',
+      section_cd_chart: '💸 Créances vs Dettes',
+      section_cat: '📊 Budget par catégorie',
+      section_tx: '📋 Dernières transactions',
+      menu_section_gestion: 'Gestion',
+      menu_add_planning: 'Ajouter Planning dépenses',
+      menu_add_planning_sub: 'Planifier une échéance future',
+      menu_list_planning: 'Liste Planning dépenses',
+      menu_tx: 'Transactions', menu_tx_sub: 'Toutes les opérations',
+      menu_history: 'Historique mensuel', menu_history_sub: 'Mois précédents',
+      menu_section_params: 'Paramètres',
+      menu_goal_lbl: "Objectif d'épargne", menu_goal_undef: 'Non défini',
+      menu_budget_lbl: 'Budget par catégorie', menu_budget_sub: 'Plafonds mensuels',
+      menu_alerts_lbl: 'Alertes financières', menu_alerts_sub: 'Seuils & notifications',
+      menu_section_personnel: 'Personnel',
+      menu_journal_lbl: 'Journal Intime', menu_journal_sub: 'Mon journal secret',
+      menu_cred_lbl: 'Modifier mes accès', menu_cred_sub: 'Identifiant & mot de passe',
+      menu_export_lbl: 'Exporter mes données', menu_export_sub: 'Télécharger une sauvegarde JSON',
+      menu_import_lbl: 'Restaurer une sauvegarde', menu_import_sub: 'Importer un fichier JSON',
+      menu_section_admin: 'Administration',
+      menu_admin_lbl: 'Panneau Admin', menu_admin_sub: 'Gérer les clients',
+      menu_trash_lbl: 'Corbeille',
+      menu_logout_lbl: 'Déconnexion', menu_logout_sub: 'Changer de compte',
+      menu_reset_lbl: 'Réinitialiser tout', menu_reset_sub: 'Effacer toutes les données',
+      drawer_profile_sub: 'Appuyez pour modifier',
+      // Create Account
+      ca_title: 'Créer mon compte', ca_sub: 'Renseignez vos informations',
+      ca_photo: 'Photo (optionnel)',
+      ca_lbl_prenom: 'Prénom *', ca_lbl_nom: 'Nom *',
+      ca_lbl_tel: '📞 Téléphone *', ca_lbl_dob: '🎂 Date de naissance',
+      ca_lbl_quartier: '📍 Quartier', ca_lbl_profession: '💼 Profession',
+      ca_lbl_situation: '💍 Situation matrimoniale',
+      ca_lbl_sexe: '⚧ Sexe',
+      ca_opt_cat: 'Catégorie...',
+      ca_opt_celibataire: 'Célibataire', ca_opt_marie: 'Marié(e)',
+      ca_opt_divorce: 'Divorcé(e)', ca_opt_veuf: 'Veuf/Veuve',
+      ca_opt_masculin: '👨 Masculin', ca_opt_feminin: '👩 Féminin',
+      ca_credentials_title: '🔐 Choisissez vos identifiants de connexion',
+      ca_lbl_login: '👤 Identifiant *',
+      ca_lbl_pass: '🔒 Mot de passe *', ca_lbl_confirm: 'Confirmer *',
+      ca_submit: '✅ Créer mon compte', ca_back: '← Retour',
+      // First Profile
+      fp_title: 'Créer votre profil', fp_sub: 'Renseignez vos informations pour continuer',
+      fp_photo: 'Photo de profil (optionnel)',
+      fp_lbl_prenom: '👤 Prénom *', fp_lbl_nom: '👤 Nom *',
+      fp_lbl_tel: '📞 Numéro de téléphone *', fp_lbl_dob: '🎂 Date de naissance',
+      fp_lbl_quartier: '📍 Quartier', fp_lbl_profession: '💼 Profession',
+      fp_required: '* Champs obligatoires', fp_submit: '✅ Créer mon profil',
+      // Profile
+      profile_title: '👤 Mon Profil',
+      p_lbl_prenom: 'Prénom', p_lbl_nom: 'Nom',
+      p_lbl_tel: '📞 Téléphone', p_lbl_dob: 'Date de naissance',
+      p_lbl_age: 'Âge', p_lbl_quartier: 'Quartier',
+      p_lbl_profession: 'Profession', p_lbl_sexe: '⚧ Sexe',
+      p_lbl_situation: 'Situation matrimoniale',
+      p_save: '💾 Enregistrer le profil', p_close: 'Fermer',
+      // Journal
+      ji_title: '📔 Journal Intime', ji_new_btn: '+ Nouvelle',
+      ji_tab_journal: 'Journal', ji_tab_media: 'Média',
+      ji_media_sel_all: 'Tout sélect.',
+      ji_new_entry: 'Nouvelle entrée',
+      ji_save_btn: '💾 Enregistrer',
+      ji_mood_lbl: 'HUMEUR DU JOUR',
+      ji_date_lbl: 'DATE', ji_cat_lbl: 'CATÉGORIE',
+      ji_entry_lbl: 'MON ENTRÉE',
+      ji_entry_ph: 'Écris librement tes pensées, émotions, souvenirs...',
+      ji_photos_lbl: 'PHOTOS',
+      ji_add_photo: 'Ajouter une photo',
+      ji_delete_entry: '🗑️ Supprimer cette entrée',
+      ji_settings_title: '⚙️ Paramètres Journal',
+      ji_change_pin: 'Changer le PIN', ji_change_pin_sub: 'Modifier votre code secret',
+      ji_trash_lbl: 'Corbeille Journal',
+      ji_cat_general: '📝 Général', ji_cat_amour: '❤️ Amour',
+      ji_cat_famille: '👨‍👩‍👧 Famille', ji_cat_travail: '💼 Travail', ji_cat_intime: '🔒 Intime',
+      // Language picker
+      lang_picker_title: 'Choisir la langue',
+      menu_lang_lbl: 'Langue / Language', menu_lang_sub: 'Français',
+      // Trash
+      trash_title: '🗑️ Corbeille', trash_sub: 'Les éléments supprimés peuvent être restaurés',
+      trash_empty_btn: '🗑️ Vider la corbeille', trash_close_btn: 'Fermer',
+      // Credentials
+      pwd_title: '🔑 Modifier mes accès', pwd_lbl_old: 'Mot de passe actuel',
+      pwd_section_user: 'Nouvel identifiant', pwd_lbl_user: 'Identifiant',
+      pwd_section_pass: 'Nouveau mot de passe', pwd_lbl_new: 'Nouveau mot de passe',
+      pwd_lbl_confirm: 'Confirmer', pwd_hint: 'Laissez vide pour ne pas modifier',
+      pwd_save_btn: '💾 Enregistrer', pwd_cancel_btn: 'Annuler',
+      // Transactions page
+      page_tx_title: '📋 Transactions',
+      tx_tab_all: 'Tout', tx_tab_inc: 'Revenus', tx_tab_exp: 'Dépenses',
+      // History
+      page_history_title: '🗂️ Historique mensuel',
+      // Planned page
+      page_planned_title: '📅 Dépenses planifiées', page_planned_add: 'Ajouter',
+      // Add tx form
+      tx_lbl_amount: 'Montant (GNF)', tx_lbl_date: 'Date',
+      tx_lbl_label: 'Libellé', tx_lbl_cat: 'Catégorie', tx_lbl_meth: 'Paiement',
+      tx_save_btn: 'Enregistrer', tx_btn_inc: '💚 Revenu', tx_btn_exp: '🔴 Dépense',
+      // Planned form
+      planned_title: '📅 Planifier une dépense',
+      planned_lbl_label: 'Libellé', planned_lbl_amount: 'Montant (GNF)',
+      planned_lbl_date: "Date d'échéance", planned_lbl_cat: 'Catégorie', planned_lbl_rec: 'Récurrence',
+      planned_save_btn: 'Planifier',
+      planned_cat_loyer: 'Loyer', planned_cat_abo: 'Abonnement', planned_cat_frais: 'Frais scolaires',
+      planned_cat_cotis: 'Cotisation', planned_cat_facture: 'Facture',
+      planned_cat_momo: 'Mobile Money', planned_cat_autre: 'Autre',
+      planned_rec_once: 'Une fois', planned_rec_monthly: 'Mensuelle', planned_rec_weekly: 'Hebdomadaire',
+      // Method form
+      method_title: '💳 Méthode de paiement', method_save_btn: 'Ajouter',
+      method_lbl_type: 'Type', method_lbl_op: 'Opérateur', method_lbl_num: 'Numéro',
+      method_lbl_bank: 'Banque', method_lbl_card: '4 derniers chiffres', method_lbl_name: 'Nom affiché',
+      method_type_cash: '💵 Espèces', method_type_momo: '📱 Mobile Money',
+      method_type_card: '💳 Carte bancaire', method_type_bank: '🏦 Virement', method_type_online: '🌐 En ligne',
+      // Goal form
+      goal_title: "🎯 Objectif d'épargne",
+      goal_lbl_name: "Nom de l'objectif", goal_lbl_target: 'Montant cible (GNF)',
+      goal_lbl_current: 'Déjà épargné (GNF)', goal_lbl_current_sub: '— solde total depuis la création',
+      goal_lbl_deadline: "⏳ Délai pour atteindre l'objectif",
+      goal_deadline_none: 'Pas de délai précis', goal_deadline_date: 'Date limite', goal_deadline_months: 'Nombre de mois',
+      goal_save_btn: 'Enregistrer', goal_delete_btn: 'Supprimer',
+      // Budgets form
+      budgets_title: '💰 Budgets par catégorie', budgets_desc: 'Plafond mensuel par catégorie. Alerte si dépassé.',
+      budgets_save_btn: 'Enregistrer',
+      // Seuil form
+      seuil_title: '🚨 Alertes financières',
+      seuil_lbl_min: 'Solde minimum à maintenir (GNF)',
+      seuil_lbl_pct: 'Alerte si dépenses > X% des revenus',
+      seuil_save_btn: 'Activer',
+      // CD form
+      cd_lbl_amount: 'Montant (GNF)', cd_lbl_date: "Date d'échéance",
+      cd_lbl_reason: 'Motif', cd_lbl_meth: 'Méthode prévue',
+      cd_save_btn: 'Enregistrer',
+      // CD page
+      cd_sum_owe: '💸 Je dois', cd_sum_owned: '💰 On me doit',
+      tab_debt: '💸 Je dois payer', tab_credit: '💰 On me doit',
+      cd_btn_debt: '💸 Je dois payer', cd_btn_credit: '💰 On me doit',
+      // Admin
+      page_cd_title: '💸 Créanciers & Débiteurs',
+      admin_title: '🛡️ Panel Admin', admin_subtitle: 'DiafaGestion — Gestion des clients',
+      admin_close_btn: '✕ Fermer', admin_lbl_total: 'Clients inscrits',
+      admin_lbl_today: "Aujourd'hui", admin_lbl_list: 'Liste des clients',
+      admin_search_ph: '🔍 Rechercher un client...',
+    },
+    en: {
+      splash_welcome: 'Welcome to DiafaGestion 👋',
+      splash_sub: 'Personal Financial Management',
+      login_sub: 'Personal Financial Management',
+      btn_create: '✨ Create my account',
+      btn_access: '🔓 Access my account',
+      btn_contact: 'Contact the administrator',
+      login_form_sub: 'Sign in to your account',
+      label_identifiant: '👤 Username',
+      label_password: '🔒 Password',
+      btn_connect: '🔓 Sign in',
+      btn_back_login: '← Back',
+      hero_label: 'Monthly Balance',
+      hero_inc: '↑ Income',
+      hero_exp: '↓ Expenses',
+      qa_inc_lbl: 'Income', qa_inc_sub: 'Add', qa_list: 'List',
+      qa_exp_lbl: 'Expense', qa_exp_sub: 'Add',
+      qa_debt_lbl: 'Creditors', qa_debt_sub: 'Who I owe',
+      qa_credit_lbl: 'Debtors', qa_credit_sub: 'Who owes me',
+      section_prevision: '🔮 End of month forecast',
+      prev_solde_lbl: 'Expected balance', prev_jours_lbl: 'Days remaining',
+      prev_moy_lbl: 'Avg. exp/day', prev_dispo_lbl: 'Budget/day available',
+      section_chart: '📈 Income vs Expenses',
+      section_cd_chart: '💸 Credits vs Debts',
+      section_cat: '📊 Budget by category',
+      section_tx: '📋 Recent transactions',
+      menu_section_gestion: 'Management',
+      menu_add_planning: 'Add Expense Planning',
+      menu_add_planning_sub: 'Plan a future deadline',
+      menu_list_planning: 'Expense Planning List',
+      menu_tx: 'Transactions', menu_tx_sub: 'All operations',
+      menu_history: 'Monthly History', menu_history_sub: 'Previous months',
+      menu_section_params: 'Settings',
+      menu_goal_lbl: 'Savings Goal', menu_goal_undef: 'Not defined',
+      menu_budget_lbl: 'Budget by category', menu_budget_sub: 'Monthly limits',
+      menu_alerts_lbl: 'Financial Alerts', menu_alerts_sub: 'Thresholds & notifications',
+      menu_section_personnel: 'Personal',
+      menu_journal_lbl: 'Personal Journal', menu_journal_sub: 'My secret journal',
+      menu_cred_lbl: 'Change my credentials', menu_cred_sub: 'Username & password',
+      menu_export_lbl: 'Export my data', menu_export_sub: 'Download a JSON backup',
+      menu_import_lbl: 'Restore a backup', menu_import_sub: 'Import a JSON file',
+      menu_section_admin: 'Administration',
+      menu_admin_lbl: 'Admin Panel', menu_admin_sub: 'Manage clients',
+      menu_trash_lbl: 'Trash',
+      menu_logout_lbl: 'Log out', menu_logout_sub: 'Switch account',
+      menu_reset_lbl: 'Reset all', menu_reset_sub: 'Clear all data',
+      drawer_profile_sub: 'Tap to edit',
+      // Create Account
+      ca_title: 'Create my account', ca_sub: 'Fill in your information',
+      ca_photo: 'Photo (optional)',
+      ca_lbl_prenom: 'First name *', ca_lbl_nom: 'Last name *',
+      ca_lbl_tel: '📞 Phone *', ca_lbl_dob: '🎂 Date of birth',
+      ca_lbl_quartier: '📍 District', ca_lbl_profession: '💼 Profession',
+      ca_lbl_situation: '💍 Marital status',
+      ca_lbl_sexe: '⚧ Gender',
+      ca_opt_cat: 'Category...',
+      ca_opt_celibataire: 'Single', ca_opt_marie: 'Married',
+      ca_opt_divorce: 'Divorced', ca_opt_veuf: 'Widowed',
+      ca_opt_masculin: '👨 Male', ca_opt_feminin: '👩 Female',
+      ca_credentials_title: '🔐 Choose your login credentials',
+      ca_lbl_login: '👤 Username *',
+      ca_lbl_pass: '🔒 Password *', ca_lbl_confirm: 'Confirm *',
+      ca_submit: '✅ Create my account', ca_back: '← Back',
+      // First Profile
+      fp_title: 'Create your profile', fp_sub: 'Fill in your information to continue',
+      fp_photo: 'Profile photo (optional)',
+      fp_lbl_prenom: '👤 First name *', fp_lbl_nom: '👤 Last name *',
+      fp_lbl_tel: '📞 Phone number *', fp_lbl_dob: '🎂 Date of birth',
+      fp_lbl_quartier: '📍 District', fp_lbl_profession: '💼 Profession',
+      fp_required: '* Required fields', fp_submit: '✅ Create my profile',
+      // Profile
+      profile_title: '👤 My Profile',
+      p_lbl_prenom: 'First name', p_lbl_nom: 'Last name',
+      p_lbl_tel: '📞 Phone', p_lbl_dob: 'Date of birth',
+      p_lbl_age: 'Age', p_lbl_quartier: 'District',
+      p_lbl_profession: 'Profession', p_lbl_sexe: '⚧ Gender',
+      p_lbl_situation: 'Marital status',
+      p_save: '💾 Save profile', p_close: 'Close',
+      // Journal
+      ji_title: '📔 Personal Journal', ji_new_btn: '+ New',
+      ji_tab_journal: 'Journal', ji_tab_media: 'Media',
+      ji_media_sel_all: 'Select all',
+      ji_new_entry: 'New entry',
+      ji_save_btn: '💾 Save',
+      ji_mood_lbl: 'TODAY\'S MOOD',
+      ji_date_lbl: 'DATE', ji_cat_lbl: 'CATEGORY',
+      ji_entry_lbl: 'MY ENTRY',
+      ji_entry_ph: 'Write freely your thoughts, emotions, memories...',
+      ji_photos_lbl: 'PHOTOS',
+      ji_add_photo: 'Add a photo',
+      ji_delete_entry: '🗑️ Delete this entry',
+      ji_settings_title: '⚙️ Journal Settings',
+      ji_change_pin: 'Change PIN', ji_change_pin_sub: 'Edit your secret code',
+      ji_trash_lbl: 'Journal Trash',
+      ji_cat_general: '📝 General', ji_cat_amour: '❤️ Love',
+      ji_cat_famille: '👨‍👩‍👧 Family', ji_cat_travail: '💼 Work', ji_cat_intime: '🔒 Private',
+      // Language picker
+      lang_picker_title: 'Choose language',
+      menu_lang_lbl: 'Language / Langue', menu_lang_sub: 'English',
+      // Trash
+      trash_title: '🗑️ Trash', trash_sub: 'Deleted items can be restored',
+      trash_empty_btn: '🗑️ Empty trash', trash_close_btn: 'Close',
+      // Credentials
+      pwd_title: '🔑 Change my credentials', pwd_lbl_old: 'Current password',
+      pwd_section_user: 'New username', pwd_lbl_user: 'Username',
+      pwd_section_pass: 'New password', pwd_lbl_new: 'New password',
+      pwd_lbl_confirm: 'Confirm', pwd_hint: 'Leave blank to keep unchanged',
+      pwd_save_btn: '💾 Save', pwd_cancel_btn: 'Cancel',
+      // Transactions page
+      page_tx_title: '📋 Transactions',
+      tx_tab_all: 'All', tx_tab_inc: 'Income', tx_tab_exp: 'Expenses',
+      // History
+      page_history_title: '🗂️ Monthly History',
+      // Planned page
+      page_planned_title: '📅 Planned expenses', page_planned_add: 'Add',
+      // Add tx form
+      tx_lbl_amount: 'Amount (GNF)', tx_lbl_date: 'Date',
+      tx_lbl_label: 'Label', tx_lbl_cat: 'Category', tx_lbl_meth: 'Payment',
+      tx_save_btn: 'Save', tx_btn_inc: '💚 Income', tx_btn_exp: '🔴 Expense',
+      // Planned form
+      planned_title: '📅 Plan an expense',
+      planned_lbl_label: 'Label', planned_lbl_amount: 'Amount (GNF)',
+      planned_lbl_date: 'Due date', planned_lbl_cat: 'Category', planned_lbl_rec: 'Recurrence',
+      planned_save_btn: 'Schedule',
+      planned_cat_loyer: 'Rent', planned_cat_abo: 'Subscription', planned_cat_frais: 'School fees',
+      planned_cat_cotis: 'Contribution', planned_cat_facture: 'Bill',
+      planned_cat_momo: 'Mobile Money', planned_cat_autre: 'Other',
+      planned_rec_once: 'Once', planned_rec_monthly: 'Monthly', planned_rec_weekly: 'Weekly',
+      // Method form
+      method_title: '💳 Payment method', method_save_btn: 'Add',
+      method_lbl_type: 'Type', method_lbl_op: 'Operator', method_lbl_num: 'Number',
+      method_lbl_bank: 'Bank', method_lbl_card: 'Last 4 digits', method_lbl_name: 'Display name',
+      method_type_cash: '💵 Cash', method_type_momo: '📱 Mobile Money',
+      method_type_card: '💳 Bank card', method_type_bank: '🏦 Bank transfer', method_type_online: '🌐 Online',
+      // Goal form
+      goal_title: '🎯 Savings Goal',
+      goal_lbl_name: 'Goal name', goal_lbl_target: 'Target amount (GNF)',
+      goal_lbl_current: 'Already saved (GNF)', goal_lbl_current_sub: '— total balance since creation',
+      goal_lbl_deadline: '⏳ Deadline to reach the goal',
+      goal_deadline_none: 'No specific deadline', goal_deadline_date: 'Due date', goal_deadline_months: 'Number of months',
+      goal_save_btn: 'Save', goal_delete_btn: 'Delete',
+      // Budgets form
+      budgets_title: '💰 Budget by category', budgets_desc: 'Monthly limit per category. Alert if exceeded.',
+      budgets_save_btn: 'Save',
+      // Seuil form
+      seuil_title: '🚨 Financial Alerts',
+      seuil_lbl_min: 'Minimum balance to maintain (GNF)',
+      seuil_lbl_pct: 'Alert if expenses > X% of income',
+      seuil_save_btn: 'Activate',
+      // CD form
+      cd_lbl_amount: 'Amount (GNF)', cd_lbl_date: 'Due date',
+      cd_lbl_reason: 'Reason', cd_lbl_meth: 'Payment method',
+      cd_save_btn: 'Save',
+      // CD page
+      cd_sum_owe: '💸 I owe', cd_sum_owned: '💰 Owed to me',
+      tab_debt: '💸 I owe', tab_credit: '💰 Owed to me',
+      cd_btn_debt: '💸 I owe', cd_btn_credit: '💰 Owed to me',
+      // Admin
+      page_cd_title: '💸 Creditors & Debtors',
+      admin_title: '🛡️ Admin Panel', admin_subtitle: 'DiafaGestion — Client management',
+      admin_close_btn: '✕ Close', admin_lbl_total: 'Registered clients',
+      admin_lbl_today: 'Today', admin_lbl_list: 'Client list',
+      admin_search_ph: '🔍 Search a client...',
+    }
+  };
+
+  let _lang = localStorage.getItem('diafa_lang') || 'fr';
+
+  function t(key){ return (TRANSLATIONS[_lang]||TRANSLATIONS.fr)[key] || key; }
+
+  function setText(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+
+  window.setLang = function(lang){
+    _lang = lang;
+    localStorage.setItem('diafa_lang', lang);
+    applyLang();
+  };
+
+  window.openLangPicker = function(){
+    const overlay = document.getElementById('langPickerOverlay');
+    if(overlay) overlay.classList.add('open');
+    // Update selected state
+    const fr=document.getElementById('langOptFR'), en=document.getElementById('langOptEN');
+    if(fr) fr.className='lang-option'+(_lang==='fr'?' selected':'');
+    if(en) en.className='lang-option'+(_lang==='en'?' selected':'');
+  };
+
+  window.closeLangPicker = function(){
+    const overlay = document.getElementById('langPickerOverlay');
+    if(overlay) overlay.classList.remove('open');
+  };
+
+  window.applyLang = function(){
+    const L = _lang;
+    // Toggle button states — login page (handled above)
+
+    // Splash
+    setText('splashWelcome', t('splash_welcome'));
+    setText('splashSub', t('splash_sub'));
+    // Login welcome
+    setText('loginSub', t('login_sub'));
+    const btnCreate=document.getElementById('btnCreateAccount');
+    if(btnCreate) btnCreate.textContent=t('btn_create');
+    const btnAccess=document.getElementById('btnAccessAccount');
+    if(btnAccess) btnAccess.textContent=t('btn_access');
+    setText('btnContactAdmin', t('btn_contact'));
+    // Login form
+    setText('loginFormSub', t('login_form_sub'));
+    setText('labelIdentifiant', t('label_identifiant'));
+    setText('labelPassword', t('label_password'));
+    setText('btnConnect', t('btn_connect'));
+    setText('btnBackLogin', t('btn_back_login'));
+    // Update placeholder
+    const loginUser=document.getElementById('loginUser');
+    if(loginUser) loginUser.placeholder=L==='en'?'Your username':'Votre identifiant';
+    const loginPass=document.getElementById('loginPass');
+    if(loginPass) loginPass.placeholder=L==='en'?'Your password':'Votre mot de passe';
+    // Hero
+    setText('heroLabel', t('hero_label'));
+    setText('heroIncLbl', t('hero_inc'));
+    setText('heroExpLbl', t('hero_exp'));
+    // Quick actions
+    setText('qaIncLbl', t('qa_inc_lbl'));
+    setText('qaIncSub', t('qa_inc_sub'));
+    setText('qaListInc', t('qa_list'));
+    setText('qaExpLbl', t('qa_exp_lbl'));
+    setText('qaExpSub', t('qa_exp_sub'));
+    setText('qaListExp', t('qa_list'));
+    setText('qaDebtLbl', t('qa_debt_lbl'));
+    setText('qaDebtSub', t('qa_debt_sub'));
+    setText('qaListDebt', t('qa_list'));
+    setText('qaCreditLbl', t('qa_credit_lbl'));
+    setText('qaCreditSub', t('qa_credit_sub'));
+    setText('qaListCredit', t('qa_list'));
+    // Sections
+    setText('sectionPrevision', t('section_prevision'));
+    setText('prevSoldeLbl', t('prev_solde_lbl'));
+    setText('prevJoursLbl', t('prev_jours_lbl'));
+    setText('prevMoyLbl', t('prev_moy_lbl'));
+    setText('prevDispoLbl', t('prev_dispo_lbl'));
+    setText('sectionChart', t('section_chart'));
+    setText('sectionCDChart', t('section_cd_chart'));
+    setText('sectionCat', t('section_cat'));
+    setText('sectionTx', t('section_tx'));
+    // Drawer menu
+    setText('menuSectionGestion', t('menu_section_gestion'));
+    setText('menuAddPlanning', t('menu_add_planning'));
+    setText('menuAddPlanningSub', t('menu_add_planning_sub'));
+    setText('menuListPlanning', t('menu_list_planning'));
+    setText('menuTx', t('menu_tx'));
+    setText('menuTxSub', t('menu_tx_sub'));
+    setText('menuHistory', t('menu_history'));
+    setText('menuHistorySub', t('menu_history_sub'));
+    setText('menuSectionParams', t('menu_section_params'));
+    setText('menuGoalLbl', t('menu_goal_lbl'));
+    setText('menuBudgetLbl', t('menu_budget_lbl'));
+    setText('menuBudgetSub', t('menu_budget_sub'));
+    setText('menuAlertsLbl', t('menu_alerts_lbl'));
+    setText('menuAlertsSub', t('menu_alerts_sub'));
+    setText('menuSectionPersonnel', t('menu_section_personnel'));
+    setText('menuJournalLbl', t('menu_journal_lbl'));
+    setText('menuJournalSub', t('menu_journal_sub'));
+    setText('menuCredLbl', t('menu_cred_lbl'));
+    setText('menuCredSub', t('menu_cred_sub'));
+    setText('menuExportLbl', t('menu_export_lbl'));
+    setText('menuExportSub', t('menu_export_sub'));
+    setText('menuImportLbl', t('menu_import_lbl'));
+    setText('menuImportSub', t('menu_import_sub'));
+    setText('menuSectionAdmin', t('menu_section_admin'));
+    setText('menuAdminLbl', t('menu_admin_lbl'));
+    setText('menuAdminSub', t('menu_admin_sub'));
+    setText('menuTrashLbl', t('menu_trash_lbl'));
+    setText('menuLogoutLbl', t('menu_logout_lbl'));
+    setText('menuLogoutSub', t('menu_logout_sub'));
+    setText('menuResetLbl', t('menu_reset_lbl'));
+    setText('menuResetSub', t('menu_reset_sub'));
+    // Profile sub in drawer (only if not customised)
+    const pSub=document.getElementById('drawerProfileSub');
+    if(pSub && (pSub.textContent==='Appuyez pour modifier' || pSub.textContent==='Tap to edit')){
+      pSub.textContent=t('drawer_profile_sub');
+    }
+    // menuGoal default text
+    const mg=document.getElementById('menuGoal');
+    if(mg && (mg.textContent==='Non défini'||mg.textContent==='Not defined')) mg.textContent=t('menu_goal_undef');
+
+    // ── Create Account ──
+    setText('caTitleMain', t('ca_title'));
+    setText('caSubMain', t('ca_sub'));
+    setText('caPhotoOptional', t('ca_photo'));
+    setText('caLblPrenom', t('ca_lbl_prenom'));
+    setText('caLblNom', t('ca_lbl_nom'));
+    setText('caLblTel', t('ca_lbl_tel'));
+    setText('caLblDOB', t('ca_lbl_dob'));
+    setText('caLblQuartier', t('ca_lbl_quartier'));
+    setText('caLblProfession', t('ca_lbl_profession'));
+    setText('caLblSituation', t('ca_lbl_situation'));
+    setText('caLblSexe', t('ca_lbl_sexe'));
+    setText('caOptSitCat', t('ca_opt_cat'));
+    setText('caOptCelibataire', t('ca_opt_celibataire'));
+    setText('caOptMarie', t('ca_opt_marie'));
+    setText('caOptDivorce', t('ca_opt_divorce'));
+    setText('caOptVeuf', t('ca_opt_veuf'));
+    setText('caOptSexeCat', t('ca_opt_cat'));
+    setText('caOptMasculin', t('ca_opt_masculin'));
+    setText('caOptFeminin', t('ca_opt_feminin'));
+    setText('caCredentialsTitle', t('ca_credentials_title'));
+    setText('caLblLogin', t('ca_lbl_login'));
+    setText('caLblPass', t('ca_lbl_pass'));
+    setText('caLblPassConfirm', t('ca_lbl_confirm'));
+    setText('caSubmitBtn', t('ca_submit'));
+    setText('caBackBtn', t('ca_back'));
+    const caPrenom=document.getElementById('caPrenom'); if(caPrenom) caPrenom.placeholder=L==='en'?'First name':'Prénom';
+    const caNom=document.getElementById('caNom'); if(caNom) caNom.placeholder=L==='en'?'Last name':'Nom';
+    const caTel=document.getElementById('caTel'); if(caTel) caTel.placeholder='Ex: 625 00 00 00';
+    const caQuartier=document.getElementById('caQuartier'); if(caQuartier) caQuartier.placeholder=L==='en'?'Ex: Downtown':'Ex: Ratoma';
+    const caProfession=document.getElementById('caProfession'); if(caProfession) caProfession.placeholder=L==='en'?'Ex: Trader':'Ex: Commerçant';
+    const caLogin=document.getElementById('caLogin'); if(caLogin) caLogin.placeholder=L==='en'?'Ex: john2024':'Ex: mamadou2024';
+    const caPass=document.getElementById('caPass'); if(caPass) caPass.placeholder=L==='en'?'Min. 4 chars':'Min. 4 caractères';
+    const caPassC=document.getElementById('caPassConfirm'); if(caPassC) caPassC.placeholder=L==='en'?'Repeat':'Répéter';
+
+    // ── First Profile ──
+    setText('fpTitle', t('fp_title'));
+    setText('fpSub', t('fp_sub'));
+    setText('fpPhotoOptional', t('fp_photo'));
+    setText('fpLblPrenom', t('fp_lbl_prenom'));
+    setText('fpLblNom', t('fp_lbl_nom'));
+    setText('fpLblTel', t('fp_lbl_tel'));
+    setText('fpLblDOB', t('fp_lbl_dob'));
+    setText('fpLblQuartier', t('fp_lbl_quartier'));
+    setText('fpLblProfession', t('fp_lbl_profession'));
+    setText('fpRequired', t('fp_required'));
+    setText('fpSubmitBtn', t('fp_submit'));
+    const fpPrenom=document.getElementById('fpPrenom'); if(fpPrenom) fpPrenom.placeholder=L==='en'?'Your first name':'Votre prénom';
+    const fpNom=document.getElementById('fpNom'); if(fpNom) fpNom.placeholder=L==='en'?'Your last name':'Votre nom de famille';
+    const fpQuartier=document.getElementById('fpQuartier'); if(fpQuartier) fpQuartier.placeholder=L==='en'?'Ex: Downtown, Uptown...':'Ex: Kaloum, Ratoma...';
+    const fpProfession=document.getElementById('fpProfession'); if(fpProfession) fpProfession.placeholder=L==='en'?'Ex: Trader, Teacher...':'Ex: Commerçant, Enseignant...';
+
+    // ── Profile ──
+    setText('profileTitle', t('profile_title'));
+    setText('pLblPrenom', t('p_lbl_prenom'));
+    setText('pLblNom', t('p_lbl_nom'));
+    setText('pLblTel', t('p_lbl_tel'));
+    setText('pLblDOB', t('p_lbl_dob'));
+    setText('pLblAge', t('p_lbl_age'));
+    setText('pLblQuartier', t('p_lbl_quartier'));
+    setText('pLblProfession', t('p_lbl_profession'));
+    setText('pLblSexe', t('p_lbl_sexe'));
+    setText('pLblSituation', t('p_lbl_situation'));
+    setText('pOptSexeCat', t('ca_opt_cat'));
+    setText('pOptMasculin', t('ca_opt_masculin'));
+    setText('pOptFeminin', t('ca_opt_feminin'));
+    setText('pOptSitCat', t('ca_opt_cat'));
+    setText('pOptCelibataire', t('ca_opt_celibataire'));
+    setText('pOptMarie', t('ca_opt_marie'));
+    setText('pOptDivorce', t('ca_opt_divorce'));
+    setText('pOptVeuf', t('ca_opt_veuf'));
+    setText('profileSaveBtn', t('p_save'));
+    setText('profileCloseBtn', t('p_close'));
+    const pPrenom=document.getElementById('pPrenom'); if(pPrenom) pPrenom.placeholder=L==='en'?'First name':'Prénom';
+    const pNom=document.getElementById('pNom'); if(pNom) pNom.placeholder=L==='en'?'Last name':'Nom';
+    const pTel=document.getElementById('pTel'); if(pTel) pTel.placeholder='Ex: 625 00 00 00';
+    const pQuartier=document.getElementById('pQuartier'); if(pQuartier) pQuartier.placeholder=L==='en'?'Ex: Downtown, Uptown...':'Ex: Kaloum, Ratoma...';
+    const pProfession=document.getElementById('pProfession'); if(pProfession) pProfession.placeholder=L==='en'?'Ex: Engineer, Trader...':'Ex: Ingénieur, Commerçant...';
+
+    // ── Admin Panel ──
+    setText('adminTitle', t('admin_title'));
+    setText('adminSubtitle', t('admin_subtitle'));
+    setText('adminCloseBtn', t('admin_close_btn'));
+    setText('adminLblTotal', t('admin_lbl_total'));
+    setText('adminLblToday', t('admin_lbl_today'));
+    setText('adminLblList', t('admin_lbl_list'));
+    const adminSearchEl=document.getElementById('adminSearch'); if(adminSearchEl) adminSearchEl.placeholder=t('admin_search_ph');
+    setText('trashTitle', t('trash_title'));
+    setText('trashSub', t('trash_sub'));
+    setText('trashEmptyBtn', t('trash_empty_btn'));
+    setText('trashCloseBtn', t('trash_close_btn'));
+
+    // ── Credentials ──
+    setText('pwdTitle', t('pwd_title'));
+    setText('pwdLblOld', t('pwd_lbl_old'));
+    setText('pwdSectionUser', t('pwd_section_user'));
+    setText('pwdLblUser', t('pwd_lbl_user'));
+    setText('pwdSectionPass', t('pwd_section_pass'));
+    setText('pwdLblNew', t('pwd_lbl_new'));
+    setText('pwdLblConfirm', t('pwd_lbl_confirm'));
+    setText('pwdHint', t('pwd_hint'));
+    setText('pwdSaveBtn', t('pwd_save_btn'));
+    setText('pwdCancelBtn', t('pwd_cancel_btn'));
+    const pwdOldEl=document.getElementById('pwdOld'); if(pwdOldEl) pwdOldEl.placeholder=t('pwd_lbl_old');
+    const pwdNewUserEl=document.getElementById('pwdNewUser'); if(pwdNewUserEl) pwdNewUserEl.placeholder=L==='en'?'New username':'Nouvel identifiant';
+    const pwdNewEl=document.getElementById('pwdNew'); if(pwdNewEl) pwdNewEl.placeholder=t('pwd_lbl_new');
+    const pwdConfEl=document.getElementById('pwdConfirm'); if(pwdConfEl) pwdConfEl.placeholder=L==='en'?'Confirm password':'Confirmer le mot de passe';
+
+    // ── Transactions page ──
+    setText('pageTxTitle', t('page_tx_title'));
+    setText('txTabAll', t('tx_tab_all'));
+    setText('txTabInc', t('tx_tab_inc'));
+    setText('txTabExp', t('tx_tab_exp'));
+
+    // ── History page ──
+    setText('pageHistoryTitle', t('page_history_title'));
+
+    // ── Planned page ──
+    setText('pagePlannedTitle', t('page_planned_title'));
+    setText('pagePlannedAddBtn', t('page_planned_add'));
+
+    // ── TX form ──
+    setText('txLblAmount', t('tx_lbl_amount'));
+    setText('txLblDate', t('tx_lbl_date'));
+    setText('txLblLabel', t('tx_lbl_label'));
+    setText('txLblCat', t('tx_lbl_cat'));
+    setText('txLblMeth', t('tx_lbl_meth'));
+    setText('txSaveBtn', t('tx_save_btn'));
+    setText('btnInc', t('tx_btn_inc'));
+    setText('btnExp', t('tx_btn_exp'));
+    const txLblEl=document.getElementById('txLbl'); if(txLblEl) txLblEl.placeholder=L==='en'?'Ex: Salary, Rent…':'Ex : Salaire, Loyer…';
+
+    // ── Planned form ──
+    setText('plannedOverlayTitle', t('planned_title'));
+    setText('plannedLblLabel', t('planned_lbl_label'));
+    setText('plannedLblAmount', t('planned_lbl_amount'));
+    setText('plannedLblDate', t('planned_lbl_date'));
+    setText('plannedLblCat', t('planned_lbl_cat'));
+    setText('plannedLblRec', t('planned_lbl_rec'));
+    setText('plannedSaveBtn', t('planned_save_btn'));
+    setText('pCatLoyer', t('planned_cat_loyer'));
+    setText('pCatAbonnement', t('planned_cat_abo'));
+    setText('pCatFrais', t('planned_cat_frais'));
+    setText('pCatCotisation', t('planned_cat_cotis'));
+    setText('pCatFacture', t('planned_cat_facture'));
+    setText('pCatMomo', t('planned_cat_momo'));
+    setText('pCatAutre', t('planned_cat_autre'));
+    setText('pRecOnce', t('planned_rec_once'));
+    setText('pRecMonthly', t('planned_rec_monthly'));
+    setText('pRecWeekly', t('planned_rec_weekly'));
+    const pLblEl=document.getElementById('pLbl'); if(pLblEl) pLblEl.placeholder=L==='en'?'Ex: Rent, Subscription…':'Ex : Loyer, Abonnement…';
+
+    // ── Method form ──
+    setText('methodOverlayTitle', t('method_title'));
+    setText('methodSaveBtn', t('method_save_btn'));
+    setText('methodLblType', t('method_lbl_type'));
+    setText('methodLblOp', t('method_lbl_op'));
+    setText('methodLblNum', t('method_lbl_num'));
+    setText('methodLblBank', t('method_lbl_bank'));
+    setText('methodLblCard', t('method_lbl_card'));
+    setText('methodLblName', t('method_lbl_name'));
+    setText('mTypeCash', t('method_type_cash'));
+    setText('mTypeMomo', t('method_type_momo'));
+    setText('mTypeCard', t('method_type_card'));
+    setText('mTypeBank', t('method_type_bank'));
+    setText('mTypeOnline', t('method_type_online'));
+
+    // ── Goal form ──
+    setText('goalOverlayTitle', t('goal_title'));
+    setText('goalLblName', t('goal_lbl_name'));
+    setText('goalLblTarget', t('goal_lbl_target'));
+    setText('goalLblCurrent', t('goal_lbl_current'));
+    setText('goalLblCurrentSub', t('goal_lbl_current_sub'));
+    setText('goalLblDeadline', t('goal_lbl_deadline'));
+    setText('gDeadlineNone', t('goal_deadline_none'));
+    setText('gDeadlineDateOpt', t('goal_deadline_date'));
+    setText('gDeadlineMonthsOpt', t('goal_deadline_months'));
+    setText('goalSaveBtn', t('goal_save_btn'));
+    setText('goalDeleteBtn', t('goal_delete_btn'));
+    const gNameEl=document.getElementById('gName'); if(gNameEl) gNameEl.placeholder=L==='en'?'Ex: Car, Trip…':'Ex : Voiture, Voyage…';
+
+    // ── Budgets form ──
+    setText('budgetsOverlayTitle', t('budgets_title'));
+    setText('budgetsDesc', t('budgets_desc'));
+    setText('budgetsSaveBtn', t('budgets_save_btn'));
+
+    // ── Seuil form ──
+    setText('seuilOverlayTitle', t('seuil_title'));
+    setText('seuilLblMin', t('seuil_lbl_min'));
+    setText('seuilLblPct', t('seuil_lbl_pct'));
+    setText('seuilSaveBtn', t('seuil_save_btn'));
+
+    // ── CD form ──
+    setText('cdLblAmount', t('cd_lbl_amount'));
+    setText('cdLblDate', t('cd_lbl_date'));
+    setText('cdLblReason', t('cd_lbl_reason'));
+    setText('cdLblMeth', t('cd_lbl_meth'));
+    setText('cdSaveBtn', t('cd_save_btn'));
+    const cdBtnD=document.getElementById('cdBtnD'); if(cdBtnD) cdBtnD.textContent=t('cd_btn_debt');
+    const cdBtnC=document.getElementById('cdBtnC'); if(cdBtnC) cdBtnC.textContent=t('cd_btn_credit');
+
+    // ── CD page ──
+    setText('pageCDTitle', t('page_cd_title'));
+    const tabDebt=document.getElementById('tabDebt'); if(tabDebt) tabDebt.textContent=t('tab_debt');
+    const tabCredit=document.getElementById('tabCredit'); if(tabCredit) tabCredit.textContent=t('tab_credit');
+    setText('jiMainTitle', t('ji_title'));
+    setText('jiNewBtn', t('ji_new_btn'));
+    setText('jiTabJournalLbl', t('ji_tab_journal'));
+    setText('jiTabMediaLbl', t('ji_tab_media'));
+    setText('jiMediaSelAllBtn', t('ji_media_sel_all'));
+    setText('jiSettingsTitle', t('ji_settings_title'));
+    setText('jiChangePinLbl', t('ji_change_pin'));
+    setText('jiChangePinSub', t('ji_change_pin_sub'));
+    setText('jiTrashLbl', t('ji_trash_lbl'));
+    setText('jiMoodLbl', t('ji_mood_lbl'));
+    setText('jiDateLbl', t('ji_date_lbl'));
+    setText('jiCatLbl', t('ji_cat_lbl'));
+    setText('jiEntryLbl', t('ji_entry_lbl'));
+    setText('jiPhotosLbl', t('ji_photos_lbl'));
+    setText('jiAddPhotoLbl', t('ji_add_photo'));
+    setText('jiDeleteBtn', t('ji_delete_entry'));
+    setText('jiSaveBtn', t('ji_save_btn'));
+    setText('jiCatGeneral', t('ji_cat_general'));
+    setText('jiCatAmour', t('ji_cat_amour'));
+    setText('jiCatFamille', t('ji_cat_famille'));
+    setText('jiCatTravail', t('ji_cat_travail'));
+    setText('jiCatIntime', t('ji_cat_intime'));
+    const jiBodyTa=document.getElementById('jiEntryBody'); if(jiBodyTa) jiBodyTa.placeholder=t('ji_entry_ph');
+    // jiEditTitle only if it shows default new entry text
+    const jiEt=document.getElementById('jiEditTitle');
+    if(jiEt && (jiEt.textContent==='Nouvelle entrée'||jiEt.textContent==='New entry')) jiEt.textContent=t('ji_new_entry');
+
+    // ── Language picker modal & menu ──
+    setText('langPickerTitle', t('lang_picker_title'));
+    setText('menuLangLbl', t('menu_lang_lbl'));
+    setText('menuLangSub', t('menu_lang_sub'));
+    // Update login lang button states
+    const lFR=document.getElementById('loginLangFR'), lEN=document.getElementById('loginLangEN');
+    if(lFR){ lFR.className='lang-btn'+(L==='fr'?' active':''); lFR.innerHTML='<span class="lang-flag">🇫🇷</span> Français'; }
+    if(lEN){ lEN.className='lang-btn'+(L==='en'?' active':''); lEN.innerHTML='<span class="lang-flag">🇬🇧</span> English'; }
+  };
+
+  window.getLang = function(){ return _lang; };
+
+  // Apply on DOM ready
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', applyLang);
+  } else {
+    setTimeout(applyLang, 0);
+  }
 })();
 </script>
 
