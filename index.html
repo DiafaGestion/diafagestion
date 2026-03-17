@@ -1134,7 +1134,16 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
           </select>
         </div>
         <div class="fg"><label id="txLblMeth">Paiement</label>
-          <select id="txMeth"><option>Espèces</option><option>Orange Money</option><option>MTN Money</option><option>Kulu</option><option>PayCard</option><option>Carte bancaire</option><option>Virement</option><option>En ligne</option></select>
+          <select id="txMeth">
+            <option value="Espèces" id="txMethCash">Espèces</option>
+            <option value="Orange Money" id="txMethOrange">Orange Money</option>
+            <option value="MTN Money" id="txMethMTN">MTN Money</option>
+            <option value="Kulu" id="txMethKulu">Kulu</option>
+            <option value="PayCard" id="txMethPayCard">PayCard</option>
+            <option value="Carte bancaire" id="txMethCard">Carte bancaire</option>
+            <option value="Virement" id="txMethVirement">Virement</option>
+            <option value="En ligne" id="txMethOnline">En ligne</option>
+          </select>
         </div>
       </div>
     </div>
@@ -1270,7 +1279,15 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
       <div class="fg"><label id="cdLblReason">Motif</label><input type="text" id="cdReason" placeholder="Ex : Prêt, Achat…"></div>
       <div class="fg"><label id="cdLblMeth">Méthode prévue</label>
-        <select id="cdMeth"><option>Espèces</option><option>Orange Money</option><option>MTN Money</option><option>Kulu</option><option>PayCard</option><option>Virement</option><option>Autre</option></select>
+        <select id="cdMeth">
+          <option value="Espèces" id="cdMethCash">Espèces</option>
+          <option value="Orange Money" id="cdMethOrange">Orange Money</option>
+          <option value="MTN Money" id="cdMethMTN">MTN Money</option>
+          <option value="Kulu" id="cdMethKulu">Kulu</option>
+          <option value="PayCard" id="cdMethPayCard">PayCard</option>
+          <option value="Virement" id="cdMethVirement">Virement</option>
+          <option value="Autre" id="cdMethAutre">Autre</option>
+        </select>
       </div>
     </div>
     <div class="sheet-footer"><button class="cta cta-green" id="cdSaveBtn" onclick="saveCD()">Enregistrer</button></div>
@@ -1368,24 +1385,30 @@ function filterTx(f,btn){
   renderAllTx();
 }
 function renderAllTx(){
+  const _L=getLang();
   const m=month();
   let txs=S.tx.filter(t=>t.month===m);
   if(txPageFilter==='income')txs=txs.filter(t=>t.type==='income');
   if(txPageFilter==='expense')txs=txs.filter(t=>t.type==='expense');
   const el=document.getElementById('allTxList');
-  el.innerHTML=txs.length?txs.map(t=>txHTML(t)).join(''):'<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune transaction</div></div>';
+  el.innerHTML=txs.length?txs.map(t=>txHTML(t)).join(''):'<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">'+(_L==='en'?'No transactions':'Aucune transaction')+'</div></div>';
 }
 function renderAllPlanned(){
+  const _L=getLang();
   const el=document.getElementById('allPlannedList');
-  if(!S.planned.length){el.innerHTML='<div class="empty"><div class="empty-emoji">📅</div><div class="empty-text">Aucune dépense planifiée</div></div>';return;}
+  if(!S.planned.length){el.innerHTML='<div class="empty"><div class="empty-emoji">📅</div><div class="empty-text">'+(_L==='en'?'No planned expenses':'Aucune dépense planifiée')+'</div></div>';return;}
   el.innerHTML=[...S.planned].sort((a,b)=>new Date(a.date)-new Date(b.date)).map(p=>plannedHTML(p)).join('');
 }
 function renderAllHistory(){
+  const _L=getLang();
   const months={};
   S.tx.forEach(t=>{if(!months[t.month])months[t.month]={inc:0,exp:0,n:0};months[t.month][t.type==='income'?'inc':'exp']+=t.amt;months[t.month].n++;});
   const el=document.getElementById('allHistoryList');
   const keys=Object.keys(months).sort().reverse();
-  el.innerHTML=keys.length?keys.map(k=>{const d=months[k],b=d.inc-d.exp;return'<div class="history-item"><div class="h-icon">📅</div><div class="h-info"><div class="h-name">'+monthLabel(k)+'</div><div class="h-sub">'+d.n+' opérations · Rev: '+fmt(d.inc)+' · Dép: '+fmt(d.exp)+'</div></div><div class="h-bal '+(b>=0?'pos':'neg')+'">'+(b>=0?'+':'')+fmt(b)+'</div></div>';}).join(''):'<div class="empty"><div class="empty-emoji">🗂️</div><div class="empty-text">Aucun historique</div></div>';
+  const opLbl=_L==='en'?'operations':'opérations';
+  const incLbl=_L==='en'?'Inc':'Rev';
+  const expLbl=_L==='en'?'Exp':'Dép';
+  el.innerHTML=keys.length?keys.map(k=>{const d=months[k],b=d.inc-d.exp;return'<div class="history-item"><div class="h-icon">📅</div><div class="h-info"><div class="h-name">'+monthLabel(k)+'</div><div class="h-sub">'+d.n+' '+opLbl+' · '+incLbl+': '+fmt(d.inc)+' · '+expLbl+': '+fmt(d.exp)+'</div></div><div class="h-bal '+(b>=0?'pos':'neg')+'">'+(b>=0?'+':'')+fmt(b)+'</div></div>';}).join(''):'<div class="empty"><div class="empty-emoji">🗂️</div><div class="empty-text">'+(_L==='en'?'No history':'Aucun historique')+'</div></div>';
 }
 function renderAllMethods(){
   const el=document.getElementById('allMethodsList');
@@ -2559,16 +2582,23 @@ function renderListPage(){
   // Onglets
   const tabsEl = document.getElementById('pageListTabs');
   if(type === 'planned'){
-    tabsEl.innerHTML = [['all','Tous'],['upcoming','À venir'],['past','Passés']].map(([v,l])=>
+    const tabs = _Ll==='en'
+      ? [['all','All'],['upcoming','Upcoming'],['past','Past']]
+      : [['all','Tous'],['upcoming','À venir'],['past','Passés']];
+    tabsEl.innerHTML = tabs.map(([v,l])=>
       '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
     ).join('');
   } else if(type === 'income' || type === 'expense'){
-    const opts = [['all','Tous'], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
+    const allLbl = _Ll==='en'?'All':'Tous';
+    const opts = [[' all',allLbl], ...allMonths.slice(0,6).map(m=>[m, monthLabel(m)])];
     tabsEl.innerHTML = opts.map(([v,l])=>
-      '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
+      '<button class="cd-tab'+(listPageFilter===v.trim()?' ad':'')+'" data-lf="'+v.trim()+'">'+l+'</button>'
     ).join('');
   } else {
-    tabsEl.innerHTML = [['all','Tous'],['active','En cours'],['paid','Réglés']].map(([v,l])=>
+    const tabs = _Ll==='en'
+      ? [['all','All'],['active','Active'],['paid','Paid']]
+      : [['all','Tous'],['active','En cours'],['paid','Réglés']];
+    tabsEl.innerHTML = tabs.map(([v,l])=>
       '<button class="cd-tab'+(listPageFilter===v?' ad':'')+'" data-lf="'+v+'">'+l+'</button>'
     ).join('');
   }
@@ -2603,48 +2633,50 @@ function renderListPage(){
     const upNb = items.filter(x=>x.date>=today).length;
     sumEl.innerHTML =
       '<div style="background:#f3e8ff;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+fmt(tot)+' GNF</div></div>'+
-      '<div style="background:#ede9fe;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">À venir</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+upNb+'</div></div>';
+      '<div style="background:#ede9fe;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;">'+(_Ll==='en'?'Upcoming':'À venir')+'</div><div style="font-size:18px;font-weight:800;color:#7c3aed;">'+upNb+'</div></div>';
   } else if(type === 'income' || type === 'expense'){
     const total = items.reduce((s,t)=>s+t.amt, 0);
     const color = type==='income' ? 'var(--green)' : 'var(--red)';
     sumEl.innerHTML =
       '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Total</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(total)+'</div></div>'+
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Opérations</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">'+(_Ll==='en'?'Operations':'Opérations')+'</div><div style="font-size:18px;font-weight:800;color:#374151;">'+items.length+'</div></div>';
   } else {
     const totalPending = items.filter(c=>!c.paid).reduce((s,c)=>s+c.amount, 0);
     const totalPaid    = items.filter(c=> c.paid).reduce((s,c)=>s+c.amount, 0);
     const color = type==='debt' ? 'var(--red)' : 'var(--green)';
     sumEl.innerHTML =
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">En cours</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>'+
-      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Réglé</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">'+(_Ll==='en'?'Pending':'En cours')+'</div><div style="font-size:18px;font-weight:800;color:'+color+';">'+fmt(totalPending)+'</div></div>'+
+      '<div style="background:#f8fafc;border-radius:12px;padding:10px 14px;"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">'+(_Ll==='en'?'Paid':'Réglé')+'</div><div style="font-size:18px;font-weight:800;color:#6b7280;">'+fmt(totalPaid)+'</div></div>';
   }
 
   // Liste
   const el = document.getElementById('pageListContent');
   if(!items.length){
-    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">Aucune entrée</div></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-emoji">📭</div><div class="empty-text">'+(_Ll==='en'?'No entries':'Aucune entrée')+'</div></div>';
     return;
   }
 
   if(type === 'planned'){
-    const recL = {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois'};
+    const recL = _Ll==='en'
+      ? {monthly:'Monthly', weekly:'Weekly', '1x':'Once', once:'Once'}
+      : {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois', once:'1 fois'};
     el.innerHTML = items.map(x=>{
       const past = x.date < today;
       const dj = Math.round((new Date(x.date) - new Date()) / 864e5);
       const urgent = !past && dj <= 2;
       const col = past ? '#9ca3af' : urgent ? '#dc2626' : '#7c3aed';
       const badge = past
-        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3f4f6;color:#9ca3af;">Passé</span>'
+        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3f4f6;color:#9ca3af;">'+(_Ll==='en'?'Past':'Passé')+'</span>'
         : urgent
-        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#fee2e2;color:#dc2626;">Urgent</span>'
-        : '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3e8ff;color:#7c3aed;">'+dj+'j</span>';
+        ? '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#fee2e2;color:#dc2626;">'+(_Ll==='en'?'Urgent':'Urgent')+'</span>'
+        : '<span style="font-size:10px;padding:2px 6px;border-radius:10px;background:#f3e8ff;color:#7c3aed;">'+dj+(_Ll==='en'?'d':'j')+'</span>';
       return '<div class="tx-item" style="border-left:4px solid '+col+';display:flex;align-items:center;gap:8px;">'+
         '<div style="flex:1;">'+
           '<div class="tx-main"><div class="tx-lbl">'+escHtml(x.lbl)+'</div>'+
           '<div class="tx-meta">'+x.date+' · '+(x.cat||'')+' · '+(recL[x.rec]||x.rec||'—')+'</div></div>'+
           '<div class="tx-right"><div class="tx-amt" style="color:'+col+';">-'+fmt(x.amt)+'</div>'+badge+'</div>'+
         '</div>'+
-        '<button onclick="delPlannedFromList('+x.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="Supprimer">🗑️</button>'+
+        '<button onclick="delPlannedFromList('+x.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="'+(_Ll==='en'?'Delete':'Supprimer')+'">🗑️</button>'+
       '</div>';
     }).join('');
   } else if(type === 'income' || type === 'expense'){
@@ -2652,11 +2684,11 @@ function renderListPage(){
   } else {
     el.innerHTML = items.map(c=>{
       const days=daysTo(c.date), overdue=!c.paid&&days<0, soon=!c.paid&&days>=0&&days<=7;
-      const badge = c.paid ? '<span class="badge b-paid">Réglé</span>'
-        : overdue ? '<span class="badge b-late">Retard '+Math.abs(days)+' j</span>'
-        : days===0 ? '<span class="badge b-urgent">Auj.</span>'
-        : soon ? '<span class="badge b-soon">'+days+' j</span>'
-        : '<span class="badge b-ok">'+days+' j</span>';
+      const badge = c.paid ? '<span class="badge b-paid">'+(_Ll==='en'?'Paid':'Réglé')+'</span>'
+        : overdue ? '<span class="badge b-late">'+(_Ll==='en'?'Late '+Math.abs(days)+'d':'Retard '+Math.abs(days)+' j')+'</span>'
+        : days===0 ? '<span class="badge b-urgent">'+(_Ll==='en'?'Today':'Auj.')+'</span>'
+        : soon ? '<span class="badge b-soon">'+days+(_Ll==='en'?'d':'j')+'</span>'
+        : '<span class="badge b-ok">'+days+(_Ll==='en'?'d':'j')+'</span>';
       const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
       return '<div class="cd-item" style="opacity:'+(c.paid?'0.6':'1')+';display:flex;align-items:center;gap:8px;">'+
         '<div style="flex:1;display:flex;align-items:center;gap:10px;">'+
@@ -2666,7 +2698,7 @@ function renderListPage(){
           '<div class="cd-due">'+badge+' · '+c.date+'</div></div>'+
           '<div class="cd-right"><div class="cd-amount '+(c.type==='debt'?'debt':'credit')+'">'+(c.type==='debt'?'-':'+')+fmt(c.amount)+'</div></div>'+
         '</div>'+
-        '<button onclick="deleteCDFromList('+c.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="Supprimer">🗑️</button>'+
+        '<button onclick="deleteCDFromList('+c.id+')" style="flex-shrink:0;background:#fee2e2;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px;color:#dc2626;" title="'+(_Ll==='en'?'Delete':'Supprimer')+'">🗑️</button>'+
       '</div>';
     }).join('');
   }
@@ -4623,7 +4655,25 @@ if('serviceWorker' in navigator){
       render();
     }
 
-    // ── Admin Panel ──
+    // ── Paiement options (txMeth + cdMeth) ──
+    const _methMap = L==='en'
+      ? {Cash:'Cash', Card:'Bank card', Virement:'Bank transfer', Online:'Online', Autre:'Other'}
+      : {Cash:'Espèces', Card:'Carte bancaire', Virement:'Virement', Online:'En ligne', Autre:'Autre'};
+    setText('txMethCash',    L==='en'?'Cash':'Espèces');
+    setText('txMethCard',    L==='en'?'Bank card':'Carte bancaire');
+    setText('txMethVirement',L==='en'?'Bank transfer':'Virement');
+    setText('txMethOnline',  L==='en'?'Online':'En ligne');
+    setText('cdMethCash',    L==='en'?'Cash':'Espèces');
+    setText('cdMethVirement',L==='en'?'Bank transfer':'Virement');
+    setText('cdMethAutre',   L==='en'?'Other':'Autre');
+
+    // ── Traductions dynamiques renderAllTx / renderAllPlanned / renderAllHistory ──
+    // (appelées à chaque changement de langue pour mettre à jour le contenu ouvert)
+    if(typeof renderAllTx==='function') renderAllTx();
+    if(typeof renderAllPlanned==='function') renderAllPlanned();
+    if(typeof renderAllHistory==='function') renderAllHistory();
+    if(typeof renderCD==='function') renderCD();
+    if(typeof renderListPage==='function' && document.getElementById('pageList') && document.getElementById('pageList').classList.contains('open')) renderListPage();
     setText('adminTitle', t('admin_title'));
     setText('adminSubtitle', t('admin_subtitle'));
     setText('adminCloseBtn', t('admin_close_btn'));
