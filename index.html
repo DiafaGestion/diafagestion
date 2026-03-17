@@ -3952,7 +3952,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=123')
+    navigator.serviceWorker.register('./sw.js?v=124')
       .then(reg=>{
         // Détecter mise à jour disponible
         reg.addEventListener('updatefound',()=>{
@@ -4468,6 +4468,7 @@ if('serviceWorker' in navigator){
 
   window.setLang = function(lang){
     localStorage.setItem('diafa_lang', lang);
+    _lang = lang;
     applyLang();
   };
 
@@ -4486,7 +4487,8 @@ if('serviceWorker' in navigator){
   };
 
   window.applyLang = function(){
-    const L = localStorage.getItem('diafa_lang') || 'fr';
+    _lang = localStorage.getItem('diafa_lang') || 'fr';
+    const L = _lang;
     // Toggle button states — login page (handled above)
 
     // Splash
