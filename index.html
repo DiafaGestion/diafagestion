@@ -1294,6 +1294,34 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
   </div>
 </div>
 
+<!-- PAGE LIST (doit être AVANT le script principal) -->
+<div class="overlay" id="pageList">
+  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header" style="flex-shrink:0;">
+      <div class="sheet-title" id="pageListTitle">📋 Liste</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="pageListPdfBtn" onclick="printListPage()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 PDF</button>
+        <button class="sheet-close" onclick="closeSheet('pageList')">✕</button>
+      </div>
+    </div>
+    <div id="pageListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
+    <div style="flex-shrink:0;padding:10px 14px 6px;">
+      <div class="cd-tabs" id="pageListTabs"></div>
+    </div>
+    <div id="pageListContent" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
+  </div>
+</div>
+
+<!-- ── getLang défini EN PREMIER avant tout autre script ── -->
+<script>
+window.getLang = function(){ return localStorage.getItem('diafa_lang') || 'fr'; };
+window.setLang = function(lang){
+  localStorage.setItem('diafa_lang', lang);
+  if(typeof window.applyLang === 'function') window.applyLang();
+};
+</script>
+
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="toastIcon">✅</span><span id="toastText">Enregistré</span></div>
 
@@ -2809,26 +2837,6 @@ function printListPage(){
 </script>
 
 <!-- PAGE LISTE + PDF -->
-<div class="overlay" id="pageList">
-  <div class="sheet" style="border-radius:24px 24px 0 0;max-height:95vh;display:flex;flex-direction:column;overflow:hidden;">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header" style="flex-shrink:0;">
-      <div class="sheet-title" id="pageListTitle">📋 Liste</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button id="pageListPdfBtn" onclick="printListPage()" style="padding:6px 14px;border-radius:10px;border:none;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:#dc2626;display:flex;align-items:center;gap:5px;">📄 PDF</button>
-        <button class="sheet-close" onclick="closeSheet('pageList')">✕</button>
-      </div>
-    </div>
-    <!-- Résumé stat -->
-    <div id="pageListSummary" style="flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);"></div>
-    <!-- Filtre période -->
-    <div style="flex-shrink:0;padding:10px 14px 6px;">
-      <div class="cd-tabs" id="pageListTabs"></div>
-    </div>
-    <!-- Liste scrollable -->
-    <div id="pageListContent" style="overflow-y:auto;flex:1;padding-bottom:20px;"></div>
-  </div>
-</div>
 
 <!-- ══════════════════════════════ JOURNAL INTIME ══════════════════════════════ -->
 <!-- ÉCRAN PIN -->
@@ -3944,7 +3952,7 @@ window.jiViewerDownloadAll = function(){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js?v=120')
+    navigator.serviceWorker.register('./sw.js?v=123')
       .then(reg=>{
         // Détecter mise à jour disponible
         reg.addEventListener('updatefound',()=>{
@@ -4459,7 +4467,6 @@ if('serviceWorker' in navigator){
   function setText(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
 
   window.setLang = function(lang){
-    _lang = lang;
     localStorage.setItem('diafa_lang', lang);
     applyLang();
   };
@@ -4479,7 +4486,7 @@ if('serviceWorker' in navigator){
   };
 
   window.applyLang = function(){
-    const L = _lang;
+    const L = localStorage.getItem('diafa_lang') || 'fr';
     // Toggle button states — login page (handled above)
 
     // Splash
@@ -4667,13 +4674,18 @@ if('serviceWorker' in navigator){
     setText('cdMethVirement',L==='en'?'Bank transfer':'Virement');
     setText('cdMethAutre',   L==='en'?'Other':'Autre');
 
-    // ── Traductions dynamiques renderAllTx / renderAllPlanned / renderAllHistory ──
-    // (appelées à chaque changement de langue pour mettre à jour le contenu ouvert)
-    if(typeof renderAllTx==='function') renderAllTx();
-    if(typeof renderAllPlanned==='function') renderAllPlanned();
-    if(typeof renderAllHistory==='function') renderAllHistory();
-    if(typeof renderCD==='function') renderCD();
-    if(typeof renderListPage==='function' && document.getElementById('pageList') && document.getElementById('pageList').classList.contains('open')) renderListPage();
+
+    // ── Rafraîchir les listes (seulement si S est déjà initialisé) ──
+    try {
+      if(typeof S!=='undefined' && S && S.tx) {
+        if(typeof renderAllTx==='function') renderAllTx();
+        if(typeof renderAllPlanned==='function') renderAllPlanned();
+        if(typeof renderAllHistory==='function') renderAllHistory();
+        if(typeof renderCD==='function') renderCD();
+        const _pl=document.getElementById('pageList');
+        if(typeof renderListPage==='function' && _pl && _pl.classList.contains('open')) renderListPage();
+      }
+    } catch(e){}
     setText('adminTitle', t('admin_title'));
     setText('adminSubtitle', t('admin_subtitle'));
     setText('adminCloseBtn', t('admin_close_btn'));
@@ -4836,7 +4848,6 @@ if('serviceWorker' in navigator){
     if(lEN){ lEN.className='lang-btn'+(L==='en'?' active':''); lEN.innerHTML='<span class="lang-flag">🇬🇧</span> English'; }
   };
 
-  window.getLang = function(){ return _lang; };
 
   // Apply on DOM ready
   if(document.readyState==='loading'){
