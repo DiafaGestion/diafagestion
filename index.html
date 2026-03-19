@@ -1373,9 +1373,9 @@ const monthLabel=k=>{const[y,m]=k.split('-');return['Jan','Fév','Mar','Avr','Ma
 const daysTo=d=>{const n=new Date();n.setHours(0,0,0,0);const t=new Date(d);t.setHours(0,0,0,0);return Math.ceil((t-n)/86400000);};
 const daysInMonth=()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth()+1,0).getDate();};
 const dayOfMonth=()=>new Date().getDate();
-const ICONS={'Alimentation':'🛒','Transport':'🚗','Logement / Loyer':'🏠','Santé':'💊','Éducation':'🎓','Loisirs':'🎉','Épargne / Tontine':'🏦','Mobile Money':'📱','Famille':'👨‍👩‍👧','Business':'💼','Salaire':'💰','Commerce':'🏪','Investissement':'📈','Prime / Bonus':'🎁','Autre revenu':'💵','Autre':'📦'};
-const COLORS={'Alimentation':'#16a34a','Transport':'#2563eb','Logement / Loyer':'#ea580c','Santé':'#dc2626','Éducation':'#d97706','Loisirs':'#7c3aed','Épargne / Tontine':'#0891b2','Mobile Money':'#0369a1','Famille':'#be185d','Business':'#ca8a04','Salaire':'#16a34a','Commerce':'#15803d','Investissement':'#1d4ed8','Prime / Bonus':'#b45309','Autre revenu':'#6b7280','Autre':'#9ca3af'};
-const EXPENSE_CATS=['Alimentation','Transport','Logement / Loyer','Santé','Éducation','Loisirs','Épargne / Tontine','Mobile Money','Famille','Business','Autre'];
+const ICONS={'Famille':'👨‍👩‍👧','Nourriture':'🍽️','Loyer/Logement':'🏠','Crédit d\'appel':'📞','Carburant':'⛽','Internet':'🌐','Santé':'💊','Entretien Voiture/Moto':'🔧','Loisirs':'🎉','Investissement':'📈','Transport':'🚗','Education':'🎓','Habillement':'👗','Tontine':'🏦','Autres':'📦','Salaire':'💰','Don':'🎁','Commerce':'🏪','Retour investissement':'💹','Prime/Bonus':'🎖️','Prêt bancaire/Crédit':'🏦','Autre':'📦'};
+const COLORS={'Famille':'#be185d','Nourriture':'#16a34a','Loyer/Logement':'#ea580c','Crédit d\'appel':'#0891b2','Carburant':'#ca8a04','Internet':'#0369a1','Santé':'#dc2626','Entretien Voiture/Moto':'#6b7280','Loisirs':'#7c3aed','Investissement':'#1d4ed8','Transport':'#2563eb','Education':'#d97706','Habillement':'#db2777','Tontine':'#0891b2','Autres':'#9ca3af','Salaire':'#16a34a','Don':'#b45309','Commerce':'#15803d','Retour investissement':'#1d4ed8','Prime/Bonus':'#b45309','Prêt bancaire/Crédit':'#7c3aed','Autre':'#9ca3af'};
+const EXPENSE_CATS=['Famille','Nourriture','Loyer/Logement','Crédit d\'appel','Carburant','Internet','Santé','Entretien Voiture/Moto','Loisirs','Investissement','Transport','Education','Habillement','Tontine','Autres'];
 const ico=c=>ICONS[c]||'💳';
 const col=c=>COLORS[c]||'#9ca3af';
 
@@ -1501,10 +1501,10 @@ function setType(t){
   document.getElementById('txSheetTitle').textContent=t==='income'
     ?(_L==='en'?'Add income':'Ajouter un revenu')
     :(_L==='en'?'Add expense':'Ajouter une dépense');
-  const INCOME_CATS_FR=['Salaire','Commerce','Investissement','Prime / Bonus','Autre revenu'];
-  const INCOME_CATS_EN=['Salary','Business','Investment','Bonus','Other income'];
-  const DEPENSE_CATS_FR=['Alimentation','Transport','Logement / Loyer','Santé','Éducation','Loisirs','Épargne / Tontine','Mobile Money','Famille','Business','Autre'];
-  const DEPENSE_CATS_EN=['Food','Transport','Housing / Rent','Health','Education','Leisure','Savings / Tontine','Mobile Money','Family','Business','Other'];
+  const INCOME_CATS_FR=['Salaire','Don','Commerce','Retour investissement','Prime/Bonus','Prêt bancaire/Crédit','Autres'];
+  const INCOME_CATS_EN=['Salary','Gift/Donation','Business','Return on investment','Bonus','Bank loan/Credit','Others'];
+  const DEPENSE_CATS_FR=['Famille','Nourriture','Loyer/Logement','Crédit d\'appel','Carburant','Internet','Santé','Entretien Voiture/Moto','Loisirs','Investissement','Transport','Education','Habillement','Tontine','Autres'];
+  const DEPENSE_CATS_EN=['Family','Food','Rent/Housing','Airtime credit','Fuel','Internet','Health','Car/Bike maintenance','Leisure','Investment','Transport','Education','Clothing','Tontine','Others'];
   const catsBase = t==='income' ? INCOME_CATS_FR : DEPENSE_CATS_FR;
   const catsEN   = t==='income' ? INCOME_CATS_EN : DEPENSE_CATS_EN;
   const cats = _L==='en' ? catsEN : catsBase;
