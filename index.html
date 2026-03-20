@@ -642,6 +642,25 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
 /* Style inline override pour dpk dans les formulaires inline-style */
 .dpk.inline select{border-color:#e5e7eb;}
 
+
+/* ── GESTIONNAIRE CATÉGORIES PERSO ── */
+.cat-mgr-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:9500;display:none;align-items:flex-end;justify-content:center;}
+.cat-mgr-overlay.open{display:flex;}
+.cat-mgr-sheet{background:var(--white);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:85vh;display:flex;flex-direction:column;animation:sheetUp 0.28s cubic-bezier(0.25,0.46,0.45,0.94);}
+.cat-mgr-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.cat-mgr-title{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;}
+.cat-mgr-body{flex:1;overflow-y:auto;padding:14px 18px;}
+.cat-mgr-section{margin-bottom:18px;}
+.cat-mgr-section-lbl{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.cat-mgr-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.cat-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;background:var(--bg2);color:var(--text);border:1px solid var(--border);}
+.cat-tag.custom{background:var(--blue-l);color:var(--blue);border-color:var(--blue);}
+.cat-tag-del{background:none;border:none;cursor:pointer;font-size:12px;color:var(--red);padding:0;line-height:1;margin-left:2px;}
+.cat-add-row{display:flex;gap:8px;margin-top:8px;}
+.cat-add-row input{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;font-family:'Mulish',sans-serif;color:var(--text);outline:none;}
+.cat-add-row input:focus{border-color:var(--blue);}
+.cat-add-btn{padding:9px 14px;border-radius:10px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+body.desktop-mode .cat-mgr-overlay{position:fixed !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;width:100% !important;height:100% !important;z-index:9500 !important;}
 </style>
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1255,10 +1274,12 @@ input:focus,select:focus{border-color:var(--blue);background:var(--white);}
       </div>
       <div class="fg"><label id="txLblLabel">Libellé</label><input type="text" id="txLbl" placeholder="Ex : Salaire, Loyer…"></div>
       <div class="fr">
-        <div class="fg"><label id="txLblCat">Catégorie</label>
+        <div class="fg">
+          <label id="txLblCat">Catégorie</label>
           <select id="txCat">
             <option value="">Catégorie...</option>
           </select>
+          <button type="button" onclick="openCatMgr()" id="catMgrBtn" style="margin-top:6px;background:#dbeafe;border:none;color:#185FA5;font-size:11px;font-weight:600;cursor:pointer;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#185FA5" stroke-width="1.2"/><path d="M6 4v4M4 6h4" stroke="#185FA5" stroke-width="1.2" stroke-linecap="round"/></svg> Gérer mes catégories</button>
         </div>
         <div class="fg"><label id="txLblMeth">Paiement</label>
           <select id="txMeth">
@@ -1454,7 +1475,7 @@ window.setLang = function(lang){
 
 <script>
 // ── STATE ──
-let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
+let S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income',customCatsIncome:[],customCatsExpense:[]};
 // Clé de données liée au client connecté
 function getDataKey(){ return 'diafa_data_'+(localStorage.getItem('diafa_uid')||'local'); }
 // NE PAS charger les données ici — elles sont chargées après login avec l'UID correct
@@ -1642,8 +1663,15 @@ function setType(t){
   sel.appendChild(def);
   cats.forEach((c,i)=>{
     const o=document.createElement('option');
-    // Always store FR value so data stays consistent
-    o.value=catsBase[i]; o.textContent=c;
+    o.value=catsBase[i];
+    const icon = ICONS[catsBase[i]] || '';
+    o.textContent = icon ? icon+' '+c : c;
+    sel.appendChild(o);
+  });
+  const customCats = t==='income' ? (S.customCatsIncome||[]) : (S.customCatsExpense||[]);
+  customCats.forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c; o.textContent='✨ '+c;
     sel.appendChild(o);
   });
 }
@@ -5065,6 +5093,104 @@ if('serviceWorker' in navigator){
   window.closeModeDrop = function(){ var d=document.getElementById('modeSwitchDrop'); if(d)d.classList.remove('open'); };
   document.addEventListener('click',function(e){ var btn=document.getElementById('modeSwitchBtn'),d=document.getElementById('modeSwitchDrop'); if(d&&!d.contains(e.target)&&e.target!==btn)d.classList.remove('open'); });
 })();
+</script>
+
+<!-- ══ GESTIONNAIRE CATÉGORIES PERSO ══ -->
+<div class="cat-mgr-overlay" id="catMgrOverlay" onclick="if(event.target===this)closeCatMgr()">
+  <div class="cat-mgr-sheet">
+    <div class="cat-mgr-head">
+      <div class="cat-mgr-title" id="catMgrTitle">⚙️ Mes catégories</div>
+      <button class="sheet-close" onclick="closeCatMgr()">✕</button>
+    </div>
+    <div class="cat-mgr-body">
+      <div class="cat-mgr-section">
+        <div class="cat-mgr-section-lbl">Catégories par défaut</div>
+        <div class="cat-mgr-list" id="catMgrDefaultList"></div>
+      </div>
+      <div class="cat-mgr-section">
+        <div class="cat-mgr-section-lbl">Mes catégories personnalisées</div>
+        <div class="cat-mgr-list" id="catMgrCustomList"></div>
+        <div class="cat-add-row">
+          <input type="text" id="catMgrInput" placeholder="Nom de la catégorie..." maxlength="30" onkeydown="if(event.key==='Enter')addCustomCat()">
+          <button class="cat-add-btn" onclick="addCustomCat()">+ Ajouter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var _catMgrType = 'expense';
+
+window.openCatMgr = function(){
+  _catMgrType = S.type || 'expense';
+  renderCatMgr();
+  document.getElementById('catMgrOverlay').classList.add('open');
+  setTimeout(function(){ var inp=document.getElementById('catMgrInput'); if(inp)inp.focus(); }, 300);
+};
+
+window.closeCatMgr = function(){
+  document.getElementById('catMgrOverlay').classList.remove('open');
+  document.getElementById('catMgrInput').value = '';
+  setType(_catMgrType);
+};
+
+function renderCatMgr(){
+  var isIncome = _catMgrType === 'income';
+  document.getElementById('catMgrTitle').textContent = isIncome ? '⚙️ Catégories Revenus' : '⚙️ Catégories Dépenses';
+  var defaultCats = isIncome
+    ? ['Salaire','Don','Commerce','Retour investissement','Prime/Bonus','Prêt bancaire/Crédit','Autres']
+    : ['Famille','Nourriture','Loyer/Logement',"Crédit d'appel",'Carburant','Internet','Santé','Entretien Voiture/Moto','Loisirs','Investissement','Transport','Education','Habillement','Tontine','Autres'];
+  var defaultList = document.getElementById('catMgrDefaultList');
+  defaultList.innerHTML = defaultCats.map(function(cat){ return '<span class="cat-tag">'+(ICONS[cat]||'💳')+' '+cat+'</span>'; }).join('');
+  var customKey = isIncome ? 'customCatsIncome' : 'customCatsExpense';
+  if(!S[customKey]) S[customKey] = [];
+  var customList = document.getElementById('catMgrCustomList');
+  customList.innerHTML = '';
+  if(S[customKey].length === 0){
+    customList.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:4px 0;">Aucune catégorie personnalisée</div>';
+  } else {
+    S[customKey].forEach(function(cat){
+      var span = document.createElement('span');
+      span.className = 'cat-tag custom';
+      span.textContent = cat;
+      var btn = document.createElement('button');
+      btn.className = 'cat-tag-del';
+      btn.textContent = '✕';
+      btn.setAttribute('data-cat', cat);
+      btn.onclick = function(){ deleteCustomCat(this.getAttribute('data-cat')); };
+      span.appendChild(btn);
+      customList.appendChild(span);
+    });
+  }
+}
+
+window.addCustomCat = function(){
+  var input = document.getElementById('catMgrInput');
+  var name = input.value.trim();
+  if(!name){ toast('⚠️','Entrez un nom'); return; }
+  var customKey = _catMgrType === 'income' ? 'customCatsIncome' : 'customCatsExpense';
+  if(!S[customKey]) S[customKey] = [];
+  var defaultCats = _catMgrType === 'income'
+    ? ['Salaire','Don','Commerce','Retour investissement','Prime/Bonus','Prêt bancaire/Crédit','Autres']
+    : ['Famille','Nourriture','Loyer/Logement',"Crédit d'appel",'Carburant','Internet','Santé','Entretien Voiture/Moto','Loisirs','Investissement','Transport','Education','Habillement','Tontine','Autres'];
+  var allNames = defaultCats.concat(S[customKey]).map(function(x){ return x.toLowerCase(); });
+  if(allNames.indexOf(name.toLowerCase()) >= 0){ toast('⚠️','Catégorie déjà existante'); return; }
+  S[customKey].push(name);
+  save();
+  input.value = '';
+  renderCatMgr();
+  toast('✅','Catégorie ajoutée !');
+};
+
+window.deleteCustomCat = function(name){
+  var customKey = _catMgrType === 'income' ? 'customCatsIncome' : 'customCatsExpense';
+  if(!S[customKey]) return;
+  S[customKey] = S[customKey].filter(function(x){ return x !== name; });
+  save();
+  renderCatMgr();
+  toast('🗑️','Catégorie supprimée');
+};
 </script>
 
 </body>
