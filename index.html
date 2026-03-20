@@ -1608,6 +1608,10 @@ const CURRENCIES = {
   'TRY':  {symbol:'₺',    locale:'tr-TR', decimals:2, flag:'🇹🇷', name:'Livre Turque'},
 };
 function getCurrency(){ return localStorage.getItem('diafa_currency') || 'GNF'; }
+function profileKey(){
+  var u = localStorage.getItem('diafa_user') || '';
+  return u === ADMIN_LOGIN ? 'diafa_profile_admin' : 'diafa_profile';
+}
 function getCurrencyInfo(){ return CURRENCIES[getCurrency()] || CURRENCIES['GNF']; }
 const fmt=n=>{const cur=getCurrencyInfo();const formatted=new Intl.NumberFormat(cur.locale,{minimumFractionDigits:cur.decimals,maximumFractionDigits:cur.decimals}).format(Math.round(n*(cur.decimals>0?100:1))/(cur.decimals>0?100:1));return formatted+' '+cur.symbol;};
 const fmtS=n=>{const sym=getCurrencyInfo().symbol;if(n>=1000000)return(n/1000000).toFixed(1)+'M '+sym;if(n>=1000)return(n/1000).toFixed(0)+'K '+sym;return fmt(n);};
@@ -2102,10 +2106,10 @@ async function checkLogin(){
     localStorage.setItem('diafa_user', ADMIN_LOGIN);
     S={tx:[],planned:[],methods:[],goal:null,budgets:{},seuil:{min:0,pct:80},cd:[],type:'income'};
     // donnees chargees depuis Firebase
-    let ap=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    let ap=JSON.parse(localStorage.getItem('diafa_profile_admin')||'{}');
     if(!ap.nom){
       ap={prenom:'Admin',nom:'DiafaGestion',telephone:'625518669',profession:'Administrateur',createdAt:new Date().toISOString()};
-      localStorage.setItem('diafa_profile',JSON.stringify(ap));
+      localStorage.setItem('diafa_profile_admin',JSON.stringify(ap));
     }
     loadProfile();
     render();
@@ -2114,7 +2118,7 @@ async function checkLogin(){
   } else {
     // Client normal — on essaie Firebase, sinon on garde le profil local
     await loadProfileFromFirebase(user);
-    const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    const p=JSON.parse(localStorage.getItem(profileKey())||'{}');
     if(!p.nom||!p.prenom||!p.telephone){
       // Aucun profil ni local ni Firebase → première connexion
       openFirstTimeProfile();
@@ -2171,7 +2175,7 @@ function savePassword(){
 
 // ── PROFILE ──
 function loadProfile(){
-  const p=JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  const p=JSON.parse(localStorage.getItem(profileKey())||'{}');
   // Avatar
   const avatar = p.avatar || '';
   document.getElementById('profileAvatarImg').src = avatar;
@@ -2233,9 +2237,9 @@ function handleAvatar(event){
     const src = e.target.result;
     document.getElementById('profileAvatarImg').src = src;
     document.getElementById('drawerAvatar').src = src;
-    const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+    const p = JSON.parse(localStorage.getItem(profileKey())||'{}');
     p.avatar = src;
-    localStorage.setItem('diafa_profile', JSON.stringify(p));
+    localStorage.setItem(profileKey(), JSON.stringify(p));
     toast('📷','Photo de profil mise à jour !');
   };
   reader.readAsDataURL(file);
@@ -2252,7 +2256,8 @@ function closeProfile(){
   document.getElementById('profileOverlay').classList.add('hidden');
 }
 function saveProfile(){
-  const p = JSON.parse(localStorage.getItem('diafa_profile')||'{}');
+  var _pkey = profileKey();
+  const p = JSON.parse(localStorage.getItem(_pkey)||'{}');
   p.prenom     = document.getElementById('pPrenom').value.trim();
   p.nom        = document.getElementById('pNom').value.trim();
   p.telephone  = (document.getElementById('pTel')||{value:''}).value.trim();
@@ -2279,7 +2284,7 @@ function saveProfile(){
   p.sexe        = document.getElementById('pSexe').value;
   p.situation   = document.getElementById('pSituation').value;
   if(!p.createdAt) p.createdAt = new Date().toISOString();
-  localStorage.setItem('diafa_profile', JSON.stringify(p));
+  localStorage.setItem(_pkey, JSON.stringify(p));
   saveClientToFirebase(p);
   loadProfile();
   closeProfile();
@@ -2633,7 +2638,7 @@ function filterAdminClients(q){
 function exportData(){
   const data = {
     diafa_v4: localStorage.getItem('diafa_v4'),
-    diafa_profile: localStorage.getItem('diafa_profile'),
+    diafa_profile: localStorage.getItem(profileKey()),
     diafa_trash: localStorage.getItem('diafa_trash'),
     exportedAt: new Date().toISOString()
   };
@@ -2659,7 +2664,7 @@ function importData(){
       try {
         const data = JSON.parse(ev.target.result);
         if(data.diafa_v4) localStorage.setItem('diafa_v4', data.diafa_v4);
-        if(data.diafa_profile) localStorage.setItem('diafa_profile', data.diafa_profile);
+        if(data.diafa_profile) localStorage.setItem(profileKey(), data.diafa_profile);
         if(data.diafa_trash) localStorage.setItem('diafa_trash', data.diafa_trash);
         toast('✅','Données restaurées !');
         setTimeout(() => location.reload(), 1200);
@@ -2791,7 +2796,7 @@ async function saveCreateAccount(){
   const avatar = localStorage.getItem('ca_temp_avatar') || '';
   localStorage.removeItem('ca_temp_avatar');
   const profile = { prenom, nom, telephone, dob, age: getAge(dob), quartier, profession, situation, sexe, avatar, createdAt: new Date().toISOString() };
-  localStorage.setItem('diafa_profile', JSON.stringify(profile));
+  localStorage.setItem(profileKey(), JSON.stringify(profile));
 
   // Sync Firebase (await pour que l'UID soit prêt avant d'entrer dans l'app)
   await saveClientToFirebase(profile);
