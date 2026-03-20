@@ -2213,12 +2213,15 @@ function loadProfile(){
               oo.textContent = di;
               sels[0].appendChild(oo);
             }
-            sels[0].value = parts[2]; // jour
+            // Assigner le jour avec padding si nécessaire
+            var dayVal = parts[2];
+            if(dayVal && parseInt(dayVal) < 10 && dayVal.length === 1) dayVal = '0'+dayVal;
+            sels[0].value = dayVal; // jour
           }
         }
       }
     }
-    setTimeout(function(){ calcAge(p.dob); }, 50);
+    setTimeout(function(){ calcAge(p.dob); }, 200);
   }
   else if(p.age) { document.getElementById('pAge').value = p.age; }
   if(p.quartier) document.getElementById('pQuartier').value = p.quartier;
@@ -2286,21 +2289,27 @@ function saveProfile(){
   p.prenom     = document.getElementById('pPrenom').value.trim();
   p.nom        = document.getElementById('pNom').value.trim();
   p.telephone  = (document.getElementById('pTel')||{value:''}).value.trim();
-  // Lire la date depuis le picker (selects) si hidden est vide
-  var dobHidden = document.getElementById('pDOB');
-  var dobVal = dobHidden ? dobHidden.value : '';
-  if(!dobVal) {
-    // Essayer de reconstruire depuis les selects du picker
-    var dpkDiv = document.querySelector('.dpk[data-for="pDOB"]');
-    if(dpkDiv) {
-      var sels = dpkDiv.querySelectorAll('select');
-      if(sels.length >= 3) {
-        var y = sels[2] ? sels[2].value : '';
-        var m = sels[1] ? sels[1].value : '';
-        var d = sels[0] ? sels[0].value : '';
-        if(y && m && d) dobVal = y+'-'+m+'-'+d;
+  // Lire la date TOUJOURS depuis les selects du picker (plus fiable que le hidden)
+  var dobVal = '';
+  var dpkDiv = document.querySelector('.dpk[data-for="pDOB"]');
+  if(dpkDiv) {
+    var sels = dpkDiv.querySelectorAll('select');
+    if(sels.length >= 3) {
+      var selDay   = sels[0] ? sels[0].value : '';
+      var selMonth = sels[1] ? sels[1].value : '';
+      var selYear  = sels[2] ? sels[2].value : '';
+      if(selYear && selMonth && selDay) {
+        dobVal = selYear + '-' + selMonth + '-' + selDay;
+      } else if(selYear && selMonth) {
+        // Jour manquant — garder l'ancienne valeur si elle existe
+        dobVal = p.dob || '';
       }
     }
+  }
+  // Fallback: lire depuis le champ caché
+  if(!dobVal) {
+    var dobHidden = document.getElementById('pDOB');
+    dobVal = dobHidden ? dobHidden.value : '';
   }
   p.dob = dobVal;
   p.age        = getAge(p.dob);
