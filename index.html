@@ -2192,8 +2192,37 @@ function loadProfile(){
   if(telEl && p.telephone) telEl.value = p.telephone;
   if(p.nom) document.getElementById('pNom').value = p.nom;
   if(p.dob) {
-    document.getElementById('pDOB').value = p.dob;
-    setTimeout(function(){ calcAge(p.dob); }, 100);
+    // Assigner la valeur au champ caché (le setter du picker mettra à jour les selects)
+    var dobEl = document.getElementById('pDOB');
+    if(dobEl) {
+      dobEl.value = p.dob;
+      // Forcer aussi la mise à jour manuelle des selects si le setter n'a pas fonctionné
+      var dpkDiv = document.querySelector('.dpk[data-for="pDOB"]');
+      if(dpkDiv) {
+        var parts = p.dob.split('-');
+        if(parts.length === 3) {
+          var sels = dpkDiv.querySelectorAll('select');
+          if(sels.length >= 3) {
+            // format YYYY-MM-DD → sels[0]=jour, sels[1]=mois, sels[2]=année
+            sels[2].value = parts[0]; // année
+            sels[1].value = parts[1]; // mois
+            // Rebuild days avant de setter le jour
+            var y2 = parseInt(parts[0]), m2 = parseInt(parts[1]);
+            var maxD = new Date(y2, m2, 0).getDate();
+            var curD = sels[0].value;
+            sels[0].innerHTML = '<option value="">Jour</option>';
+            for(var di=1; di<=maxD; di++){
+              var oo = document.createElement('option');
+              oo.value = String(di < 10 ? '0'+di : di);
+              oo.textContent = di;
+              sels[0].appendChild(oo);
+            }
+            sels[0].value = parts[2]; // jour
+          }
+        }
+      }
+    }
+    setTimeout(function(){ calcAge(p.dob); }, 50);
   }
   else if(p.age) { document.getElementById('pAge').value = p.age; }
   if(p.quartier) document.getElementById('pQuartier').value = p.quartier;
@@ -2246,10 +2275,10 @@ function handleAvatar(event){
 }
 function openProfile(){
   document.getElementById('profileOverlay').classList.remove('hidden');
-  // Init pickers d'abord, puis charger les valeurs
+  // Init pickers PUIS charger les valeurs avec délai suffisant
   setTimeout(function(){
     if(window.initAllPickers) window.initAllPickers();
-    loadProfile();
+    setTimeout(function(){ loadProfile(); }, 80);
   }, 50);
 }
 function closeProfile(){
