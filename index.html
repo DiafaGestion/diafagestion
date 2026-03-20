@@ -1608,10 +1608,6 @@ const CURRENCIES = {
   'TRY':  {symbol:'₺',    locale:'tr-TR', decimals:2, flag:'🇹🇷', name:'Livre Turque'},
 };
 function getCurrency(){ return localStorage.getItem('diafa_currency') || 'GNF'; }
-function profileKey(){
-  var u = localStorage.getItem('diafa_user') || '';
-  return u === ADMIN_LOGIN ? 'diafa_profile_admin' : 'diafa_profile';
-}
 function getCurrencyInfo(){ return CURRENCIES[getCurrency()] || CURRENCIES['GNF']; }
 const fmt=n=>{const cur=getCurrencyInfo();const formatted=new Intl.NumberFormat(cur.locale,{minimumFractionDigits:cur.decimals,maximumFractionDigits:cur.decimals}).format(Math.round(n*(cur.decimals>0?100:1))/(cur.decimals>0?100:1));return formatted+' '+cur.symbol;};
 const fmtS=n=>{const sym=getCurrencyInfo().symbol;if(n>=1000000)return(n/1000000).toFixed(1)+'M '+sym;if(n>=1000)return(n/1000).toFixed(0)+'K '+sym;return fmt(n);};
@@ -2381,6 +2377,11 @@ let db = null;
 let ALL_CLIENTS = [];
 const ADMIN_LOGIN = 'admin';
 const ADMIN_PASS  = 'Diafa@2026';
+
+function profileKey(){
+  var u = localStorage.getItem('diafa_user') || '';
+  return u === ADMIN_LOGIN ? 'diafa_profile_admin' : 'diafa_profile';
+}
 
 function initFirebase(){
   try {
