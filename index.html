@@ -151,14 +151,24 @@ body.desktop-mode .trash-sheet{max-width:620px;border-radius:20px 20px 0 0;}
 /* ── CURRENCY PICKER ── */
 .currency-picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:9500;display:none;align-items:center;justify-content:center;}
 .currency-picker-overlay.open{display:flex;}
-.currency-picker-sheet{background:var(--white);border-radius:20px;width:90%;max-width:360px;padding:20px;animation:sheetUp 0.25s cubic-bezier(0.25,0.46,0.45,0.94);}
-.currency-picker-title{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;text-align:center;margin-bottom:16px;}
-.currency-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.currency-opt{padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;text-align:center;transition:all 0.15s;}
+.currency-picker-sheet{background:var(--white);border-radius:20px;width:92%;max-width:400px;padding:20px;animation:sheetUp 0.25s cubic-bezier(0.25,0.46,0.45,0.94);max-height:85vh;display:flex;flex-direction:column;}
+.currency-picker-title{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;text-align:center;margin-bottom:12px;flex-shrink:0;}
+.currency-search{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);font-size:13px;font-family:'Mulish',sans-serif;color:var(--text);outline:none;margin-bottom:10px;flex-shrink:0;box-sizing:border-box;}
+.currency-search:focus{border-color:var(--blue);}
+.currency-grid{display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1;}
+.currency-opt{padding:11px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;display:flex;align-items:center;gap:12px;transition:all 0.15s;}
 .currency-opt:hover{border-color:var(--blue);background:var(--blue-l);}
-.currency-opt.active{border-color:var(--red);background:var(--red-l);color:var(--red);}
-.currency-opt-sym{font-size:18px;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;}
-.currency-opt-name{font-size:10px;color:var(--text3);margin-top:2px;}
+.currency-opt.active{border-color:var(--red);background:var(--red-l);}
+.currency-opt-flag{font-size:22px;line-height:1;flex-shrink:0;width:28px;text-align:center;}
+.currency-opt-code{font-size:14px;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;color:var(--text);min-width:40px;}
+.currency-opt.active .currency-opt-code{color:var(--red);}
+.currency-opt-sep{color:var(--text3);font-size:13px;}
+.currency-opt.active .currency-opt-sep{color:var(--red);}
+.currency-opt-name{font-size:13px;color:var(--text2);}
+.currency-opt.active .currency-opt-name{color:var(--red);}
+.currency-opt-check{margin-left:auto;color:var(--red);font-size:16px;display:none;}
+.currency-opt.active .currency-opt-check{display:block;}
+.currency-no-result{text-align:center;color:var(--text3);font-size:13px;padding:20px;}
 /* ── MODE SWITCHER TOPBAR ── */
 .mode-switch-btn{width:36px;height:36px;border-radius:10px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all 0.15s;}
 .mode-switch-btn:active{transform:scale(0.93);}
@@ -1543,14 +1553,59 @@ async function loadDataFromFirebase(){
 // ── UTILS ──
 // ── DEVISE ──
 const CURRENCIES = {
-  'GNF':  {symbol:'GNF',  locale:'fr-FR', decimals:0},
-  'CFA':  {symbol:'CFA',  locale:'fr-FR', decimals:0},
-  'KMF':  {symbol:'KMF',  locale:'fr-FR', decimals:0},
-  'GHS':  {symbol:'GHS',  locale:'en-GH', decimals:2},
-  'NGN':  {symbol:'NGN',  locale:'en-NG', decimals:2},
-  'SLL':  {symbol:'SLL',  locale:'en-SL', decimals:0},
-  'USD':  {symbol:'$',    locale:'en-US', decimals:2},
-  'EUR':  {symbol:'€',    locale:'fr-FR', decimals:2},
+  'GNF':  {symbol:'GNF',  locale:'fr-FR', decimals:0, flag:'🇬🇳', name:'Franc Guinéen'},
+  'XOF':  {symbol:'XOF',  locale:'fr-FR', decimals:0, flag:'🌍', name:'Franc CFA (UEMOA)'},
+  'XAF':  {symbol:'XAF',  locale:'fr-FR', decimals:0, flag:'🌍', name:'Franc CFA (CEMAC)'},
+  'KMF':  {symbol:'KMF',  locale:'fr-FR', decimals:0, flag:'🇰🇲', name:'Franc Comorien'},
+  'GHS':  {symbol:'GHS',  locale:'en-GH', decimals:2, flag:'🇬🇭', name:'Cedi Ghanéen'},
+  'NGN':  {symbol:'₦',    locale:'en-NG', decimals:2, flag:'🇳🇬', name:'Naira Nigérian'},
+  'SLE':  {symbol:'SLE',  locale:'en-SL', decimals:2, flag:'🇸🇱', name:'Leone Sierra-Leone'},
+  'EGP':  {symbol:'E£',   locale:'ar-EG', decimals:2, flag:'🇪🇬', name:'Livre Égyptienne'},
+  'MAD':  {symbol:'MAD',  locale:'fr-MA', decimals:2, flag:'🇲🇦', name:'Dirham Marocain'},
+  'TND':  {symbol:'TND',  locale:'fr-TN', decimals:3, flag:'🇹🇳', name:'Dinar Tunisien'},
+  'DZD':  {symbol:'DZD',  locale:'fr-DZ', decimals:2, flag:'🇩🇿', name:'Dinar Algérien'},
+  'LYD':  {symbol:'LYD',  locale:'ar-LY', decimals:3, flag:'🇱🇾', name:'Dinar Libyen'},
+  'SDG':  {symbol:'SDG',  locale:'ar-SD', decimals:2, flag:'🇸🇩', name:'Livre Soudanaise'},
+  'ETB':  {symbol:'ETB',  locale:'am-ET', decimals:2, flag:'🇪🇹', name:'Birr Éthiopien'},
+  'KES':  {symbol:'KSh',  locale:'en-KE', decimals:2, flag:'🇰🇪', name:'Shilling Kényan'},
+  'TZS':  {symbol:'TSh',  locale:'en-TZ', decimals:0, flag:'🇹🇿', name:'Shilling Tanzanien'},
+  'UGX':  {symbol:'USh',  locale:'en-UG', decimals:0, flag:'🇺🇬', name:'Shilling Ougandais'},
+  'RWF':  {symbol:'FRw',  locale:'fr-RW', decimals:0, flag:'🇷🇼', name:'Franc Rwandais'},
+  'BIF':  {symbol:'FBu',  locale:'fr-BI', decimals:0, flag:'🇧🇮', name:'Franc Burundais'},
+  'DJF':  {symbol:'DJF',  locale:'fr-DJ', decimals:0, flag:'🇩🇯', name:'Franc Djiboutien'},
+  'ERN':  {symbol:'Nfk',  locale:'ti-ER', decimals:2, flag:'🇪🇷', name:'Nakfa Érythréen'},
+  'SOS':  {symbol:'Sh',   locale:'so-SO', decimals:2, flag:'🇸🇴', name:'Shilling Somalien'},
+  'ZAR':  {symbol:'R',    locale:'en-ZA', decimals:2, flag:'🇿🇦', name:'Rand Sud-Africain'},
+  'BWP':  {symbol:'P',    locale:'en-BW', decimals:2, flag:'🇧🇼', name:'Pula Botswanais'},
+  'NAD':  {symbol:'N$',   locale:'en-NA', decimals:2, flag:'🇳🇦', name:'Dollar Namibien'},
+  'LSL':  {symbol:'LSL',  locale:'en-LS', decimals:2, flag:'🇱🇸', name:'Loti Lésothan'},
+  'SZL':  {symbol:'SZL',  locale:'en-SZ', decimals:2, flag:'🇸🇿', name:'Lilangeni Swazi'},
+  'ZMW':  {symbol:'ZMW',  locale:'en-ZM', decimals:2, flag:'🇿🇲', name:'Kwacha Zambien'},
+  'MWK':  {symbol:'MWK',  locale:'en-MW', decimals:2, flag:'🇲🇼', name:'Kwacha Malawite'},
+  'MZN':  {symbol:'MT',   locale:'pt-MZ', decimals:2, flag:'🇲🇿', name:'Metical Mozambicain'},
+  'ZWL':  {symbol:'Z$',   locale:'en-ZW', decimals:2, flag:'🇿🇼', name:'Dollar Zimbabwéen'},
+  'AOA':  {symbol:'Kz',   locale:'pt-AO', decimals:2, flag:'🇦🇴', name:'Kwanza Angolais'},
+  'CDF':  {symbol:'CDF',  locale:'fr-CD', decimals:2, flag:'🇨🇩', name:'Franc Congolais'},
+  'MGA':  {symbol:'Ar',   locale:'mg-MG', decimals:0, flag:'🇲🇬', name:'Ariary Malgache'},
+  'SCR':  {symbol:'SR',   locale:'en-SC', decimals:2, flag:'🇸🇨', name:'Roupie Seychelloise'},
+  'MUR':  {symbol:'Rs',   locale:'en-MU', decimals:2, flag:'🇲🇺', name:'Roupie Mauricienne'},
+  'STN':  {symbol:'Db',   locale:'pt-ST', decimals:2, flag:'🇸🇹', name:'Dobra São-Toméen'},
+  'CVE':  {symbol:'CVE',  locale:'pt-CV', decimals:2, flag:'🇨🇻', name:'Escudo Cap-Verdien'},
+  'GMD':  {symbol:'D',    locale:'en-GM', decimals:2, flag:'🇬🇲', name:'Dalasi Gambien'},
+  'GNF':  {symbol:'GNF',  locale:'fr-FR', decimals:0, flag:'🇬🇳', name:'Franc Guinéen'},
+  'SLL':  {symbol:'Le',   locale:'en-SL', decimals:0, flag:'🇸🇱', name:'Old Leone'},
+  'LRD':  {symbol:'L$',   locale:'en-LR', decimals:2, flag:'🇱🇷', name:'Dollar Libérien'},
+  'MRU':  {symbol:'UM',   locale:'ar-MR', decimals:2, flag:'🇲🇷', name:'Ouguiya Mauritanien'},
+  'HTG':  {symbol:'G',    locale:'fr-HT', decimals:2, flag:'🇭🇹', name:'Gourde Haïtienne'},
+  'XPF':  {symbol:'FCFP', locale:'fr-PF', decimals:0, flag:'🇵🇫', name:'Franc Pacifique'},
+  'USD':  {symbol:'$',    locale:'en-US', decimals:2, flag:'🇺🇸', name:'Dollar US'},
+  'EUR':  {symbol:'€',    locale:'fr-FR', decimals:2, flag:'🇪🇺', name:'Euro'},
+  'CNY':  {symbol:'¥',    locale:'zh-CN', decimals:2, flag:'🇨🇳', name:'Yuan Chinois (Renminbi)'},
+  'RUB':  {symbol:'₽',    locale:'ru-RU', decimals:2, flag:'🇷🇺', name:'Rouble Russe'},
+  'INR':  {symbol:'₹',    locale:'en-IN', decimals:2, flag:'🇮🇳', name:'Roupie Indienne'},
+  'QAR':  {symbol:'QR',   locale:'ar-QA', decimals:2, flag:'🇶🇦', name:'Riyal Qatari'},
+  'AED':  {symbol:'AED',  locale:'ar-AE', decimals:2, flag:'🇦🇪', name:'Dirham Émirati (Dubaï)'},
+  'TRY':  {symbol:'₺',    locale:'tr-TR', decimals:2, flag:'🇹🇷', name:'Livre Turque'},
 };
 function getCurrency(){ return localStorage.getItem('diafa_currency') || 'GNF'; }
 function getCurrencyInfo(){ return CURRENCIES[getCurrency()] || CURRENCIES['GNF']; }
@@ -4747,7 +4802,7 @@ if('serviceWorker' in navigator){
     const loginPass=document.getElementById('loginPass');
     if(loginPass) loginPass.placeholder=L==='en'?'Your password':'Votre mot de passe';
     // Hero
-    setText('heroLabel', t('hero_label'));
+    setText('heroLabelTxt', t('hero_label'));
     setText('heroIncLbl', t('hero_inc'));
     setText('heroExpLbl', t('hero_exp'));
     // Quick actions
@@ -5078,6 +5133,11 @@ if('serviceWorker' in navigator){
     setText('langPickerTitle', t('lang_picker_title'));
     setText('menuLangLbl', t('menu_lang_lbl'));
     setText('menuLangSub', t('menu_lang_sub'));
+    // Mettre à jour le label Devise
+    var curSub = document.getElementById('menuCurrencySub');
+    if(curSub) curSub.textContent = getCurrency();
+    var curLbl = document.getElementById('menuCurrencyLbl');
+    if(curLbl) curLbl.textContent = L==='en' ? 'Currency / Devise' : 'Devise / Currency';
     // Update login lang button states
     const lFR=document.getElementById('loginLangFR'), lEN=document.getElementById('loginLangEN');
     if(lFR){ lFR.className='lang-btn'+(L==='fr'?' active':''); lFR.innerHTML='<span class="lang-flag">🇫🇷</span> Français'; }
@@ -5276,8 +5336,9 @@ window.deleteCustomCat = function(name){
 <div class="currency-picker-overlay" id="currencyPickerOverlay" onclick="if(event.target===this)closeCurrencyPicker()">
   <div class="currency-picker-sheet">
     <div class="currency-picker-title">💱 Choisir la devise</div>
+    <input class="currency-search" id="currencySearch" type="text" placeholder="🔍 Rechercher une devise..." oninput="filterCurrencies(this.value)">
     <div class="currency-grid" id="currencyGrid"></div>
-    <button onclick="closeCurrencyPicker()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:none;background:var(--bg2);font-size:13px;font-weight:700;cursor:pointer;">Fermer</button>
+    <button onclick="closeCurrencyPicker()" style="margin-top:12px;width:100%;padding:11px;border-radius:12px;border:none;background:var(--bg2);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;">Fermer</button>
   </div>
 </div>
 
@@ -5294,20 +5355,39 @@ var _CURRENCY_LABELS = {
   'EUR': 'Euro',
 };
 
-window.openCurrencyPicker = function(){
+function renderCurrencyGrid(filter){
   var cur = getCurrency();
+  var keys = Object.keys(CURRENCIES).filter(function(k){
+    if(!filter) return true;
+    var f = filter.toLowerCase();
+    return k.toLowerCase().includes(f) || CURRENCIES[k].name.toLowerCase().includes(f);
+  });
   var grid = document.getElementById('currencyGrid');
-  grid.innerHTML = Object.keys(CURRENCIES).map(function(k){
+  if(keys.length === 0){
+    grid.innerHTML = '<div class="currency-no-result">Aucun résultat pour &quot;'+filter+'&quot;</div>';
+    return;
+  }
+  grid.innerHTML = keys.map(function(k){
     var active = k===cur ? ' active' : '';
-    var sym = CURRENCIES[k].symbol;
-    var lbl = _CURRENCY_LABELS[k]||k;
+    var info = CURRENCIES[k];
     return '<div class="currency-opt'+active+'" onclick="selectCurrency(this)" data-code="'+k+'">'
-      +'<div class="currency-opt-sym">'+sym+'</div>'
-      +'<div class="currency-opt-name">'+k+'</div>'
-      +'<div class="currency-opt-name">'+lbl+'</div>'
+      +'<span class="currency-opt-flag">'+info.flag+'</span>'
+      +'<span class="currency-opt-code">'+k+'</span>'
+      +'<span class="currency-opt-sep">—</span>'
+      +'<span class="currency-opt-name">'+info.name+'</span>'
+      +'<span class="currency-opt-check">✓</span>'
       +'</div>';
   }).join('');
+}
+
+window.filterCurrencies = function(val){ renderCurrencyGrid(val); };
+
+window.openCurrencyPicker = function(){
+  var search = document.getElementById('currencySearch');
+  if(search) search.value = '';
+  renderCurrencyGrid('');
   document.getElementById('currencyPickerOverlay').classList.add('open');
+  setTimeout(function(){ if(search) search.focus(); }, 200);
 };
 
 window.closeCurrencyPicker = function(){
@@ -5372,6 +5452,37 @@ window.updateCurrencyLabels = updateCurrencyLabels;
     setTimeout(updateCurrencyLabels, 200);
   }
 })();
+</script>
+
+<script>
+// ── MASQUER/AFFICHER SOLDE ──
+// Forcer masqué par défaut
+if(localStorage.getItem('diafa_bal_hidden') === null){
+  localStorage.setItem('diafa_bal_hidden', '1');
+}
+
+// Appliquer l'état dès le chargement DOM
+document.addEventListener('DOMContentLoaded', function(){
+  var hidden = localStorage.getItem('diafa_bal_hidden') !== '0';
+  var el  = document.getElementById('heroBalance');
+  var btn = document.getElementById('balanceEyeBtn');
+  if(el)  el.style.filter = hidden ? 'blur(8px)' : '';
+  if(btn) btn.innerHTML = hidden
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Afficher'
+    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Masquer';
+});
+
+window.toggleBalance = function(){
+  var isHidden = localStorage.getItem('diafa_bal_hidden') !== '0';
+  // Basculer
+  localStorage.setItem('diafa_bal_hidden', isHidden ? '0' : '1');
+  var el  = document.getElementById('heroBalance');
+  var btn = document.getElementById('balanceEyeBtn');
+  if(el)  el.style.filter = isHidden ? '' : 'blur(8px)';
+  if(btn) btn.innerHTML = isHidden
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Masquer'
+    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Afficher';
+};
 </script>
 
 </body>
