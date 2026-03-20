@@ -147,6 +147,18 @@ body.desktop-mode .profile-sheet,
 body.desktop-mode .trash-sheet{max-width:620px;border-radius:20px 20px 0 0;}
 
 /* ── MODE SWITCHER ── */
+
+/* ── CURRENCY PICKER ── */
+.currency-picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:9500;display:none;align-items:center;justify-content:center;}
+.currency-picker-overlay.open{display:flex;}
+.currency-picker-sheet{background:var(--white);border-radius:20px;width:90%;max-width:360px;padding:20px;animation:sheetUp 0.25s cubic-bezier(0.25,0.46,0.45,0.94);}
+.currency-picker-title{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:800;text-align:center;margin-bottom:16px;}
+.currency-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.currency-opt{padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;text-align:center;transition:all 0.15s;}
+.currency-opt:hover{border-color:var(--blue);background:var(--blue-l);}
+.currency-opt.active{border-color:var(--red);background:var(--red-l);color:var(--red);}
+.currency-opt-sym{font-size:18px;font-weight:800;font-family:'Bricolage Grotesque',sans-serif;}
+.currency-opt-name{font-size:10px;color:var(--text3);margin-top:2px;}
 /* ── MODE SWITCHER TOPBAR ── */
 .mode-switch-btn{width:36px;height:36px;border-radius:10px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all 0.15s;}
 .mode-switch-btn:active{transform:scale(0.93);}
@@ -202,8 +214,10 @@ body.desktop-mode .trash-sheet{max-width:620px;border-radius:20px 20px 0 0;}
 
 /* ── HERO ── */
 .hero{background:linear-gradient(145deg,#1a1d2e 0%,#2d3250 100%);border-radius:18px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden;}
-.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:rgba(34,197,94,0.1);}
-.hero-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+.hero::before{pointer-events:none;content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:rgba(34,197,94,0.1);}
+.hero-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+.balance-eye-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:20px;color:#fff;cursor:pointer;font-size:10px;font-weight:700;padding:3px 9px;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s;}
+.balance-eye-btn:active{transform:scale(0.93);}
 .hero-amount{font-family:'Bricolage Grotesque',sans-serif;font-size:32px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1;margin-bottom:5px;}
 .hero-status{font-size:12px;font-weight:600;margin-bottom:14px;}
 .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;z-index:1;}
@@ -994,8 +1008,14 @@ body.desktop-mode .cat-mgr-overlay{position:fixed !important;top:0 !important;le
 
     <!-- HERO -->
     <div class="hero">
-      <div class="hero-label" id="heroLabel">Solde du mois</div>
-      <div class="hero-amount" id="heroBalance">0 GNF</div>
+      <div class="hero-label" id="heroLabel">
+        <span id="heroLabelTxt">Solde du mois</span>
+        <button class="balance-eye-btn" id="balanceEyeBtn" onclick="toggleBalance()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          Afficher
+        </button>
+      </div>
+      <div class="hero-amount" id="heroBalance" style="filter:blur(8px);">0 GNF</div>
       <div class="hero-status" id="heroStatus">—</div>
       <div class="hero-grid">
         <div class="hero-stat"><div class="hstat-lbl" id="heroIncLbl">↑ Revenus</div><div class="hstat-val inc" id="heroIncome">0 GNF</div></div>
@@ -1153,6 +1173,13 @@ body.desktop-mode .cat-mgr-overlay{position:fixed !important;top:0 !important;le
       <button class="menu-item" onclick="closeDrawer();openLangPicker()">
         <div class="menu-icon" style="background:#e0e7ff">🌐</div>
         <div><div class="menu-label" id="menuLangLbl">Langue / Language</div><div class="menu-sub" id="menuLangSub">Français</div></div>
+        <span style="color:#9ca3af;font-size:18px;margin-left:auto;">›</span>
+      </button>
+
+      <!-- DEVISE -->
+      <button class="menu-item" onclick="closeDrawer();openCurrencyPicker()">
+        <div class="menu-icon" style="background:#fef9c3">💱</div>
+        <div><div class="menu-label" id="menuCurrencyLbl">Devise / Currency</div><div class="menu-sub" id="menuCurrencySub">GNF</div></div>
         <span style="color:#9ca3af;font-size:18px;margin-left:auto;">›</span>
       </button>
 
@@ -1514,8 +1541,21 @@ async function loadDataFromFirebase(){
 }
 
 // ── UTILS ──
-const fmt=n=>new Intl.NumberFormat('fr-FR').format(Math.round(n))+' GNF';
-const fmtS=n=>{if(n>=1000000)return(n/1000000).toFixed(1)+'M GNF';if(n>=1000)return(n/1000).toFixed(0)+'K GNF';return fmt(n);};
+// ── DEVISE ──
+const CURRENCIES = {
+  'GNF':  {symbol:'GNF',  locale:'fr-FR', decimals:0},
+  'CFA':  {symbol:'CFA',  locale:'fr-FR', decimals:0},
+  'KMF':  {symbol:'KMF',  locale:'fr-FR', decimals:0},
+  'GHS':  {symbol:'GHS',  locale:'en-GH', decimals:2},
+  'NGN':  {symbol:'NGN',  locale:'en-NG', decimals:2},
+  'SLL':  {symbol:'SLL',  locale:'en-SL', decimals:0},
+  'USD':  {symbol:'$',    locale:'en-US', decimals:2},
+  'EUR':  {symbol:'€',    locale:'fr-FR', decimals:2},
+};
+function getCurrency(){ return localStorage.getItem('diafa_currency') || 'GNF'; }
+function getCurrencyInfo(){ return CURRENCIES[getCurrency()] || CURRENCIES['GNF']; }
+const fmt=n=>{const cur=getCurrencyInfo();const formatted=new Intl.NumberFormat(cur.locale,{minimumFractionDigits:cur.decimals,maximumFractionDigits:cur.decimals}).format(Math.round(n*(cur.decimals>0?100:1))/(cur.decimals>0?100:1));return formatted+' '+cur.symbol;};
+const fmtS=n=>{const sym=getCurrencyInfo().symbol;if(n>=1000000)return(n/1000000).toFixed(1)+'M '+sym;if(n>=1000)return(n/1000).toFixed(0)+'K '+sym;return fmt(n);};
 const month=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');};
 const monthLabel=k=>{const[y,m]=k.split('-');return['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][+m-1]+' '+y;};
 const daysTo=d=>{const n=new Date();n.setHours(0,0,0,0);const t=new Date(d);t.setHours(0,0,0,0);return Math.ceil((t-n)/86400000);};
@@ -1811,6 +1851,7 @@ function renderCD(){
 // RENDU PRINCIPAL
 // ══════════════════════
 function render(){
+  if(window.updateCurrencyLabels) updateCurrencyLabels();
   const m=month();
   const txs=S.tx.filter(t=>t.month===m);
   const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
@@ -1819,6 +1860,18 @@ function render(){
 
   document.getElementById('heroBalance').textContent=fmt(bal);
   document.getElementById('heroBalance').style.color=bal<0?'#f87171':'#fff';
+  // Mettre à jour les labels devise
+  if(window.updateCurrencyLabels) updateCurrencyLabels();
+  // Maintenir état masquage
+  (function(){
+    var hidden = localStorage.getItem('diafa_bal_hidden') !== '0';
+    var el = document.getElementById('heroBalance');
+    var btn = document.getElementById('balanceEyeBtn');
+    if(el) el.style.filter = hidden ? 'blur(8px)' : '';
+    if(btn) btn.innerHTML = hidden
+      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Afficher'
+      : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Masquer';
+  })();
   document.getElementById('heroIncome').textContent=fmt(inc);
   document.getElementById('heroExpense').textContent=fmt(exp);
   const pctExp=inc>0?(exp/inc*100).toFixed(0):0;
@@ -2079,7 +2132,10 @@ function loadProfile(){
   const telEl = document.getElementById('pTel');
   if(telEl && p.telephone) telEl.value = p.telephone;
   if(p.nom) document.getElementById('pNom').value = p.nom;
-  if(p.dob) { document.getElementById('pDOB').value = p.dob; calcAge(p.dob); }
+  if(p.dob) {
+    document.getElementById('pDOB').value = p.dob;
+    setTimeout(function(){ calcAge(p.dob); }, 100);
+  }
   else if(p.age) { document.getElementById('pAge').value = p.age; }
   if(p.quartier) document.getElementById('pQuartier').value = p.quartier;
   if(p.profession) document.getElementById('pProfession').value = p.profession;
@@ -2130,8 +2186,12 @@ function handleAvatar(event){
   reader.readAsDataURL(file);
 }
 function openProfile(){
-  loadProfile();
   document.getElementById('profileOverlay').classList.remove('hidden');
+  // Init pickers d'abord, puis charger les valeurs
+  setTimeout(function(){
+    if(window.initAllPickers) window.initAllPickers();
+    loadProfile();
+  }, 50);
 }
 function closeProfile(){
   document.getElementById('profileOverlay').classList.add('hidden');
@@ -2141,7 +2201,23 @@ function saveProfile(){
   p.prenom     = document.getElementById('pPrenom').value.trim();
   p.nom        = document.getElementById('pNom').value.trim();
   p.telephone  = (document.getElementById('pTel')||{value:''}).value.trim();
-  p.dob        = document.getElementById('pDOB').value;
+  // Lire la date depuis le picker (selects) si hidden est vide
+  var dobHidden = document.getElementById('pDOB');
+  var dobVal = dobHidden ? dobHidden.value : '';
+  if(!dobVal) {
+    // Essayer de reconstruire depuis les selects du picker
+    var dpkDiv = document.querySelector('.dpk[data-for="pDOB"]');
+    if(dpkDiv) {
+      var sels = dpkDiv.querySelectorAll('select');
+      if(sels.length >= 3) {
+        var y = sels[2] ? sels[2].value : '';
+        var m = sels[1] ? sels[1].value : '';
+        var d = sels[0] ? sels[0].value : '';
+        if(y && m && d) dobVal = y+'-'+m+'-'+d;
+      }
+    }
+  }
+  p.dob = dobVal;
   p.age        = getAge(p.dob);
   p.quartier   = document.getElementById('pQuartier').value.trim();
   p.profession = document.getElementById('pProfession').value.trim();
@@ -2905,18 +2981,18 @@ function printListPage(){
     const recLP = {monthly:'Mensuel', weekly:'Hebdo', '1x':'1 fois'};
     items = [...S.planned].sort((a,b)=>a.date.localeCompare(b.date));
     const totP = items.reduce((s,x)=>s+x.amt, 0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Récurrence</th><th>Montant (GNF)</th></tr>';
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Récurrence</th><th>Montant ('+getCurrency()+')</th></tr>';
     rows = items.map((x,n)=>
       '<tr><td>'+(n+1)+'</td><td>'+x.date+'</td><td>'+escHtml(x.lbl)+'</td><td>'+(x.cat||'—')+'</td><td>'+(recLP[x.rec]||x.rec||'—')+'</td>'+
       '<td style="text-align:right;font-weight:700;color:#7c3aed;">'+x.amt.toLocaleString('fr-FR')+'</td></tr>'
     ).join('');
-    rows += '<tr style="background:#f3e8ff;font-weight:800"><td colspan="5" style="color:#7c3aed;">TOTAL</td><td style="text-align:right;color:#7c3aed;">'+totP.toLocaleString('fr-FR')+' GNF</td></tr>';
+    rows += '<tr style="background:#f3e8ff;font-weight:800"><td colspan="5" style="color:#7c3aed;">TOTAL</td><td style="text-align:right;color:#7c3aed;">'+totP.toLocaleString('fr-FR')+' '+getCurrency()+'</td></tr>';
   } else if(type === 'income' || type === 'expense'){
     items = S.tx.filter(t=>t.type===type);
     if(listPageFilter !== 'all') items = items.filter(t=>t.month===listPageFilter);
     items = [...items].sort((a,b)=>b.date.localeCompare(a.date));
     const total = items.reduce((s,t)=>s+t.amt,0);
-    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant (GNF)</th></tr>';
+    thead = '<tr><th>#</th><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Méthode</th><th>Montant ('+getCurrency()+')</th></tr>';
     rows = items.map((t,i)=>'<tr><td>'+(i+1)+'</td><td>'+t.date+'</td><td>'+escHtml(t.lbl)+'</td><td>'+escHtml(t.cat)+'</td><td>'+escHtml(t.meth||'—')+'</td><td style="text-align:right;font-weight:700;color:'+(t.type==='income'?'#15803d':'#b91c1c')+';">'+fmt(t.amt)+'</td></tr>').join('');
     rows += '<tr style="font-weight:800;background:#f1f5f9;"><td colspan="5" style="text-align:right;">TOTAL</td><td style="text-align:right;color:'+(type==='income'?'#15803d':'#b91c1c')+';">'+fmt(total)+'</td></tr>';
   } else {
@@ -4248,6 +4324,8 @@ if('serviceWorker' in navigator){
       hidden.dispatchEvent(new Event('change', {bubbles:true}));
       // Handle specific callbacks
       if(onchangeFn && window[onchangeFn]) window[onchangeFn](v);
+      // Déclencher aussi un event change natif pour les listeners
+      hidden.dispatchEvent(new Event('input', {bubbles:true}));
     }
     selD.addEventListener('change', onSelect);
     selM.addEventListener('change', onSelect);
@@ -4268,6 +4346,7 @@ if('serviceWorker' in navigator){
   function initAllPickers(){
     document.querySelectorAll('.dpk[data-for]').forEach(initPicker);
   }
+  window.initAllPickers = initAllPickers;
 
   // Run on DOM ready + after dynamic overlays open
   if(document.readyState==='loading'){
@@ -4885,7 +4964,7 @@ if('serviceWorker' in navigator){
     setText('pagePlannedAddBtn', t('page_planned_add'));
 
     // ── TX form ──
-    setText('txLblAmount', t('tx_lbl_amount'));
+    setText('txLblAmount', t('tx_lbl_amount').replace('GNF', getCurrency()));
     setText('txLblDate', t('tx_lbl_date'));
     setText('txLblLabel', t('tx_lbl_label'));
     setText('txLblCat', t('tx_lbl_cat'));
@@ -4898,7 +4977,7 @@ if('serviceWorker' in navigator){
     // ── Planned form ──
     setText('plannedOverlayTitle', t('planned_title'));
     setText('plannedLblLabel', t('planned_lbl_label'));
-    setText('plannedLblAmount', t('planned_lbl_amount'));
+    setText('plannedLblAmount', t('planned_lbl_amount').replace('GNF', getCurrency()));
     setText('plannedLblDate', t('planned_lbl_date'));
     setText('plannedLblCat', t('planned_lbl_cat'));
     setText('plannedLblRec', t('planned_lbl_rec'));
@@ -4933,8 +5012,8 @@ if('serviceWorker' in navigator){
     // ── Goal form ──
     setText('goalOverlayTitle', t('goal_title'));
     setText('goalLblName', t('goal_lbl_name'));
-    setText('goalLblTarget', t('goal_lbl_target'));
-    setText('goalLblCurrent', t('goal_lbl_current'));
+    setText('goalLblTarget', t('goal_lbl_target').replace('GNF', getCurrency()));
+    setText('goalLblCurrent', t('goal_lbl_current').replace('GNF', getCurrency()));
     setText('goalLblCurrentSub', t('goal_lbl_current_sub'));
     setText('goalLblDeadline', t('goal_lbl_deadline'));
     setText('gDeadlineNone', t('goal_deadline_none'));
@@ -4951,12 +5030,12 @@ if('serviceWorker' in navigator){
 
     // ── Seuil form ──
     setText('seuilOverlayTitle', t('seuil_title'));
-    setText('seuilLblMin', t('seuil_lbl_min'));
+    setText('seuilLblMin', t('seuil_lbl_min').replace('GNF', getCurrency()));
     setText('seuilLblPct', t('seuil_lbl_pct'));
     setText('seuilSaveBtn', t('seuil_save_btn'));
 
     // ── CD form ──
-    setText('cdLblAmount', t('cd_lbl_amount'));
+    setText('cdLblAmount', t('cd_lbl_amount').replace('GNF', getCurrency()));
     setText('cdLblDate', t('cd_lbl_date'));
     setText('cdLblReason', t('cd_lbl_reason'));
     setText('cdLblMeth', t('cd_lbl_meth'));
@@ -5191,6 +5270,108 @@ window.deleteCustomCat = function(name){
   renderCatMgr();
   toast('🗑️','Catégorie supprimée');
 };
+</script>
+
+<!-- ══ CURRENCY PICKER ══ -->
+<div class="currency-picker-overlay" id="currencyPickerOverlay" onclick="if(event.target===this)closeCurrencyPicker()">
+  <div class="currency-picker-sheet">
+    <div class="currency-picker-title">💱 Choisir la devise</div>
+    <div class="currency-grid" id="currencyGrid"></div>
+    <button onclick="closeCurrencyPicker()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:none;background:var(--bg2);font-size:13px;font-weight:700;cursor:pointer;">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ══ CURRENCY PICKER ══
+var _CURRENCY_LABELS = {
+  'GNF': 'Franc Guinéen',
+  'CFA': 'Franc CFA',
+  'KMF': 'Franc Comorien',
+  'GHS': 'Cedi Ghanéen',
+  'NGN': 'Naira Nigérian',
+  'SLL': 'Leone Sierra-Leone',
+  'USD': 'Dollar US',
+  'EUR': 'Euro',
+};
+
+window.openCurrencyPicker = function(){
+  var cur = getCurrency();
+  var grid = document.getElementById('currencyGrid');
+  grid.innerHTML = Object.keys(CURRENCIES).map(function(k){
+    var active = k===cur ? ' active' : '';
+    var sym = CURRENCIES[k].symbol;
+    var lbl = _CURRENCY_LABELS[k]||k;
+    return '<div class="currency-opt'+active+'" onclick="selectCurrency(this)" data-code="'+k+'">'
+      +'<div class="currency-opt-sym">'+sym+'</div>'
+      +'<div class="currency-opt-name">'+k+'</div>'
+      +'<div class="currency-opt-name">'+lbl+'</div>'
+      +'</div>';
+  }).join('');
+  document.getElementById('currencyPickerOverlay').classList.add('open');
+};
+
+window.closeCurrencyPicker = function(){
+  document.getElementById('currencyPickerOverlay').classList.remove('open');
+};
+
+window.selectCurrency = function(el){ var code = el.getAttribute('data-code');
+  localStorage.setItem('diafa_currency', code);
+  // Mettre à jour le sous-titre dans le menu
+  var sub = document.getElementById('menuCurrencySub');
+  if(sub) sub.textContent = code;
+  closeCurrencyPicker();
+  // Mettre à jour tous les labels
+  updateCurrencyLabels();
+  // Rafraîchir l'affichage
+  render();
+  toast('💱', 'Devise: '+code);
+};
+
+function updateCurrencyLabels(){
+  var cur = getCurrency();
+  // Labels des formulaires
+  var ids = ['txLblAmount','plannedLblAmount','goalLblTarget','goalLblCurrent','seuilLblMin','cdLblAmount'];
+  var labelsFR = {
+    'txLblAmount': 'Montant ('+cur+')',
+    'plannedLblAmount': 'Montant ('+cur+')',
+    'goalLblTarget': 'Montant cible ('+cur+')',
+    'goalLblCurrent': 'Déjà épargné ('+cur+')',
+    'seuilLblMin': 'Solde minimum à maintenir ('+cur+')',
+    'cdLblAmount': 'Montant ('+cur+')',
+  };
+  var labelsEN = {
+    'txLblAmount': 'Amount ('+cur+')',
+    'plannedLblAmount': 'Amount ('+cur+')',
+    'goalLblTarget': 'Target amount ('+cur+')',
+    'goalLblCurrent': 'Already saved ('+cur+')',
+    'seuilLblMin': 'Minimum balance ('+cur+')',
+    'cdLblAmount': 'Amount ('+cur+')',
+  };
+  var _L = getLang ? getLang() : 'fr';
+  var labels = _L === 'en' ? labelsEN : labelsFR;
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && labels[id]){
+      // Préserver les spans enfants (comme goalLblCurrentSub)
+      var sub = el.querySelector('span');
+      el.textContent = labels[id];
+      if(sub) el.appendChild(sub);
+    }
+  });
+  // Menu sous-titre
+  var menuSub = document.getElementById('menuCurrencySub');
+  if(menuSub) menuSub.textContent = cur;
+}
+window.updateCurrencyLabels = updateCurrencyLabels;
+
+// Init sous-titre devise au chargement
+(function(){
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(updateCurrencyLabels, 200); });
+  } else {
+    setTimeout(updateCurrencyLabels, 200);
+  }
+})();
 </script>
 
 </body>
