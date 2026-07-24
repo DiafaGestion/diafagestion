@@ -3,9 +3,15 @@
 
 /*.html
   Content-Type: text/html; charset=UTF-8
+  Cache-Control: no-cache, no-store, must-revalidate
 
 /*.js
   Content-Type: application/javascript
+
+/sw.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
 
 /*.json
   Content-Type: application/json
